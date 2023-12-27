@@ -1,0 +1,24 @@
+Package: plimanshiny
+Title: An Amazing Shiny App
+Version: 0.0.0.9000
+Authors@R: 
+    person("firstname", "lastname", , "your@email.com", role = c("aut", "cre"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Imports: 
+    bs4Dash,
+    config (>= 0.3.2),
+    data.table,
+    golem (>= 0.4.1),
+    leaflet,
+    mapedit,
+    mapview,
+    pliman,
+    sf,
+    shiny (>= 1.7.5.1),
+    shinyWidgets,
+    terra
+Config/testthat/edition: 3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
