@@ -389,7 +389,6 @@ return_colors <- function(pal){
          "Spectral" = scales::brewer_pal(palette = "Spectral")(8)
   )
 }
-
 add_spinner <- function(x, type = 4, color = "#28a745"){
   shinycssloaders::withSpinner(x, type = type, color = color)
 }
