@@ -3,14 +3,17 @@
 #' @param ... A series of options to be used inside the app.
 #'
 #' @export
-#' @importFrom shiny shinyApp
+#' @rawNamespace import(DT, except = c(dataTableOutput, renderDataTable))
 #' @importFrom golem with_golem_options
+#' @importFrom plotly ggplotly renderPlotly plotlyOutput
+#' @importFrom shiny shinyApp
+#' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 fresh
 #' @rawNamespace import(bs4Dash, except = c(progressBar, insertTab, actionButton, updateTabsetPanel, column, tabsetPanel, tabPanel, navbarMenu))
 #' @rawNamespace import(terra, except = c(panel, shift, distance))
+#' @rawNamespace import(leaflet.extras2, except = c(menuItem, addSpinner))
 #' @rawNamespace import(pliman, except = c(`%>%`))
-#' @import shinyWidgets data.table  mapview leaflet mapedit sf
 run_app <- function(...) {
-  options(shiny.maxRequestSize = 5000 * 1024^2)
+  options(shiny.maxRequestSize = 10000 * 1024^2)
   with_golem_options(
     app = shinyApp(
       ui = app_ui,
@@ -20,3 +23,4 @@ run_app <- function(...) {
     golem_opts = list(...)
   )
 }
+

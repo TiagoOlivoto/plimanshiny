@@ -7,6 +7,7 @@
 app_server <- function(input, output, session) {
   # Your application server logic
 
+
   # Create the reactiveValues object to store the mosaic data
   mosaic_data <- reactiveValues(mosaic = NULL)
   r <- reactiveValues(r = NULL)
@@ -15,6 +16,8 @@ app_server <- function(input, output, session) {
   re <- reactiveValues(re = NULL)
   nir <- reactiveValues(nir = NULL)
   basemap <- reactiveValues(map = NULL)
+  index <- reactiveValues(index = NULL)
+
 
   # Call the import mosaic module
   mod_mosaic_prepare_server("mosaic_prepare_1", mosaic_data, r, g, b, re, nir, basemap)
@@ -23,5 +26,7 @@ app_server <- function(input, output, session) {
   shapefile <- reactiveValues(shapefile = NULL)
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
 
+  mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index)
+  mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index)
 }
 

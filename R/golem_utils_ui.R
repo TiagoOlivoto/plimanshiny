@@ -151,7 +151,7 @@ undisplay <- function(tag) {
   # if not already hidden
   if (
     !is.null(tag$attribs$style) &&
-      !grepl("display:\\s+none", tag$attribs$style)
+    !grepl("display:\\s+none", tag$attribs$style)
   ) {
     tag$attribs$style <- paste(
       "display: none;",
@@ -167,7 +167,7 @@ undisplay <- function(tag) {
 display <- function(tag) {
   if (
     !is.null(tag$attribs$style) &&
-      grepl("display:\\s+none", tag$attribs$style)
+    grepl("display:\\s+none", tag$attribs$style)
   ) {
     tag$attribs$style <- gsub(
       "(\\s)*display:(\\s)*none(\\s)*(;)*(\\s)*",
@@ -279,6 +279,11 @@ col_6 <- function(...) {
   column(6, ...)
 }
 
+#' @importFrom shiny column
+col_7 <- function(...) {
+  column(7, ...)
+}
+
 
 #' @importFrom shiny column
 col_5 <- function(...) {
@@ -308,8 +313,86 @@ col_1 <- function(...) {
   column(1, ...)
 }
 
+#' @importFrom shiny div
+divclass <- function(class, ...) {
+  div(class = class, ...)
+}
 
 
+pickerpalette <- function(id, inputid, ...){
+  ns <- NS(id)
+  palettePicker(
+    inputId = ns(inputid),
+    label = "Color palette",
+    choices = list(
+      "Viridis" = list(
+        "viridis" = scales::viridis_pal(option = "viridis")(10),
+        "magma" = scales::viridis_pal(option = "magma")(10),
+        "inferno" = scales::viridis_pal(option = "inferno")(10),
+        "plasma" = scales::viridis_pal(option = "plasma")(10),
+        "cividis" = scales::viridis_pal(option = "cividis")(10),
+        "set1" = grDevices::colorRampPalette(c("yellow", "#53CC67", "#009B95", "#00588B","#4B0055"))(10),
+        "set2" = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(10),
+        "set3" = rev(grDevices::terrain.colors(10))
+      ),
+      "Brewer" = list(
+        "Blues" = scales::brewer_pal(palette = "Blues")(8),
+        "Reds" = scales::brewer_pal(palette = "Reds")(8),
+        "Blues" = scales::brewer_pal(palette = "Blues")(8),
+        "Reds" = scales::brewer_pal(palette = "Reds")(8),
+        "Greens " = scales::brewer_pal(palette = "Greens")(8),
+        "Oranges" = scales::brewer_pal(palette = "Oranges")(8),
+        "Paired" = scales::brewer_pal(palette = "Paired")(8)
+      ),
+      "Others" = list(
+        "BrBG" = scales::brewer_pal(palette = "BrBG")(8),
+        "PiYG" = scales::brewer_pal(palette = "PiYG")(8),
+        "PRGn" = scales::brewer_pal(palette = "PRGn")(8),
+        "PuOr" = scales::brewer_pal(palette = "PuOr")(8),
+        "RdBu" = scales::brewer_pal(palette = "RdBu")(8),
+        "RdGy" = scales::brewer_pal(palette = "RdGy")(8),
+        "RdYlBu" = scales::brewer_pal(palette = "RdYlBu")(8),
+        "RdYlGn" = scales::brewer_pal(palette = "RdYlGn")(8),
+        "Spectral" = scales::brewer_pal(palette = "Spectral")(8)
+      )
+    ),
+    textColor = c(rep("white", 5), "black", "white", rep("black", 8), rep("white", 9)),
+    ...
+  )
+}
+
+return_colors <- function(pal){
+  switch(pal,
+         "viridis" = scales::viridis_pal(option = "viridis")(10),
+         "magma" = scales::viridis_pal(option = "magma")(10),
+         "inferno" = scales::viridis_pal(option = "inferno")(10),
+         "plasma" = scales::viridis_pal(option = "plasma")(10),
+         "cividis" = scales::viridis_pal(option = "cividis")(10),
+         "set1" = grDevices::colorRampPalette(c("yellow", "#53CC67", "#009B95", "#00588B","#4B0055"))(10),
+         "set2" = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3),
+         "set3" = rev(grDevices::terrain.colors(10)),
+         "Blues" = scales::brewer_pal(palette = "Blues")(8),
+         "Reds" = scales::brewer_pal(palette = "Reds")(8),
+         "Blues" = scales::brewer_pal(palette = "Blues")(8),
+         "Reds" = scales::brewer_pal(palette = "Reds")(8),
+         "Greens " = scales::brewer_pal(palette = "Greens")(8),
+         "Oranges" = scales::brewer_pal(palette = "Oranges")(8),
+         "Paired" = scales::brewer_pal(palette = "Paired")(8),
+         "BrBG" = scales::brewer_pal(palette = "BrBG")(8),
+         "PiYG" = scales::brewer_pal(palette = "PiYG")(8),
+         "PRGn" = scales::brewer_pal(palette = "PRGn")(8),
+         "PuOr" = scales::brewer_pal(palette = "PuOr")(8),
+         "RdBu" = scales::brewer_pal(palette = "RdBu")(8),
+         "RdGy" = scales::brewer_pal(palette = "RdGy")(8),
+         "RdYlBu" = scales::brewer_pal(palette = "RdYlBu")(8),
+         "RdYlGn" = scales::brewer_pal(palette = "RdYlGn")(8),
+         "Spectral" = scales::brewer_pal(palette = "Spectral")(8)
+  )
+}
+
+add_spinner <- function(x, type = 4, color = "#28a745"){
+  shinycssloaders::withSpinner(x, type = type, color = color)
+}
 #' Make the current tag behave like an action button
 #'
 #' Only works with compatible tags like button or links

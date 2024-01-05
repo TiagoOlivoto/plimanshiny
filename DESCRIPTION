@@ -1,23 +1,37 @@
 Package: plimanshiny
-Title: An Amazing Shiny App
+Title: A shiny app for the pliman package
 Version: 0.0.0.9000
 Authors@R: 
-    person("firstname", "lastname", , "your@email.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Tiago", "Olivoto", , "tiagoolivoto@gmail.com", role = c("aut", "cre"))
+Description: Provides interactive tools for analyzing mosaics.
 License: MIT + file LICENSE
 Imports: 
     bs4Dash,
     config (>= 0.3.2),
-    data.table,
+    DT,
+    esquisse,
+    fresh,
+    ggplot2,
     golem (>= 0.4.1),
+    grDevices,
     leaflet,
+    leaflet.extras2,
+    leafsync,
     mapedit,
     mapview,
     pliman,
+    plotly,
+    poorman,
+    rintrojs,
+    scales,
     sf,
     shiny (>= 1.7.5.1),
+    shinycssloaders,
     shinyWidgets,
-    terra
+    terra,
+    utils,
+    waiter
+Remotes: TiagoOlivoto/pliman
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true

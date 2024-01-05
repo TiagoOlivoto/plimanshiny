@@ -55,13 +55,14 @@ golem::use_recommended_tests()
 
 ## Favicon ----
 # If you want to change the favicon (default is golem's one)
-golem::use_favicon() # path = "path/to/ico". Can be an online file.
+# golem::use_favicon("D:/Desktop/pliman/pkgdown/favicon/apple-touch-icon-120x120.png") # path = "path/to/ico". Can be an online file.
 # golem::remove_favicon() # Uncomment to remove the default favicon
 
 ## Add helper functions ----
 golem::use_utils_ui()
 golem::use_utils_server()
 
+usethis::use_pkgdown()
 # You're now set! ----
 
 # go to dev/02_dev.R

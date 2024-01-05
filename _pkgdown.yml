@@ -1,0 +1,48 @@
+url: https://tiagoolivoto.github.io/plimanshiny/
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#0054AD"
+    border-radius: 0.5rem
+    btn-border-radius: 0.25rem
+
+home:
+  title: plimanshiny
+  description: The Shiny interface for the pliman package
+
+toc:
+  depth: 3
+
+authors:
+  Tiago Olivoto:
+    href: https://olivoto.netlify.app/
+
+
+navbar:
+  title: "sparklyr"
+  type: inverse
+  left:
+    - icon: fa-home
+      text: "Home"
+      href: index.html
+    - text: "Functions"
+      href: reference/index.html
+    - text: News
+      menu:
+      - text: Package news
+        href: news/index.html
+  right:
+    - icon: "fab fa-researchgate fa-2x"
+      href: https://www.researchgate.net/profile/Tiago_Olivoto2
+    - icon: "fa-github fa-2x"
+      href: https://github.com/TiagoOlivoto
+    - icon: "fab fa-twitter fa-2x"
+      href: https://twitter.com/tolivoto
+    - icon: "fab fa-mendeley fa-2x"
+      href: https://www.mendeley.com/profiles/tiago-olivoto/
+
+reference:
+  - title: "Run app"
+    desc: "The function to run the app"
+    contents:
+      - run_app

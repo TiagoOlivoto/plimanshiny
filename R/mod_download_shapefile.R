@@ -7,29 +7,47 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_download_shapefile_ui <- function(id){
+mod_download_shapefile_ui <- function(id, label = "Download shapefile"){
   ns <- NS(id)
   tagList(
-    downloadBttn(ns("downloadshapefile"),
-                 label = "Download shapefile",
-                 style = "pill")
+    fluidRow(
+      col_8(
+        downloadBttn(ns("downloadshapefile"),
+                     label = label,
+                     style = "pill")
+      ),
+      col_4(
+        selectInput(ns("formatshp"),
+                    label = "Format",
+                    choices = c(".rds", ".shp", ".json", ".kml", ".gml"),
+                    selected = ".rds")
+      )
+    )
   )
 }
 
 #' download_shapefile Server Functions
 #'
 #' @noRd
-mod_download_shapefile_server <- function(id, data){
+mod_download_shapefile_server <- function(id, data, name = "shapefile"){
   moduleServer(
     id,
     function(input, output, session) {
       ns <- session$ns
       output$downloadshapefile <- downloadHandler(
         filename = function() {
-          paste("shapefile", ".rds", sep = "")
+          if(input$formatshp == ".shp"){
+            "shapefile.zip"
+          } else{
+            paste(name, input$formatshp, sep = "")
+          }
         },
         content = function(file) {
-          terra::writeVector(data, file)
+          if(input$formatshp == ".shp"){
+            write_shp(data, file)
+          } else{
+            terra::writeVector(data, file)
+          }
         }
       )
     }

@@ -1,0 +1,37 @@
+element;intro;type
+.prep1;Here, the bands are configured. By default, the 'BGR' system is used. Red-Edge and NIR bands (when available) are set as the layer 4 and 5, respectively.;mosaic
+.prep2;Here, you can configure the upper and lower quantiles used for color stretching.;mosaic
+.prep3;Maximum number of pixels to render in the map or plot. By default, 1000000 pixels are rendered. If the mosaic has a larger resolution, it will be first be aggregated by a factor to approximate the maximum number of pixels declared.;mosaic
+.prep4;Search by the mosaic file. The maximum size for upload is ~2GB;mosaic
+.prep5;Choose how to visualize the mosaic: 'rgb' for a colorful RGB plot, 'mapview' for an interactive zoomable map, or 'bands' to plot individual layers.;mosaic
+.prep6;If needed, the mosaic can be cropped. Turn on this button and use the 'Draw Rectangle' to crop the mosaic to the region of interest.;mosaic
+.prep7;This button will download the current mosaic.;mosaic
+.shape1;Define how a shapefile will be created. When 'Build' (default), the shapefile can be created by defining a grid or a free shape. To do that, use the 'Draw Polygon' tool. When 'Import' is used, an external shapefile previously created can be imported.;shape
+.shape2;Use this tool to configure the color and opacity for the shape's stroke and fill;shape
+.shape3;Define the shape of the grid by setting the number of rows and columns.;shape
+.shape4;Buffering factor for the columns and rows, of each individual plot's side. A value between -0.5 and 0.5 where 0 means no buffering, -0.5 means complete buffering. A value of -0.25 will buffer (narrow) the plot by 25% on each side.;shape
+.shape5;Check this box when the shapefile is finished. An additional Switch button will appear asking if the plots need to be edited. In this step, you can edit the plots individually.;shape
+.shape6;Check this box when the edition is finished. The shapefile will be updated with the edited shapes.;shape
+.ind1;The index(es) to be computed. You can choose in a list of build-in indexes or declare your personalized index. A list of personalized indexes can be created by using a comma ( , ) to separate the indexes (eg., B-R, R+B-G);index
+.ind2;The index to be syncked with the basemap. By default, the first computed index is shown.;index
+.anal1;"The function to compute summaries for the pixel values. Defaults to ""mean,"" i.e., the mean value of the pixels";analyze
+.anal2;Logical, indicating whether to segment plots (default: FALSE). If TRUE, the segment_index will be computed, and pixels with values below the threshold will be selected.;analyze
+.anal3;Logical, indicating whether to segment individuals within plots (default: FALSE). If TRUE, the segment_index will be computed, and pixels with values below the threshold will be selected, and a watershed-based segmentation will be performed.;analyze
+.anal4;The index used for segmentation.;analyze
+.anal5;"Character vector specifying the type of intersection. Defaults to ""centroid"" (individuals in which the centroid is included within the drawn plot will be included in that plot). Other possible values include ""covered"", ""overlap"", and ""intersect"".";analyze
+.anal6;"By default (threshold = ""Otsu""), a threshold value based on Otsu's method is used to reduce the grayscale image to a binary image. If a numeric value is provided, this value will be used as a threshold.";analyze
+.anal7;Crop the mosaic to the extension of shapefile? Defaults to TRUE. This allows for a faster index computation when the region of the built shapefile is much smaller than the entire mosaic extension.;analyze
+.anal8;Logical, indicating whether to invert the mask. Defaults to FALSE, i.e., pixels with intensity greater than the threshold values are selected.;analyze
+.anal9;If TRUE (default), performs watershed-based object detection. This will detect objects even when they are touching one another. If FALSE, all pixels for each connected set of foreground pixels are set to a unique object. This is faster but is not able to segment touching objects.;analyze
+.anal10;If TRUE, the distance between objects within plots is computed. The distance can be mapped either in the horizontal or vertical direction. The distances, coefficient of variation (CV), and mean of distances are then returned.;analyze
+.anal11;To prevent noise from affecting the image analysis, objects with lesser than 10% of the mean area of all objects are removed (lower_noise = 0.1). Increasing this value will remove larger noises (such as dust points), but can remove desired objects too. To define an explicit lower or upper size, use the lower_size and upper_size arguments.;analyze
+.anal12;Performs median filtering in the binary image? See more at ?pliman::image_filter(). Defaults to FALSE. Use a positive integer to define the size of the median filtering. Larger values are effective at removing noise but adversely affect edges.;analyze
+.anal13;Lower and upper limits for size for the image analysis. Plant images often contain dirt and dust. Upper limit is set to NULL, i.e., no upper limit used. One can set a known area or use lower_size = 0 to select all objects (not advised). Objects that matches the size of a given range of sizes can be selected by setting up the two arguments. For example, if lower_size = 120 and upper_size = 140, objects with size greater than or equal 120 and less than or equal 140 will be considered.;analyze
+.anal14;Select the top n objects based on its area. topn_lower selects the n elements with the smallest area whereas topn_upper selects the n objects with the largest area.;analyze
+.out1;The summarize function to show in the results.;output
+.out2;The attribute at the plot-level to be plotted in the map;output
+.out3;The attribute at the individual-level to be plotted in the map;output
+.shapeimp1;Search by a valid shapefile. Allowed extensions are .rds (single file) or .shp (multiple files). When a '.shp' is used, ensure to import the companion mandatory files (.dbf, .prj, .shx).;shapeimp
+.shapeimp2;Optional column name to color the map by.;shapeimp
+.shapeimp3;Check this box when the shapefile is finished. An additional Switch button will appear asking if the plots need to be edited. In this step, you can edit the plots individually.;shapeimp
+.shapeimp4;Check this box when the edition is finished. The shapefile will be updated with the edited shapes.;shapeimp

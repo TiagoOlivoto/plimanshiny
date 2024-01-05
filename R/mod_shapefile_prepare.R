@@ -11,133 +11,285 @@ mod_shapefile_prepare_ui <- function(id){
   ns <- NS(id)
   fluidRow(
     col_3(
-      bs4Card(title = "Shapefile input",
-              width = 12,
-              radioGroupButtons(
-                inputId = ns("shapetype"),
-                label = "Choose an option to create the shapefile",
-                choices = c("Build", "Import"),
-                checkIcon = list(
-                  yes = tags$i(class = "fa fa-check-square",
-                               style = "color: steelblue"),
-                  no = tags$i(class = "fa fa-square-o",
-                              style = "color: steelblue"))
-              ),
-              conditionalPanel(
-                condition = "input.shapetype == 'Build'", ns = ns,
-                h3("Plot configuration"),
-                fluidRow(
-                  col_6(
-                    numericInput(ns("ncols"),
-                                 label = "Number of columns",
-                                 value = 1)
-                  ),
-                  col_6(
-                    numericInput(ns("nrows"),
-                                 label = "Number of rows",
-                                 value = 1)
-                  )
-                ),
-                sliderInput(ns("buffercol"),
-                            label = "Column buffer",
-                            value = 0,
-                            min = -0.5,
-                            max = 0.5,
-                            step = 0.01
-                ),
-                sliderInput(ns("bufferrow"),
-                            label = "Row buffer",
-                            value = 0,
-                            min = -0.5,
-                            max = 0.5,
-                            step = 0.01
-                ),
-                prettyCheckbox(
-                  inputId = ns("shapedone"),
-                  label = "Shapefile finished!",
-                  value = FALSE,
-                  status = "info",
-                  icon = icon("thumbs-up"),
-                  plain = TRUE,
-                  outline = TRUE,
-                  animation = "rotate"
+      bs4Card(
+        title = "Settings",
+        status = "success",
+        width = 12,
+        fluidRow(
+          col_6(
+            divclass("shape1",
+                     prettyRadioButtons(
+                       inputId = ns("shapetype"),
+                       label = "I want to...",
+                       choices = c("Build", "Import"),
+                       icon = icon("check"),
+                       bigger = TRUE,
+                       status = "info",
+                       animation = "jelly"
+                     )
+            )
+          ),
+          col_6(
+            fluidRow(
+              col_4(
+                divclass("shape2",
+                         br(),
+                         dropdown(
+                           fluidRow(
+                             col_6(
+                               colorPickr(
+                                 inputId = ns("colorfill"),
+                                 label = "Fill color",
+                                 swatches = scales::viridis_pal()(10),
+                                 theme = "monolith",
+                                 useAsButton = TRUE,
+                                 selected = "#0361FC",
+                               )
+                             ),
+                             col_6(
+                               colorPickr(
+                                 inputId = ns("colorstroke"),
+                                 label = "Stroke color",
+                                 swatches = scales::viridis_pal()(10),
+                                 theme = "monolith",
+                                 useAsButton = TRUE,
+                                 selected = "darkred",
+                               )
+                             )
+                           ),
+                           sliderInput(ns("alphacolorfill"),
+                                       label = "Fill opacity",
+                                       min = 0,
+                                       max = 1,
+                                       value = 0.3),
+                           style = "unite",
+                           icon = icon("gear"),
+                           status = "success",
+                           width = "360px",
+                           animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
+                           tooltip = tooltipOptions(title = "Settings")
+                         )
                 )
               ),
-              conditionalPanel(
-                condition = "input.shapetype == 'Import'", ns = ns,
-                fileInput(ns("import_shapefile"),
-                          "Import a shapefile (.shp, .rds)",
-                          accept = c('.shp','.rds'))
-              ),
-              conditionalPanel(
-                condition = "input.shapedone == true", ns = ns,
-                materialSwitch(
-                  inputId = ns("editplots"),
-                  label = "Edit the drawn plots?",
-                  value = FALSE,
-                  status = "danger"
-                ), br(),
+              col_8(
                 conditionalPanel(
-                  condition = "input.editplots == true", ns = ns,
-                  prettyCheckbox(
-                    inputId = ns("editdone"),
-                    label = "Edition finished!",
-                    value = FALSE,
-                    status = "info",
-                    icon = icon("thumbs-up"),
-                    plain = TRUE,
-                    outline = TRUE,
-                    animation = "rotate"
+                  condition = "input.shapetype == 'Build'", ns = ns,
+                  br(),
+                  actionButton(
+                    inputId = ns("guideshape"),
+                    label = tagList(
+                      icon = icon("question-circle", verify_fa = FALSE), "Guide"
+                    ),
+                    style = "color: white ; background-color: #dd4b39",
+                    class = "btn-danger"
                   )
                 ),
-                mod_download_shapefile_ui(ns("downloadshapefile"))
+                conditionalPanel(
+                  condition = "input.shapetype == 'Import'", ns = ns,
+                  br(),
+                  actionButton(
+                    inputId = ns("guideshapeimput"),
+                    label = tagList(
+                      icon = icon("question-circle", verify_fa = FALSE), "Guide"
+                    ),
+                    style = "color: white ; background-color: #dd4b39",
+                    class = "btn-danger"
+                  )
+                )
               )
+            )
+          )
+        ),
+        conditionalPanel(
+          condition = "input.shapetype == 'Build'", ns = ns,
+          divclass("shape3",
+                   h3("Grid shape"),
+                   fluidRow(
+                     col_6(
+                       numericInput(ns("ncols"),
+                                    label = "Number of columns",
+                                    value = 1)
+                     ),
+                     col_6(
+                       numericInput(ns("nrows"),
+                                    label = "Number of rows",
+                                    value = 1)
+                     )
+                   )
+          ),
+          divclass("shape4",
+                   sliderInput(ns("buffercol"),
+                               label = "Column buffer",
+                               value = 0,
+                               min = -0.5,
+                               max = 0.5,
+                               step = 0.01
+                   ),
+                   sliderInput(ns("bufferrow"),
+                               label = "Row buffer",
+                               value = 0,
+                               min = -0.5,
+                               max = 0.5,
+                               step = 0.01
+                   )
+          ),
+          divclass("shape5",
+                   prettyCheckbox(
+                     inputId = ns("shapedone"),
+                     label = "Shapefile finished!",
+                     value = FALSE,
+                     status = "info",
+                     icon = icon("thumbs-up"),
+                     plain = TRUE,
+                     outline = TRUE,
+                     animation = "rotate"
+                   )
+          ),
+          tags$hr(),
+        ),
+        conditionalPanel(
+          condition = "input.shapetype == 'Import'", ns = ns,
+          tags$hr(),
+          divclass("shapeimp1",
+                   fileInput(ns("import_shapefile"),
+                             "Import a shapefile (.shp, .rds)",
+                             accept=c('.shp','.dbf','.sbn','.sbx','.shx','.prj','.cpg', ".rds"), multiple=TRUE)
+          ),
+          tags$hr(),
+          divclass("shapeimp2",
+                   selectInput(ns("colorshapeimport"),
+                               label = "Fill color",
+                               choices = NULL)
+          )
+        ),
+        conditionalPanel(
+          condition = "input.shapedone == true | input.shapetype == 'Import'", ns = ns,
+          materialSwitch(
+            inputId = ns("editplots"),
+            label = "Edit the drawn plots?",
+            value = FALSE,
+            status = "danger"
+          ),
+          conditionalPanel(
+            condition = "input.editplots == true & input.shapetype != 'Import'", ns = ns,
+            divclass("shapeimp3",
+                     prettyCheckbox(
+                       inputId = ns("editdone"),
+                       label = "Edition finished!",
+                       value = FALSE,
+                       status = "info",
+                       icon = icon("thumbs-up"),
+                       plain = TRUE,
+                       outline = TRUE,
+                       animation = "rotate"
+                     )
+            )
+          ),
+          conditionalPanel(
+            condition = "input.editplots == true & input.shapetype == 'Import'", ns = ns,
+            divclass("shapeimp4",
+                     prettyCheckbox(
+                       inputId = ns("editdoneimpo"),
+                       label = "Edition finished!",
+                       value = FALSE,
+                       status = "info",
+                       icon = icon("thumbs-up"),
+                       plain = TRUE,
+                       outline = TRUE,
+                       animation = "rotate"
+                     ), br()
+            )
+          ),
+          tags$hr(),
+          mod_download_shapefile_ui(ns("downloadshapefile"))
+        )
       )
     ),
     col_9(
-      conditionalPanel(
-        condition = "input.shapetype == 'Build' & input.shapedone == false", ns = ns,
-        fluidRow(
-          col_6(
-            h3("Control points"),
-            editModUI(ns("shapefile_build"), height = "760px")
-          ),
-          col_6(
-            h3("Built shapefile"),
-            leafletOutput(ns("createdshapes"), height = "760px")
+      bs4Card(
+        width = 12,
+        height = "780px",
+        title = "Building the shapefile",
+        color = "success",
+        status = "success",
+        maximizable = TRUE,
+        conditionalPanel(
+          condition = "input.shapetype == 'Build' & input.shapedone == false", ns = ns,
+          fluidRow(
+            col_6(
+              h4("Control points"),
+              editModUI(ns("shapefile_build"), height = "740px") |> add_spinner()
+            ),
+            col_6(
+              h4("Built shapefile"),
+              leafletOutput(ns("createdshapes"), height = "740px") |> add_spinner()
+            )
           )
-        )
-      ),
-      conditionalPanel(
-        condition = "input.shapetype == 'Build' & input.shapedone == true", ns = ns,
-        fluidRow(
-          col_6(
-            h3("Built shapefile"),
-            leafletOutput(ns("plotshapedone"), height = "760px")
-          ),
-          col_6(
-            conditionalPanel(
-              condition = "input.editplots == true", ns = ns,
-              h3("Plot edition"),
-              editModUI(ns("plotedit"), height = "760px")
+        ),
+        conditionalPanel(
+          condition = "input.shapetype == 'Build' & input.shapedone == true", ns = ns,
+          fluidRow(
+            col_6(
+              h3("Built shapefile"),
+              leafletOutput(ns("plotshapedone"), height = "740px") |> add_spinner()
+            ),
+            col_6(
+              conditionalPanel(
+                condition = "input.editplots == true & input.editdone == false", ns = ns,
+                h3("Plot edition"),
+                editModUI(ns("plotedit"), height = "740px") |> add_spinner()
+              )
+            )
+          )
+        ),
+        conditionalPanel(
+          condition = "input.shapetype == 'Import'", ns = ns,
+          fluidRow(
+            col_6(
+              h3("Built shapefile"),
+              leafletOutput(ns("shapefile_mapview"), height = "740px") |> add_spinner()
+            ),
+            col_6(
+              conditionalPanel(
+                condition = "input.editplots == true & input.editdoneimpo == false", ns = ns,
+                h3("Plot edition"),
+                editModUI(ns("ploteditimpo"), height = "740px") |> add_spinner()
+              )
             )
           )
         )
-      ),
-      conditionalPanel(
-        condition = "input.shapetype == 'Import'", ns = ns,
-        leafletOutput(ns("shapefile_mapview"), height = "760px")
       )
     )
+
   )
 }
 
+helpshp <-
+  read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
+  poorman::filter(type == "shape")
+shapeimp <-
+  read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
+  poorman::filter(type == "shapeimp")
 #' shapefile_prepare Server Functions
 #'
 #' @noRd
 mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    observeEvent(input$guideshape, introjs(session,
+                                           options = list("nextLabel"="Next",
+                                                          "prevLabel"="Previous",
+                                                          "skipLabel"="Skip",
+                                                          steps = helpshp),
+                                           events = list("oncomplete"=I('alert("Hope it helped!")'))))
+    observeEvent(input$guideshapeimput, introjs(session,
+                                                options = list("nextLabel"="Next",
+                                                               "prevLabel"="Previous",
+                                                               "skipLabel"="Skip",
+                                                               steps = shapeimp),
+                                                events = list("oncomplete"=I('alert("Hope it helped!")'))))
+
+    # GUIA
     observe({
       if(!is.null(mosaic_data$mosaic)){
         observeEvent(input$shapetype, {
@@ -170,6 +322,9 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               mapp <-
                 basemap$map +
                 mapview::mapview(createdshape$shp[[nelem]],
+                                 color = input$colorstroke,
+                                 col.regions = input$colorfill,
+                                 alpha.regions = input$alphacolorfill,
                                  layer.name = "shapes")
               mapp@map
             })
@@ -181,74 +336,202 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 mapp <-
                   basemap$map +
                   mapview::mapview(shapefile$shapefile,
+                                   color = input$colorstroke,
+                                   col.regions = input$colorfill,
+                                   alpha.regions = input$alphacolorfill,
                                    layer.name = "shapes")
                 mapp@map
               })
             })
+
+            observeEvent(c(input$editplots, !input$editdone),{
+              if(input$editplots == TRUE){
+                shapes <-
+                  shapefile$shapefile |>
+                  poorman::mutate(`_leaflet_id` = 1:nrow(shapefile$shapefile),
+                                  feature_type = "polygon") |>
+                  poorman::relocate(geometry, .after = 2) |>
+                  sf::st_transform(crs = 4326)
+
+
+                mapp <-
+                  basemap$map@map |>
+                  leaflet::addPolygons(
+                    data = shapes,
+                    weight = 3,
+                    color = input$colorstroke,
+                    fillColor = input$colorfill,
+                    opacity = 1,
+                    fillOpacity = input$alphacolorfill,
+                    group = "editable"
+                  )
+
+                editedpoints <- callModule(editMod, "plotedit",
+                                           leafmap = mapp,
+                                           targetLayerId = "editable")
+
+                observeEvent(input$editdone,{
+                  if(input$editdone == TRUE){
+                    if(!is.null(editedpoints()$all)){
+
+                      shapefile$shapefile <- editedpoints()$all |> poorman::select(geometry) |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
+                      output$plotshapedone <- renderLeaflet({
+                        mapp <-
+                          basemap$map +
+                          mapview::mapview(shapefile$shapefile,
+                                           color = input$colorstroke,
+                                           col.regions = input$colorfill,
+                                           alpha.regions = input$alphacolorfill,
+                                           layer.name = "shapes")
+                        mapp@map
+                      })
+                    }
+                    updateMaterialSwitch(session, "editplots", value = FALSE)
+                  }
+                })
+              }
+            })
+
+
           }
         }
         )
-        observeEvent(input$import_shapefile, {
-          shapefile$shapefile <- terra::vect(input$import_shapefile$datapath)
-          req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
+      }
+    })
+    observeEvent(input$import_shapefile, {
+      files <- input$import_shapefile$datapath
 
-          output$shapefile_mapview <- renderLeaflet({
-            mapp <- basemap$map + mapview::mapview(shapefile$shapefile)
-            # req(basemap$map)  # Ensure mosaic_data$mosaic is not NULL
-            # mapview::mapview(shapefile$shapefile)@map
-            mapp@map
-          })
-        })
+      if(any(file_extension(files) == "shp")){
+        shapefile$shapefile <- import_shp(input$import_shapefile)
+      } else{
+        shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
+      }
+      req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
 
-        observeEvent(c(input$editplots, !input$editdone),{
-          if(input$editplots == TRUE){
-            shapes <-
-              shapefile$shapefile |>
-              poorman::mutate(`_leaflet_id` = 1:nrow(shapefile$shapefile),
-                              feature_type = "polygon") |>
-              poorman::relocate(geometry, .after = 2) |>
-              sf::st_transform(crs = 4326)
+      updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))
+      if(!is.null(mosaic_data$mosaic)){
+        if(sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic)){
+          sendSweetAlert(
+            session = session,
+            title = "Invalid CRS",
+            text = "The Coordinate Reference System (CRS) of the shapefile does
+            not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
+            type = "warning"
+          )
+          shp <- shapefile$shapefile |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
+          shapefile$shapefile <- shp
+        }
+      }
+      output$shapefile_mapview <- renderLeaflet({
+        if(is.null(basemap$map)){
+          if(ncol(shapefile$shapefile) ==1){
+            mapp <- mapview::mapview(shapefile$shapefile, layer.name = "shapes")
+          } else{
+            mapp <- mapview::mapview(shapefile$shapefile,
+                                     zcol = input$colorshapeimport,
+                                     color = input$colorstroke,
+                                     # col.regions = input$colorfill,
+                                     alpha.regions = input$alphacolorfill,
+                                     layer.name = "shapes")
+          }
+        } else{
+          if(ncol(shapefile$shapefile) ==1){
+            mapp <-
+              basemap$map +
+              mapview::mapview(shapefile$shapefile,
+                               color = input$colorstroke,
+                               col.regions = input$colorfill,
+                               alpha.regions = input$alphacolorfill,
+                               layer.name = "shapes")
 
+          } else{
+            mapp <-
+              basemap$map +
+              mapview::mapview(shapefile$shapefile,
+                               zcol = input$colorshapeimport,
+                               color = input$colorstroke,
+                               alpha.regions = input$alphacolorfill,
+                               layer.name = "shapes")
+          }
+        }
+        mapp@map
+      })
+      observeEvent(c(input$editplots, !input$editdoneimpo),{
+        if(input$editplots == TRUE){
+          shapes <-
+            shapefile$shapefile |>
+            poorman::mutate(`_leaflet_id` = 1:nrow(shapefile$shapefile),
+                            feature_type = "polygon") |>
+            poorman::relocate(geometry, .after = 2) |>
+            sf::st_transform(crs = 4326)
+
+          if(is.null(basemap$map)){
+            mapp <-
+              leaflet::leaflet() |>
+              addTiles(options = tileOptions(minZoom = 1, maxZoom = 30)) |>
+              leaflet::addPolygons(
+                data = shapes,
+                color = input$colorstroke,
+                fillColor = input$colorfill,
+                opacity = 1,
+                fillOpacity = input$alphacolorfill,
+                group = "editable"
+              )
+          } else{
             mapp <-
               basemap$map@map |>
               leaflet::addPolygons(
                 data = shapes,
-                weight = 3,
+                color = input$colorstroke,
+                fillColor = input$colorfill,
                 opacity = 1,
-                fill = FALSE,
-                color = 'black',
-                fillOpacity = 1,
-                smoothFactor = 0.01,
+                fillOpacity = input$alphacolorfill,
                 group = "editable"
               )
-
-            editedpoints <- callModule(editMod, "plotedit",
-                                  leafmap = mapp,
-                                  targetLayerId = "editable")
-
-            observeEvent(input$editdone,{
-              if(input$editdone == TRUE){
-                if(!is.null(editedpoints()$all)){
-
-                  shapefile$shapefile <- editedpoints()$all |> poorman::select(geometry)
-                  output$plotshapedone <- renderLeaflet({
-                    mapp <-
-                      basemap$map +
-                      mapview::mapview(shapefile$shapefile,
-                                       layer.name = "shapes")
-                    mapp@map
-                  })
-                }
-              }
-            })
           }
 
 
+          editedpoints <- callModule(editMod, "ploteditimpo",
+                                     leafmap = mapp,
+                                     targetLayerId = "editable")
 
-        })
-        mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefile))
-      }
+          observeEvent(input$editdoneimpo,{
+            if(input$editdoneimpo == TRUE){
+              if(!is.null(editedpoints()$all)){
+
+                shapefile$shapefile <- editedpoints()$all |> poorman::select(geometry)
+                output$plotshapedone <- renderLeaflet({
+                  if(is.null(basemap$map)){
+                    mapp <-
+                      basemap$map +
+                      mapview::mapview(shapefile$shapefile,
+                                       color = input$colorstroke,
+                                       col.regions = input$colorfill,
+                                       alpha.regions = input$alphacolorfill,
+                                       layer.name = "shapes")
+                  } else{
+                    mapp <-
+                      mapview::mapview(shapefile$shapefile,
+                                       color = input$colorstroke,
+                                       col.regions = input$colorfill,
+                                       alpha.regions = input$alphacolorfill,
+                                       layer.name = "shapes")
+                  }
+                  mapp@map
+                })
+              }
+            }
+          })
+        }
+      })
+
+
     })
+
+
+
+    mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefile))
+
 
   })
 }

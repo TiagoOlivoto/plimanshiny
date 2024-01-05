@@ -7,26 +7,35 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_download_mosaic_ui <- function(id) {
+mod_download_mosaic_ui <- function(id, button_label = "Download mosaic") {
   ns <- NS(id)
   tagList(
-    downloadBttn(ns("downloadmosaic"),
-                 label = "Download mosaic",
-                 style = "pill")
+    fluidRow(
+      col_8(
+        downloadBttn(ns("downloadmosaic"),
+                     label = button_label,
+                     style = "pill")
+      ),
+      col_4(
+        selectInput(ns("formatmosaic"),
+                    label = "Format",
+                    choices = c(".tif", ".jpg"))
+      )
+    )
   )
 }
 
 #' download_mosaic Server Functions
 #'
 #' @noRd
-mod_download_mosaic_server <- function(id, data) {
+mod_download_mosaic_server <- function(id, data, name = "mosaic") {
   moduleServer(
     id,
     function(input, output, session) {
       ns <- session$ns
       output$downloadmosaic <- downloadHandler(
         filename = function() {
-          paste("mosaic", ".tif", sep = "")
+          paste(name, input$formatmosaic, sep = "")
         },
         content = function(file) {
           terra::writeRaster(data, file)

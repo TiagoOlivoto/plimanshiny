@@ -10,36 +10,49 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     # Your application UI logic
     bs4DashPage(
+      preloader = list(html = spin_google(), color = "#228B227F"),
       title = "pliman Shiny",
-      skin = NULL,
-      freshTheme = NULL,
-      preloader = NULL,
       options = NULL,
       fullscreen = TRUE,
-      help = FALSE,
-      dark = NULL,
-      scrollToTop = FALSE,
+      help = TRUE,
+      scrollToTop = TRUE,
+      footer =  dashboardFooter(
+        left = a(
+          href = "https://olivoto.netlify.app/",
+          target = "_blank", "@Olivoto"
+        ),
+        right = "2023"
+      ),
+      controlbar = dashboardControlbar(
+        skinSelector()
+      ),
       header = bs4DashNavbar(
         title = dashboardBrand(
           title = "pliman Shiny",
           color = "white",
-          href = "https://mrpackages.netlify.app/",
-          image = "www/beans3.png",
+          image = "www/pdepliman.png",
           opacity = 0.8
         ),
         status = "white",
         fixed = TRUE,
-        "Shiny app for the pliman package",
+        "A Shiny app for {pliman} package",
         rightUi = bs4DropdownMenu(
           type = "messages",
           badgeStatus = "danger",
-          href = "http://buymeacoffee.com/mrbean"
-          # messageItem(
-          #   from = "MrBean",
-          #   message = "If you want to contribute...",
-          #   time = "today", image = "www/beans3.png",
-          #   href = "http://buymeacoffee.com/mrbean"
-          # )
+          messageItem(
+            from = "Olivoto",
+            message = "If you want to contact me",
+            time = "today",
+            icon = shiny::icon("envelope"),
+            href = "https://olivoto.netlify.app/"
+          ),
+          messageItem(
+            from = "Olivoto",
+            message = "If you want to contact me",
+            time = "today",
+            icon = shiny::icon("envelope"),
+            href = "https://olivoto.netlify.app/"
+          )
         )
       ),
       sidebar = bs4DashSidebar(
@@ -56,11 +69,11 @@ app_ui <- function(request) {
           ),
           # Import data
           bs4SidebarMenuItem(
-            "Mosaic",
-            icon = shiny::icon("image"),
+            "Analyze orthomosaics",
+            icon = shiny::icon("mountain-sun"),
             startExpanded = F,
             bs4SidebarMenuItem(
-              text = "Input",
+              text = "Mosaic",
               tabName = "mosaicimport",
               icon = shiny::icon("file-upload", verify_fa = FALSE)
             ),
@@ -73,6 +86,11 @@ app_ui <- function(request) {
               text = "Index",
               tabName = "mosaicindex",
               icon = shiny::icon("crop")
+            ),
+            bs4SidebarMenuItem(
+              text = "Analyze",
+              tabName = "mosaicanalyze",
+              icon = shiny::icon("chart-line")
             )
 
           )
@@ -81,12 +99,24 @@ app_ui <- function(request) {
       body = bs4DashBody(
         bs4TabItems(
           bs4TabItem(
+            tabName = "home",
+            mod_home_ui("home_1")
+          ),
+          bs4TabItem(
             tabName = "mosaicimport",
             mod_mosaic_prepare_ui("mosaic_prepare_1")
           ),
           bs4TabItem(
             tabName = "shapefileimport",
             mod_shapefile_prepare_ui("shapefile_prepare_1")
+          ),
+          bs4TabItem(
+            tabName = "mosaicindex",
+            mod_indexes_ui("indexes_1")
+          ),
+          bs4TabItem(
+            tabName = "mosaicanalyze",
+            mod_analyze_ui("analyze_1")
           )
         )
       )
@@ -109,11 +139,13 @@ golem_add_external_resources <- function() {
   )
 
   tags$head(
-    favicon(),
+    favicon(ext = 'png'),
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "plimanshiny"
-    )
+    ),
+    rintrojs::introjsUI(),
+    waiter::use_waiter()
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
   )

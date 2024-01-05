@@ -25,6 +25,12 @@ golem::add_module(name = "shapefile_prepare")
 golem::add_module(name = "download_excel")
 golem::add_module(name = "download_mosaic")
 golem::add_module(name = "download_shapefile")
+golem::add_module(name = "indexes")
+golem::add_module(name = "analyze")
+
+## Add packages
+usethis::use_package("shiny")
+usethis::use_package("DT")
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*
