@@ -420,13 +420,12 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               text = "When importing a '.shp' file, make sure to also import the
               mandatory files companion *.dbf, *.prj, and *.shx. Select the multiple
               required files and try again.",
-              type = "warning"
+              type = "error"
             )
             return()
           } else{
             shapefile$shapefile <- import_shp(input$import_shapefile)
           }
-
         } else{
           shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
         }
