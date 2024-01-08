@@ -88,11 +88,16 @@ mod_mosaic_prepare_ui <- function(id){
         ),
         div(class = "prep4",
             fileInput(ns("import_mosaic"),
-                      "Browse the mosaic file (.tif, .tiff .jpg)",
+                      "Browse a mosaic file (.tif, .tiff .jpg)",
                       accept = c('.tif','.tiff','.jpg'))
         ),
         hl(),
         div(class = "prep5",
+            selectInput(ns("mosaictoanalyze"),
+                      label = "Mosaic to be analyzed",
+                      choices = NULL)
+        ),
+        div(class = "prep6",
             awesomeRadio(
               inputId = ns("showmosaic"),
               label = "Show",
@@ -102,7 +107,7 @@ mod_mosaic_prepare_ui <- function(id){
             )
         ),
         hl(),
-        div(class = "prep6",
+        div(class = "prep7",
             materialSwitch(
               inputId = ns("mosaiccrop"),
               label = "Crop the mosaic?",
@@ -116,7 +121,7 @@ mod_mosaic_prepare_ui <- function(id){
                      label = "Crop the mosaic!",
                      status = "danger")
         ),
-        div(class = "prep7",
+        div(class = "prep8",
             mod_download_mosaic_ui(ns("downloadmosaic"))
         )
 
@@ -159,7 +164,7 @@ helpmo <-
 #' mosaic_prepare Server Functions
 #'
 #' @noRd
-mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap) {
+mod_mosaic_prepare_server <- function(id, mosaic_data, mosaic_list, r, g, b, re, nir, basemap) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     observeEvent(input$guidemosaic, introjs(session,
@@ -179,38 +184,45 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       nir$nir <- input$nir_band
     })
 
+
+    # Function to create a new reactiveValues object for a mosaic
+    createMosaicReactiveValues <- function(mosaic_name, mosaic_data) {
+      rv <- reactiveValues(name = mosaic_name, data = mosaic_data)
+      return(rv)
+    }
+
     observeEvent(input$import_mosaic, {
-      # Update mosaic_data$mosaic when import_mosaic changes
-      mosaic_data$mosaic <- mosaic_input(input$import_mosaic$datapath)
-      req(mosaic_data$mosaic)  # Ensure mosaic_data$mosaic is not NULL
+      new_mosaic_name <- input$import_mosaic$name
 
-      mosaic_info(mosaic_data$mosaic, path = input$import_mosaic$datapath)
+      # Check if the mosaic already exists in mosaic_data
+      if (new_mosaic_name %in% names(mosaic_data)) {
+        # If it exists, update the existing reactiveValues
+        mosaic_data[[new_mosaic_name]]$name <- new_mosaic_name
+      } else {
+        # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
+        mosaic_data[[new_mosaic_name]] <- createMosaicReactiveValues(new_mosaic_name, mosaic_input(input$import_mosaic$datapath, info = FALSE))
+      }
+      # Update selectInput choices
+      updateSelectInput(session, "mosaictoanalyze", choices = names(mosaic_data))
+    })
 
-      # Reactive dependencies on r$r, g$g, and b$b
-      reactive_r <- reactive({
-        as.numeric(r$r)
-      })
+    observe({
+      # Check if a mosaic is selected
+      req(input$mosaictoanalyze)
 
-      reactive_g <- reactive({
-        as.numeric(g$g)
-      })
+      # Get the selected mosaic data
+      selected_mosaic <- mosaic_data[[input$mosaictoanalyze]]
 
-      reactive_b <- reactive({
-        as.numeric(b$b)
-      })
-
-      observe({
-        # Update basemap$map when r$r, g$g, or b$b changes
-        bm <- mosaic_view(
-          mosaic_data$mosaic,
-          r = reactive_r(),
-          g = reactive_g(),
-          b = reactive_b(),
-          quantiles = input$quantileplot,
-          max_pixels = input$maxpixels
-        )
-        basemap$map <- bm
-      })
+      # Check if the selected_mosaic is not NULL and has the 'data' field
+      if (!is.null(selected_mosaic) && 'data' %in% names(selected_mosaic)) {
+        # Assign the selected mosaic data to mosaic_data$mosaic
+        mosaic_data$mosaic <- selected_mosaic$data
+        # Print mosaic info and perform analysis (replace with your analysis code)
+        mosaic_info(mosaic_data$mosaic, path = input$import_mosaic$datapath)
+      } else {
+        # Handle the case when the selected mosaic is not properly defined
+        print("Error: Invalid or missing mosaic data.")
+      }
     })
 
     output$mosaic_plot <- renderPlot({
@@ -229,10 +241,29 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       }
     })
 
+    #
+    observe({
+      req(mosaic_data$mosaic)
+      bmtmp <- mosaic_view(
+        mosaic_data$mosaic,
+        r = as.numeric(r$r),
+        g = as.numeric(g$g),
+        b = as.numeric(b$b),
+        quantiles = input$quantileplot,
+        max_pixels = input$maxpixels
+      )
+      basemap$map <- bmtmp
+    })
+
+
+
+
     output$mosaic_mapview <- renderLeaflet({
       req(basemap$map)  # Ensure mosaic_data$mosaic is not NULL
       basemap$map@map
     })
+
+
 
     # Observe event for mosaic crop action
     observeEvent(input$mosaiccrop, {
