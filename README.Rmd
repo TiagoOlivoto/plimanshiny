@@ -30,6 +30,7 @@ The goal of plimanshiny is to provide a Shiny interface for the pliman package
 The development version of `plimanshiny` can be installed from [GitHub](https://github.com/TiagoOlivoto/plimanshiny) using the [pak](https://github.com/r-lib/pak) package:
 
 ```{r, eval=FALSE}
+install.packages("pak")
 pak::pkg_install("TiagoOlivoto/plimanshiny")
 ```
 
