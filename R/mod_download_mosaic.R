@@ -19,7 +19,7 @@ mod_download_mosaic_ui <- function(id, button_label = "Download mosaic") {
       col_4(
         selectInput(ns("formatmosaic"),
                     label = "Format",
-                    choices = c(".tif", ".jpg"))
+                    choices = c(".tif", ".png"))
       )
     )
   )
@@ -38,7 +38,7 @@ mod_download_mosaic_server <- function(id, data, name = "mosaic") {
           paste(name, input$formatmosaic, sep = "")
         },
         content = function(file) {
-          terra::writeRaster(data, file)
+          terra::writeRaster(data, file, gdal=c("COMPRESS=LZW"))
         }
       )
     }
