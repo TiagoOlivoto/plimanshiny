@@ -95,9 +95,9 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
 
       finalindex
     })
-    output$textindex <- renderText({
-      print(finalindex())  # Access the reactive value
-    })
+    # output$textindex <- renderText({
+    #   print(finalindex())  # Access the reactive value
+    # })
     observeEvent(input$computeindex, {
       if(is.null(mosaic_data$mosaic)){
         show_alert("Ops, an error occured.",
@@ -157,6 +157,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           }
           req(magg)
           output$indexsync <- renderUI({
+            req(basemap$map)
             if (input$indextosync != "") {
               leafsync::sync(basemap$map@map, mosaic_view(magg[[input$indextosync]],
                                                           index = input$indextosync))

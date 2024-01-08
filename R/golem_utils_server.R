@@ -124,7 +124,6 @@ import_shp <- function(shp){
   }
   setwd(previouswd)
   filetemp <- paste(uploaddirectory, shp$name[grep(pattern="*.shp$", shp$name)], sep="/")
-  print(filetemp)
   shapefile_input(filetemp, info = FALSE)
 }
 write_shp <- function(data, file){

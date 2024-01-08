@@ -164,7 +164,7 @@ helpmo <-
 #' mosaic_prepare Server Functions
 #'
 #' @noRd
-mod_mosaic_prepare_server <- function(id, mosaic_data, mosaic_list, r, g, b, re, nir, basemap) {
+mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     observeEvent(input$guidemosaic, introjs(session,
