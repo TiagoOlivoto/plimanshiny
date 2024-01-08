@@ -454,6 +454,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             mapp <- mapview::mapview(shapefile$shapefile, layer.name = "shapes")
           } else{
             req(input$colorshapeimport)
+
             mapp <- mapview::mapview(shapefile$shapefile,
                                      zcol = input$colorshapeimport,
                                      color = input$colorstroke,
