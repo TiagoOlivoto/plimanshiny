@@ -22,6 +22,7 @@ The development version of `plimanshiny` can be installed from
 [pak](https://github.com/r-lib/pak) package:
 
 ``` r
+install.packages("pak")
 pak::pkg_install("TiagoOlivoto/plimanshiny")
 ```
 
