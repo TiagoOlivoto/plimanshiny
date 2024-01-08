@@ -153,7 +153,7 @@ mod_shapefile_prepare_ui <- function(id){
           divclass("shapeimp1",
                    fileInput(ns("import_shapefile"),
                              "Import a shapefile (.shp, .rds)",
-                             accept=c('.shp','.dbf','.sbn','.sbx','.shx','.prj','.cpg', ".rds"), multiple=TRUE)
+                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE)
           ),
           tags$hr(),
           divclass("shapeimp2",
@@ -294,6 +294,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
       if(!is.null(mosaic_data$mosaic)){
         observeEvent(input$shapetype, {
           if (input$shapetype == "Build") {
+            req(basemap$map)
             createdshape <- reactiveValues(shp = NULL)
             cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
 
@@ -400,12 +401,37 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
     })
     observeEvent(input$import_shapefile, {
       files <- input$import_shapefile$datapath
-
-      if(any(file_extension(files) == "shp")){
-        shapefile$shapefile <- import_shp(input$import_shapefile)
+      exts <- c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg")
+      if(!any(file_extension(files)  %in% sub(".", "", exts))){
+        sendSweetAlert(
+          session = session,
+          title = "Invalid file format",
+          text = paste("Invalid file format while uploading the shapefile. Ensure that the file extension are one of", paste0(exts, collapse = ", ")),
+          type = "error"
+        )
+        return()
       } else{
-        shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
+        reqshp <- c("shp", "dbf", "prj", "shx")
+        if(any(file_extension(files)  %in%  reqshp)){
+          if (!all(reqshp %in% file_extension(files))) {
+            sendSweetAlert(
+              session = session,
+              title = "Required files",
+              text = "When importing a '.shp' file, make sure to also import the
+              mandatory files companion *.dbf, *.prj, and *.shx. Select the multiple
+              required files and try again.",
+              type = "warning"
+            )
+            return()
+          } else{
+            shapefile$shapefile <- import_shp(input$import_shapefile)
+          }
+
+        } else{
+          shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
+        }
       }
+
       req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
 
       updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))
@@ -427,6 +453,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           if(ncol(shapefile$shapefile) ==1){
             mapp <- mapview::mapview(shapefile$shapefile, layer.name = "shapes")
           } else{
+            req(input$colorshapeimport)
             mapp <- mapview::mapview(shapefile$shapefile,
                                      zcol = input$colorshapeimport,
                                      color = input$colorstroke,
