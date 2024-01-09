@@ -203,7 +203,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         mosaic_data[[new_mosaic_name]] <- createMosaicReactiveValues(new_mosaic_name, mosaic_input(input$import_mosaic$datapath, info = FALSE))
       }
       # Update selectInput choices
-      updateSelectInput(session, "mosaictoanalyze", choices = names(mosaic_data))
+      updateSelectInput(session, "mosaictoanalyze", choices = setdiff(names(mosaic_data), "mosaic"))
     })
 
     observe({
@@ -218,10 +218,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         # Assign the selected mosaic data to mosaic_data$mosaic
         mosaic_data$mosaic <- selected_mosaic$data
         # Print mosaic info and perform analysis (replace with your analysis code)
-        mosaic_info(mosaic_data$mosaic, path = input$import_mosaic$datapath)
-      } else {
-        # Handle the case when the selected mosaic is not properly defined
-        print("Error: Invalid or missing mosaic data.")
+        mosaic_info(selected_mosaic$data, path = input$import_mosaic$datapath)
       }
     })
 

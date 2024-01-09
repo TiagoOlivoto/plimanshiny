@@ -50,7 +50,7 @@ mod_analyze_ui <- function(id){
                      )
             ),
            hl(),
-            h3("Segment options"),
+            h3("Settings"),
             fluidRow(
               col_6(
                 divclass("anal2",
@@ -60,9 +60,7 @@ mod_analyze_ui <- function(id){
                            value = FALSE,
                            status = "success"
                          )
-                )
-              ),
-              col_6(
+                ),
                 divclass("anal3",
                          materialSwitch(
                            inputId = ns("segmentindividuals"),
@@ -72,6 +70,17 @@ mod_analyze_ui <- function(id){
                          )
                 )
               ),
+              col_6(
+                divclass("anal3",
+                         materialSwitch(
+                           inputId = ns("byplot"),
+                           label = "Analysis by shape?",
+                           value = FALSE,
+                           status = "success"
+                         )
+                )
+              ),
+
               conditionalPanel(
                 condition = "input.segmentindividuals == true | input.segmentplot == true", ns = ns,
                 h4("Indexes and inclusion criteria"),
@@ -489,7 +498,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
       req(shapefile$shapefile)
       req(input$segmentindex)
       layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-      m1 <-  basemap$map + shapefile_view(shapefile$shapefile)
+      m1 <-  basemap$map + mapview::mapview(shapefile$shapefile, z.col = "plot_id", legend = FALSE)
       m2 <- mosaic_view(index$index[[layer]], show = "index")
       leafsync::sync(m1@map, m2)
     })
@@ -560,36 +569,132 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
       }
 
       if(!t1 & !t2){
-        waiter_show(
-          html = tagList(
-            spin_google(),
-            "Analyzing the mosaic. Please, wait."
-          ),
-          color = "#228B227F"
-        )
-        res <-
-          mosaic_analyze(mosaic = mosaic_data$mosaic,
-                         basemap = basemap$map,
-                         shapefile = shapefile$shapefile,
-                         indexes = index$index,
-                         plot = FALSE,
-                         segment_plot = input$segmentplot,
-                         segment_individuals = input$segmentindividuals,
-                         segment_index = indcomp,
-                         watershed = input$watershed,
-                         tolerance = input$tolerance,
-                         extension = input$extension,
-                         invert = input$invertindex,
-                         summarize_fun = input$summarizefun,
-                         include_if = input$includeif,
-                         threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
-                         filter = ifelse(input$filter, input$filterval, FALSE),
-                         lower_noise = input$lower_noise,
-                         lower_size = lower_size,
-                         upper_size = upper_size,
-                         topn_lower = topn_lower,
-                         topn_upper = topn_upper,
-                         verbose = FALSE)
+
+        if(!input$byplot){
+          waiter_show(
+            html = tagList(
+              spin_google(),
+              "Analyzing the mosaic. Please, wait."
+            ),
+            color = "#228B227F"
+          )
+          res <-
+            mosaic_analyze(mosaic = mosaic_data$mosaic,
+                           basemap = basemap$map,
+                           shapefile = shapefile$shapefile,
+                           indexes = index$index,
+                           plot = FALSE,
+                           segment_plot = input$segmentplot,
+                           segment_individuals = input$segmentindividuals,
+                           segment_index = indcomp,
+                           watershed = input$watershed,
+                           tolerance = input$tolerance,
+                           extension = input$extension,
+                           invert = input$invertindex,
+                           summarize_fun = input$summarizefun,
+                           include_if = input$includeif,
+                           threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
+                           filter = ifelse(input$filter, input$filterval, FALSE),
+                           lower_noise = input$lower_noise,
+                           lower_size = lower_size,
+                           upper_size = upper_size,
+                           topn_lower = topn_lower,
+                           topn_upper = topn_upper,
+                           verbose = FALSE)
+        } else{
+          # Analyze the mosaic by plot
+          bind <- list()
+          progressSweetAlert(
+            session = session, id = "myprogress",
+            title = "Start",
+            display_pct = TRUE,
+            value = 0,
+            total = nrow(shapefile$shapefile)
+          )
+          for (i in 1:nrow(shapefile$shapefile)) {
+            updateProgressBar(
+              session = session,
+              id = "myprogress",
+              value = i,
+              title = paste0("Working in progress, Please, wait."),
+              total = nrow(shapefile$shapefile)
+            )
+
+            bind[[paste0("P", leading_zeros(i, 4))]] <-
+              mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
+                             indexes = terra::crop(index$index, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
+                             shapefile = shapefile$shapefile[i, ],
+                             segment_plot = input$segmentplot,
+                             segment_individuals = input$segmentindividuals,
+                             segment_index = indcomp,
+                             watershed = input$watershed,
+                             tolerance = input$tolerance,
+                             extension = input$extension,
+                             invert = input$invertindex,
+                             summarize_fun = input$summarizefun,
+                             include_if = input$includeif,
+                             threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
+                             filter = ifelse(input$filter, input$filterval, FALSE),
+                             lower_noise = input$lower_noise,
+                             lower_size = lower_size,
+                             upper_size = upper_size,
+                             topn_lower = topn_lower,
+                             topn_upper = topn_upper,
+                             verbose = FALSE)
+          }
+
+
+          if(is.null(bind[[1]]$result_individ_map)){
+            result_individ_map <- NULL
+          }
+          if(is.null(bind[[1]]$result_indiv)){
+            result_indiv <- result_plot_summ <- NULL
+          } else{
+            result_indiv <- poorman::bind_rows(
+              lapply(bind, function(x){
+                tmp <- x$result_indiv
+                tmp$plot_id <- NULL
+                tmp
+              }),
+              .id = "plot_id"
+            ) |>
+              poorman::relocate(plot_id, .after = block) |>
+              sf::st_as_sf()
+
+            result_plot_summ <- poorman::bind_rows(
+              lapply(bind, function(x){
+                tmp <- x$result_plot_summ
+                tmp$plot_id <- NULL
+                tmp
+              }),
+              .id = "plot_id"
+            ) |>
+              poorman::relocate(plot_id, .after = block) |>
+              sf::st_as_sf()
+          }
+
+          result_plot <- poorman::bind_rows(
+            lapply(bind, function(x){
+              tmp <- x$result_plot
+              tmp$plot_id <- NULL
+              tmp
+            }),
+            .id = "plot_id"
+          ) |>
+            poorman::relocate(plot_id, .after = block) |>
+            sf::st_as_sf()
+
+          res <-
+            list(result_plot = result_plot,
+                 result_plot_summ = result_plot_summ,
+                 result_indiv = result_indiv,
+                 result_individ_map = NULL,
+                 map_plot = NULL,
+                 map_indiv = NULL)
+
+          closeSweetAlert(session = session)
+        }
+
         req(res)
         if(input$segmentindividuals){
           updateSelectInput(session, "plotattribute", choices = names(res$result_plot_summ), selected = "coverage")

@@ -9,7 +9,7 @@ app_server <- function(input, output, session) {
 
 
   # Create the reactiveValues object to store the mosaic data
-  mosaic_data <- reactiveValues(mosaic = NULL)
+  mosaic_data <- reactiveValues()
   r <- reactiveValues(r = NULL)
   g <- reactiveValues(g = NULL)
   b <- reactiveValues(b = NULL)

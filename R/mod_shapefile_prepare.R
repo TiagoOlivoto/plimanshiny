@@ -291,6 +291,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
     # GUIA
     observe({
+      # req(mosaic_data$mosaic)
       if(!is.null(mosaic_data$mosaic)){
         observeEvent(input$shapetype, {
           if (input$shapetype == "Build") {
@@ -331,14 +332,19 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             })
             observeEvent(input$shapedone,{
               nelem <- length(createdshape$shp)
-              shapefile$shapefile <- createdshape$shp[[nelem]]
-
+              req(createdshape$shp[[nelem]])
+              shapefile$shapefile <-
+                createdshape$shp[[nelem]] |>
+                poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                                .before = 1)
               output$plotshapedone <- renderLeaflet({
                 mapp <-
                   basemap$map +
                   mapview::mapview(shapefile$shapefile,
-                                   color = input$colorstroke,
-                                   col.regions = input$colorfill,
+                                   # color = input$colorstroke,
+                                   # col.regions = input$colorfill,
+                                   z.col = "plot_id",
+                                   legend = FALSE,
                                    alpha.regions = input$alphacolorfill,
                                    layer.name = "shapes")
                 mapp@map
@@ -375,14 +381,21 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   if(input$editdone == TRUE){
                     if(!is.null(editedpoints()$all)){
 
-                      shapefile$shapefile <- editedpoints()$all |> poorman::select(geometry) |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
+                      shapefile$shapefile <-
+                        editedpoints()$all |>
+                        poorman::select(geometry) |>
+                        sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic)) |>
+                        poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(editedpoints()$all), 4)),
+                                        .before = 1)
                       output$plotshapedone <- renderLeaflet({
                         mapp <-
                           basemap$map +
                           mapview::mapview(shapefile$shapefile,
                                            color = input$colorstroke,
-                                           col.regions = input$colorfill,
+                                           # col.regions = input$colorfill,
+                                           z.col = "plot_id",
                                            alpha.regions = input$alphacolorfill,
+                                           legend = FALSE,
                                            layer.name = "shapes")
                         mapp@map
                       })
