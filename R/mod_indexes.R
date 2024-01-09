@@ -26,22 +26,23 @@ mod_indexes_ui <- function(id){
           width = 12,
           status = "success",
          hl(),
-          divclass("ind1",
-                   pickerInput(
-                     inputId = ns("plotindexes"),
-                     label = "Vegetation indexes",
-                     choices = list(RGB = sort(pliman_indexes_rgb()),
-                                    MULTISPECTRAL = sort(pliman_indexes_me())),
-                     options = list(
-                       `actions-box` = TRUE,
-                       `live-search` = TRUE
-                     ),
-                     multiple = TRUE
-                   ),
-                   textInput(ns("myindex"),
-                             label = "My personalized index",
-                             value = "")
-          ),
+           divclass("ind1",
+                    pickerInput(
+                      inputId = ns("imgbands"),
+                      label = "IMG bands",
+                      choices = c("RGB", "MS"),
+                      multiple = TRUE
+                    ),
+                    pickerInput(
+                      inputId = ns("plotindexes"),
+                      label = "Vegetation indexes",
+                      choices = "",
+                      multiple = TRUE
+                    ),
+                    textInput(ns("myindex"),
+                              label = "My personalized index",
+                              value = "")
+           ),
           actionBttn(
             inputId = ns("computeindex"),
             label = "Compute the indexes!",
@@ -88,6 +89,36 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                                           "skipLabel"="Skip",
                                                           steps = helpind),
                                            events = list("oncomplete"=I('alert("Hope it helped!")'))))
+    # Creating a new option to select VIs
+    observeEvent(input$imgbands, {
+      # Check if imgbands is empty
+      if (length(input$imgbands) == 0) {
+        print("No bands selected, resetting to default")
+        # Reset to default state
+        updatePickerInput(session, "plotindexes", choices = list(),
+                          options = list(
+                            `actions-box` = TRUE,
+                            `live-search` = TRUE
+                          ))
+      } else {
+        # Initialize an empty list for choices
+        new_choices <- list()
+
+        if ("RGB" %in% input$imgbands) {
+          new_choices$RGB <- sort(pliman_indexes_rgb())
+        }
+
+        if ("MS" %in% input$imgbands) {
+          new_choices$MULTISPECTRAL <- sort(pliman_indexes_me())
+        }
+
+        updatePickerInput(session, "plotindexes", choices = new_choices,
+                          options = list(
+                            `actions-box` = TRUE,
+                            `live-search` = TRUE
+                          ))
+      }
+    }, ignoreInit = TRUE)
 
     finalindex <- reactive({
       mindex <- strsplit(input$myindex, split = ",")[[1]]
