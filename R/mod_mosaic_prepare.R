@@ -95,8 +95,8 @@ mod_mosaic_prepare_ui <- function(id){
         hl(),
         div(class = "prep5",
             selectInput(ns("mosaictoanalyze"),
-                      label = "Mosaic to be analyzed",
-                      choices = NULL)
+                        label = "Mosaic to be analyzed",
+                        choices = NULL)
         ),
         div(class = "prep6",
             awesomeRadio(
@@ -116,12 +116,6 @@ mod_mosaic_prepare_ui <- function(id){
               status = "danger"
             )
         ),
-        conditionalPanel(
-          condition = "input.mosaiccrop == true", ns = ns,
-          actionBttn(ns("cropmosaic"),
-                     label = "Crop the mosaic!",
-                     status = "danger")
-        ),
         div(class = "prep8",
             mod_download_mosaic_ui(ns("downloadmosaic"))
         )
@@ -137,21 +131,12 @@ mod_mosaic_prepare_ui <- function(id){
         status = "success",
         maximizable = TRUE,
         conditionalPanel(
-          condition = "input.mosaiccrop != true & input.showmosaic == 'rgb' | input.mosaiccrop != true & input.showmosaic == 'bands'", ns = ns,
+          condition = "input.showmosaic == 'rgb' | input.showmosaic == 'bands'", ns = ns,
           plotOutput(ns("mosaic_plot"), height = "740px") |> add_spinner()
         ),
         conditionalPanel(
-          condition = "input.showmosaic == 'mapview' & input.mosaiccrop != true", ns = ns,
+          condition = "input.showmosaic == 'mapview'", ns = ns,
           leafletOutput(ns("mosaic_mapview"), height = "740px") |> add_spinner()
-        ),
-        conditionalPanel(
-          condition = "input.mosaiccrop == true", ns = ns,
-          fluidRow(
-            col_6(h3("Original mosaic"),
-                  editModUI(ns("mosaic_crop"), height = "740px") |> add_spinner()),
-            col_6(h3("Cropped mosaic"),
-                  leafletOutput(ns("mosaiccropped"), height = "740px") |> add_spinner())
-          )
         )
       )
     )
@@ -186,11 +171,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
     })
 
 
-    # Function to create a new reactiveValues object for a mosaic
-    create_reactval <- function(mosaic_name, mosaic_data) {
-      rv <- reactiveValues(name = mosaic_name, data = mosaic_data)
-      return(rv)
-    }
+
 
     observeEvent(input$import_mosaic, {
       new_mosaic_name <- input$import_mosaic$name
@@ -223,18 +204,21 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
           mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
         }
       }
-      mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
-      # Update selectInput choices
-      updateSelectInput(session, "mosaictoanalyze",
-                        choices = mosaicnames,
-                        selected = mosaicnames[[1]])
+
+      observe({
+        mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
+        # Update selectInput choices
+        updateSelectInput(session, "mosaictoanalyze",
+                          choices = mosaicnames,
+                          selected = mosaicnames[[1]])
+      })
     })
 
     observe({
       # Check if a mosaic is selected
       req(input$mosaictoanalyze)
 
-      # Get the selected mosaic data
+            # Get the selected mosaic data
       selected_mosaic <- mosaic_data[[input$mosaictoanalyze]]
       # # Check if the selected_mosaic is not NULL and has the 'data' field
       if ('data' %in% names(selected_mosaic)) {
@@ -274,74 +258,11 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
     })
 
 
-
-
     output$mosaic_mapview <- renderLeaflet({
       req(basemap$map)  # Ensure mosaic_data$mosaic is not NULL
       basemap$map@map
     })
 
-
-
-    # Observe event for mosaic crop action
-    observeEvent(input$mosaiccrop, {
-      if (input$mosaiccrop == TRUE) {
-        sendSweetAlert(
-          session = session,
-          title = "Cropping a mosaic",
-          text = "Use the 'Draw Rectangle' or 'Draw Polygon' tools to crop the mosaic. The mosaic will be cropped to the extend of the created shapes.",
-          type = "info"
-        )
-        # Reactive expression to store the cropped mosaic
-        cropped_mosaic <- reactiveVal(NULL)
-
-        # Attempt to get edits
-        edits <- callModule(editMod, "mosaic_crop", basemap$map@map, editor = "leafpm")
-
-        observe({
-          # Check if edits()$finished is not NULL
-          if (!is.null(edits()$finished)) {
-            grids <-
-              edits()$finished |>
-              sf::st_transform(sf::st_crs(mosaic_data$mosaic)) |>
-              terra::vect() |>
-              terra::ext()
-            mosaiccr <- terra::crop(mosaic_data$mosaic, grids)
-
-            # Update the reactiveVal with the cropped mosaic
-            cropped_mosaic(mosaiccr)
-          }
-        })
-
-        output$mosaiccropped <- renderLeaflet({
-          req(cropped_mosaic())  # Ensure cropped_mosaic is not NULL
-          # Print the updated mosaic_data$mosaic
-          # Render the cropped mosaic
-          bcrop <-
-            mosaic_view(
-              cropped_mosaic(),
-              r = as.numeric(r$r),
-              g = as.numeric(g$g),
-              b = as.numeric(b$b)
-            )
-          bcrop@map
-        })
-
-        # Observe event for mosaic crop action
-        observeEvent(input$cropmosaic, {
-          # Update mosaic_data$mosaic when input$cropmosaic is clicked
-          mosaic_data$mosaic <- cropped_mosaic()
-          updateCheckboxInput(session, "mosaiccrop", value = FALSE)
-          sendSweetAlert(
-            session = session,
-            title = "Mosaic successfully cropped!!",
-            text = "The mosaic has been successfully cropped and is now available for further analysis.",
-            type = "success"
-          )
-        })
-
-      }
-    })
     mod_download_mosaic_server("downloadmosaic", mosaic_data$mosaic)
   })
 }

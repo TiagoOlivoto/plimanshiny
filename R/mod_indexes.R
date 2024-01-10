@@ -29,8 +29,9 @@ mod_indexes_ui <- function(id){
            divclass("ind1",
                     pickerInput(
                       inputId = ns("imgbands"),
-                      label = "IMG bands",
+                      label = "Image Bands",
                       choices = c("RGB", "MS"),
+                      selected = "RGB",
                       multiple = TRUE
                     ),
                     pickerInput(
@@ -64,7 +65,7 @@ mod_indexes_ui <- function(id){
         bs4Card(
           width = 12,
           height = "760px",
-          title = "Syncked maps",
+          title = "Syncked maps after index computation",
           color = "success",
           status = "success",
           uiOutput(ns("indexsync"))|> add_spinner()
@@ -95,7 +96,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
       if (length(input$imgbands) == 0) {
         print("No bands selected, resetting to default")
         # Reset to default state
-        updatePickerInput(session, "plotindexes", choices = list(),
+        updatePickerInput(session, "plotindexes",
+                          choices = list(),
                           options = list(
                             `actions-box` = TRUE,
                             `live-search` = TRUE
@@ -112,13 +114,14 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           new_choices$MULTISPECTRAL <- sort(pliman_indexes_me())
         }
 
-        updatePickerInput(session, "plotindexes", choices = new_choices,
+        updatePickerInput(session, "plotindexes",
+                          choices = new_choices,
                           options = list(
                             `actions-box` = TRUE,
                             `live-search` = TRUE
                           ))
       }
-    }, ignoreInit = TRUE)
+    })
 
     finalindex <- reactive({
       mindex <- strsplit(input$myindex, split = ",")[[1]]

@@ -182,3 +182,9 @@ mosaic_info <- function(mo){
     width = 850
   )
 }
+
+
+# Function to create a new reactiveValues object for a mosaic
+create_reactval <- function(name, data) {
+  reactiveValues(name = name, data = data)
+}

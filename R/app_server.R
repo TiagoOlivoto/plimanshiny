@@ -16,6 +16,7 @@ app_server <- function(input, output, session) {
   re <- reactiveValues(re = NULL)
   nir <- reactiveValues(nir = NULL)
   basemap <- reactiveValues(map = NULL)
+  bmap <- reactiveValues(map = NULL)
   index <- reactiveValues(index = NULL)
 
 
@@ -28,5 +29,10 @@ app_server <- function(input, output, session) {
 
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index)
   mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index)
+
+
+
+  # manipulation
+  mod_crop_server("crop_1", mosaic_data, r, g, b)
 }
 

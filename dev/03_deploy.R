@@ -57,3 +57,6 @@ rsconnect::deployApp(
   lint = FALSE,
   forceUpdate = TRUE
 )
+
+
+usethis::use_github_release()

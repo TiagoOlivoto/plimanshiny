@@ -27,6 +27,8 @@ golem::add_module(name = "download_mosaic")
 golem::add_module(name = "download_shapefile")
 golem::add_module(name = "indexes")
 golem::add_module(name = "analyze")
+golem::add_module(name = "manipula")
+golem::add_module(name = "crop")
 
 ## Add packages
 usethis::use_package("shiny")

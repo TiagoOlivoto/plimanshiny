@@ -67,27 +67,31 @@ app_ui <- function(request) {
             "Home",
             tabName = "home", icon = shiny::icon("home", verify_fa = FALSE)
           ),
-          # Import data
           bs4SidebarMenuItem(
             "Analyze orthomosaics",
             icon = shiny::icon("mountain-sun"),
             startExpanded = F,
-            bs4SidebarMenuItem(
+            bs4SidebarMenuSubItem(
               text = "Mosaic",
               tabName = "mosaicimport",
               icon = shiny::icon("file-upload", verify_fa = FALSE)
             ),
-            bs4SidebarMenuItem(
+            bs4SidebarMenuSubItem(
+              text = "Manipulate",
+              tabName = "mosaicmanipula",
+              icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
               text = "Shapefile",
               tabName = "shapefileimport",
               icon = shiny::icon("draw-polygon")
             ),
-            bs4SidebarMenuItem(
+            bs4SidebarMenuSubItem(
               text = "Index",
               tabName = "mosaicindex",
               icon = shiny::icon("crop")
             ),
-            bs4SidebarMenuItem(
+            bs4SidebarMenuSubItem(
               text = "Analyze",
               tabName = "mosaicanalyze",
               icon = shiny::icon("chart-line")
@@ -105,6 +109,10 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "mosaicimport",
             mod_mosaic_prepare_ui("mosaic_prepare_1")
+          ),
+          bs4TabItem(
+            tabName = "mosaicmanipula",
+            mod_manipula_ui("manipula_1")
           ),
           bs4TabItem(
             tabName = "shapefileimport",

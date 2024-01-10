@@ -257,7 +257,12 @@ mod_analyze_ui <- function(id){
                          selectInput(ns("plotattribute"),
                                      label = "Plot attribute",
                                      choices = NULL),
-                         pickerpalette(id, "palplot", selected = "RdYlGn")
+                         pickerpalette(id, "palplot", selected = "RdYlGn"),
+                         sliderInput(ns("alpharesplot"),
+                                     label = "Fill opacity",
+                                     min = 0,
+                                     max = 1,
+                                     value = 0.75)
                 )
               ),
               col_6(
@@ -267,7 +272,12 @@ mod_analyze_ui <- function(id){
                            selectInput(ns("indivattribute"),
                                        label = "Individual attribute",
                                        choices = c("area")),
-                           pickerpalette(id, "palind", selected = "set2")
+                           pickerpalette(id, "palind", selected = "set2"),
+                           sliderInput(ns("alpharesindiv"),
+                                       label = "Fill opacity",
+                                       min = 0,
+                                       max = 1,
+                                       value = 0.75)
                   )
                 )
               )
@@ -966,13 +976,13 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             mshp <- shapefile_view(res$result_plot_summ,
                                    attribute = input$plotattribute,
                                    color_regions = return_colors(input$palplot),
-                                   alpha.regions = 0.5)
+                                   alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(res$result_plot, alpha.regions = 0, legend = FALSE)
             indshp <-
               shapefile_view(res$result_indiv,
                              attribute = input$indivattribute,
                              color_regions = return_colors(input$palind),
-                             alpha.regions = 1)
+                             alpha.regions = input$alpharesindiv)
           } else if(input$segmentplot){
             if(!input$plotattribute %in% colnames(res$result_plot)){
               attrib <- paste0(input$summarizefun[[1]], ".", input$segmentindex)
@@ -982,7 +992,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             mshp <- shapefile_view(res$result_plot,
                                    attribute = attrib,
                                    color_regions = return_colors(input$palplot),
-                                   alpha.regions = 0.8)
+                                   alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(res$result_plot, alpha.regions = 0, legend = FALSE)
             indshp <- NULL
           } else{
@@ -994,7 +1004,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             mshp <- shapefile_view(res$result_plot,
                                    attribute = attrib,
                                    color_regions = return_colors(input$palplot),
-                                   alpha.regions = 0.8)
+                                   alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(res$result_plot, alpha.regions = 0, legend = FALSE)
             indshp <- NULL
 
@@ -1033,6 +1043,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
           }
         )
       }
+
       # send the results to the global environment
       observeEvent(input$savetoglobalenv, {
         if(input$segmentindividuals){
@@ -1089,14 +1100,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
 
     })
 
-
-
-
-    # Results
-
-    # palettes for the results
-    # return_colors(input$palplot)
-    # return_colors(input$palind)
 
   })
 }
