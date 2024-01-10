@@ -88,8 +88,9 @@ mod_mosaic_prepare_ui <- function(id){
         ),
         div(class = "prep4",
             fileInput(ns("import_mosaic"),
-                      "Browse a mosaic file (.tif, .tiff .jpg)",
-                      accept = c('.tif','.tiff','.jpg'))
+                      "Browse mosaic file(s) (.tif, .tiff .jpg)",
+                      accept = c('.tif','.tiff','.jpg'),
+                      multiple = TRUE)
         ),
         hl(),
         div(class = "prep5",
@@ -186,24 +187,47 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
 
 
     # Function to create a new reactiveValues object for a mosaic
-    createMosaicReactiveValues <- function(mosaic_name, mosaic_data) {
+    create_reactval <- function(mosaic_name, mosaic_data) {
       rv <- reactiveValues(name = mosaic_name, data = mosaic_data)
       return(rv)
     }
 
     observeEvent(input$import_mosaic, {
       new_mosaic_name <- input$import_mosaic$name
-
       # Check if the mosaic already exists in mosaic_data
-      if (new_mosaic_name %in% names(mosaic_data)) {
+      if (any(new_mosaic_name %in% names(mosaic_data))) {
         # If it exists, update the existing reactiveValues
-        mosaic_data[[new_mosaic_name]]$name <- new_mosaic_name
+        moname <- new_mosaic_name[new_mosaic_name %in% names(mosaic_data)]
+        ask_confirmation(
+          inputId = "confirmmosaicname",
+          type = "warning",
+          title = "Mosaic already imported",
+          text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
+          btn_labels = c("Nope", "Yep"),
+          btn_colors = c("#FE642E", "#04B404")
+        )
+        observe({
+          if (!is.null(input$confirmmosaicname)) {
+            if (input$confirmmosaicname) {
+              for (i in 1:length(new_mosaic_name)) {
+                mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
+              }
+            } else {
+              return()
+            }
+          }
+        })
       } else {
         # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
-        mosaic_data[[new_mosaic_name]] <- createMosaicReactiveValues(new_mosaic_name, mosaic_input(input$import_mosaic$datapath, info = FALSE))
+        for (i in 1:length(new_mosaic_name)) {
+          mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
+        }
       }
+      mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
       # Update selectInput choices
-      updateSelectInput(session, "mosaictoanalyze", choices = setdiff(names(mosaic_data), "mosaic"))
+      updateSelectInput(session, "mosaictoanalyze",
+                        choices = mosaicnames,
+                        selected = mosaicnames[[1]])
     })
 
     observe({
@@ -212,13 +236,10 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
 
       # Get the selected mosaic data
       selected_mosaic <- mosaic_data[[input$mosaictoanalyze]]
-
-      # Check if the selected_mosaic is not NULL and has the 'data' field
-      if (!is.null(selected_mosaic) && 'data' %in% names(selected_mosaic)) {
-        # Assign the selected mosaic data to mosaic_data$mosaic
+      # # Check if the selected_mosaic is not NULL and has the 'data' field
+      if ('data' %in% names(selected_mosaic)) {
         mosaic_data$mosaic <- selected_mosaic$data
-        # Print mosaic info and perform analysis (replace with your analysis code)
-        mosaic_info(selected_mosaic$data, path = input$import_mosaic$datapath)
+        mosaic_info(selected_mosaic$data)
       }
     })
 
