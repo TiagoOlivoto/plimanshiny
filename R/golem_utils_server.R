@@ -158,7 +158,7 @@ hl <- function(){
   tags$hr()
 }
 
-mosaic_info <- function(mo, path){
+mosaic_info <- function(mo){
   if(terra::crs(mo) != ""){
     crsmo <- terra::crs(mo, describe = TRUE)
     crsname <- paste0(crsmo$name, " (", paste0(paste0(crsmo$authority), ":", paste0(crsmo$code)), ")")
@@ -166,8 +166,7 @@ mosaic_info <- function(mo, path){
     crsname <- "CRS not available"
   }
   content <- tags$span(
-    tags$h2(icon("info"), "Mosaic information", style = "color: steelblue;"),
-    icon("upload"),tags$b("Source: "), paste0(path), tags$br(),
+    tags$h1(icon("info"), "Mosaic information", style = "color: steelblue;"),
     icon("border-all"),tags$b("Number of columns: "), paste0(terra::ncol(mo)), tags$br(),
     icon("border-all"),tags$b("Number of rows: "), paste0(terra::nrow(mo)), tags$br(),
     icon("layer-group"),tags$b("Number of layers: "), paste0(terra::nlyr(mo), " (",paste0(names(mo), collapse = ", ") , ")"), tags$br(),
