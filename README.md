@@ -9,6 +9,7 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![DOI](https://zenodo.org/badge/739532807.svg)](https://zenodo.org/doi/10.5281/zenodo.10476816)
 
 <!-- badges: end -->
 
