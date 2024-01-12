@@ -222,12 +222,19 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
     output$mosaic_plot <- renderPlot({
       req(mosaic_data$mosaic)  # Ensure mosaic_data$mosaic is not NULL
       if (input$showmosaic == "rgb") {
-        terra::plotRGB(
-          mosaic_data$mosaic,
-          r = as.numeric(r$r),
-          g = as.numeric(g$g),
-          b = as.numeric(b$b)
-        )
+        if(nlyr(mosaic_data$mosaic) < 3){
+          show_alert("Ops, too few bands",
+                     text = "The selected mosaics has too few bands and an RGB image cannot be rendered",
+                     type = "warning")
+        } else{
+          terra::plotRGB(
+            mosaic_data$mosaic,
+            r = as.numeric(r$r),
+            g = as.numeric(g$g),
+            b = as.numeric(b$b)
+          )
+        }
+
       }
       if (input$showmosaic == "bands") {
         nl <- terra::nlyr(mosaic_data$mosaic)
