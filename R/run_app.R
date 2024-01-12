@@ -1,7 +1,7 @@
 #' Run the Shiny Application
 #'
 #' @param ... A series of options to be used inside the app.
-#'
+#' @param upload_size Shiny limits file uploads. Defaults to 10000 MB (10 GB).
 #' @export
 #' @rawNamespace import(DT, except = c(dataTableOutput, renderDataTable))
 #' @importFrom golem with_golem_options
@@ -12,7 +12,8 @@
 #' @rawNamespace import(terra, except = c(panel, shift, distance))
 #' @rawNamespace import(leaflet.extras2, except = c(menuItem, addSpinner))
 #' @rawNamespace import(pliman, except = c(`%>%`))
-run_app <- function(...) {
+run_app <- function(upload_size = 10000,
+                    ...) {
   options(shiny.maxRequestSize = 10000 * 1024^2)
   with_golem_options(
     app = shinyApp(

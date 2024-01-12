@@ -4,9 +4,11 @@
 \alias{run_app}
 \title{Run the Shiny Application}
 \usage{
-run_app(...)
+run_app(upload_size = 10000, ...)
 }
 \arguments{
+\item{upload_size}{Shiny limits file uploads. Defaults to 10000 MB (10 GB).}
+
 \item{...}{A series of options to be used inside the app.}
 }
 \description{

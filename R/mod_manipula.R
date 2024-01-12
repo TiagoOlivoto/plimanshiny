@@ -24,6 +24,21 @@ mod_manipula_ui <- function(id){
         title = "Crop",
         icon = icon("crop"),
         mod_crop_ui("crop_1")
+      ),
+      tabPanel(
+        title = "Bind",
+        icon = icon("layer-group"),
+        h2("Coming soon")
+      ),
+      tabPanel(
+        title = "Aggregate",
+        icon = icon("users"),
+        h2("Coming soon")
+      ),
+      tabPanel(
+        title = "Interpolate",
+        icon = icon("chart-line"),
+        h2("Coming soon")
       )
     )
   )

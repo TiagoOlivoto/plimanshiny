@@ -5,8 +5,7 @@ element;intro;type
 .prep4;Search by a mosaic file. The maximum size for upload is ~2GB;mosaic
 .prep5;The mosaic to be analyzed in the pipeline.;mosaic
 .prep6;Choose how to visualize the mosaic: 'rgb' for a colorful RGB plot, 'mapview' for an interactive zoomable map, or 'bands' to plot individual layers.;mosaic
-.prep7;If needed, the mosaic can be cropped. Turn on this button and use the 'Draw Rectangle' to crop the mosaic to the region of interest.;mosaic
-.prep8;This button will download the current mosaic.;mosaic
+.prep7;This button will download the current mosaic.;mosaic
 .shape1;Define how a shapefile will be created. When 'Build' (default), the shapefile can be created by defining a grid or a free shape. To do that, use the 'Draw Polygon' tool. When 'Import' is used, an external shapefile previously created can be imported.;shape
 .shape2;Use this tool to configure the color and opacity for the shape's stroke and fill;shape
 .shape3;Define the shape of the grid by setting the number of rows and columns.;shape

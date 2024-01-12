@@ -105,6 +105,12 @@ mod_mosaic_prepare_ui <- function(id){
               choices = c("rgb", "mapview", "bands"),
               selected = "rgb",
               inline = TRUE
+            ),
+            conditionalPanel(
+              condition = "input.showmosaic == 'mapview'", ns = ns,
+              selectInput(ns("howtoplot"),
+                          label = "How to plot",
+                          choices = NULL)
             )
         ),
         hl(),
@@ -217,6 +223,8 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         mosaic_data$mosaic <- selected_mosaic$data
         mosaic_info(selected_mosaic$data)
       }
+      updateSelectInput(session, "howtoplot",
+                        choices = c("RGB", names(selected_mosaic$data)))
     })
 
     output$mosaic_plot <- renderPlot({
@@ -245,14 +253,32 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
     #
     observe({
       req(mosaic_data$mosaic)
-      bmtmp <- mosaic_view(
-        mosaic_data$mosaic,
-        r = as.numeric(r$r),
-        g = as.numeric(g$g),
-        b = as.numeric(b$b),
-        quantiles = input$quantileplot,
-        max_pixels = input$maxpixels
-      )
+      req(input$howtoplot)
+      if(input$howtoplot == "RGB"){
+        bmtmp <- mosaic_view(
+          mosaic_data$mosaic,
+          r = as.numeric(r$r),
+          g = as.numeric(g$g),
+          b = as.numeric(b$b),
+          quantiles = input$quantileplot,
+          max_pixels = input$maxpixels
+        )
+      } else{
+        mosaictmp <- mosaic_data$mosaic
+        aggr <- find_aggrfact(mosaictmp)
+        if(aggr > 0){
+          magg <- terra::aggregate(mosaictmp, aggr)
+        } else{
+          magg <- mosaictmp
+        }
+        bmtmp <-
+          mapview::mapview(magg[[input$howtoplot]],
+                           col.regions = scales::brewer_pal(palette = "RdYlGn")(8),
+                           layer.name = input$howtoplot,
+                           maxpixels = 5000000,
+                           na.color = "transparent")
+      }
+
       basemap$map <- bmtmp
     })
 

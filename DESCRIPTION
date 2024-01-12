@@ -18,7 +18,7 @@ Imports:
     leaflet.extras2,
     leafsync,
     mapedit,
-    mapview,
+    mapview (>= 2.11.2),
     pliman,
     plotly,
     poorman,

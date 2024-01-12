@@ -17,6 +17,9 @@ mod_crop_ui <- function(id){
           collapsible = FALSE,
           width = 12,
           height = "723px",
+          footer = "To start cropping a mosaic, click on 'Start!' and use the
+          'Draw Polygon, or 'Draw Rectangle' tools. To crop the mosaic,
+          click on 'Crop'",
           selectInput(ns("mosaic_to_crop"),
                       label = "Mosaic to be cropped",
                       choices = NULL),
@@ -26,7 +29,7 @@ mod_crop_ui <- function(id){
           fluidRow(
             col_6(
               actionBttn(ns("startcrop"),
-                         label = "Start!",
+                         label = "Start cropping!",
                          status = "danger")
             ),
             col_6(
