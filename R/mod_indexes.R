@@ -25,25 +25,25 @@ mod_indexes_ui <- function(id){
           ),
           width = 12,
           status = "success",
-         hl(),
-           divclass("ind1",
-                    pickerInput(
-                      inputId = ns("imgbands"),
-                      label = "Image Bands",
-                      choices = c("RGB", "MS"),
-                      selected = "RGB",
-                      multiple = TRUE
-                    ),
-                    pickerInput(
-                      inputId = ns("plotindexes"),
-                      label = "Vegetation indexes",
-                      choices = "",
-                      multiple = TRUE
-                    ),
-                    textInput(ns("myindex"),
-                              label = "My personalized index",
-                              value = "")
-           ),
+          hl(),
+          divclass("ind1",
+                   pickerInput(
+                     inputId = ns("imgbands"),
+                     label = "Image Bands",
+                     choices = c("RGB", "MS"),
+                     selected = "RGB",
+                     multiple = TRUE
+                   ),
+                   pickerInput(
+                     inputId = ns("plotindexes"),
+                     label = "Vegetation indexes",
+                     choices = "",
+                     multiple = TRUE
+                   ),
+                   textInput(ns("myindex"),
+                             label = "My personalized index",
+                             value = "")
+          ),
           actionBttn(
             inputId = ns("computeindex"),
             label = "Compute the indexes!",
@@ -51,13 +51,19 @@ mod_indexes_ui <- function(id){
             color = "primary",
             icon = icon("chart-simple")
           ),
-         hl(),
+          hl(),
           divclass("ind2",
                    selectInput(ns("indextosync"),
                                label = "Index to sync with basemap",
                                choices = NULL)
           ),
-         hl(),
+          hl(),
+          pickerInput(
+            inputId = ns("indextodownload"),
+            label = "Index to download",
+            choices = "",
+            multiple = TRUE
+          ),
           mod_download_mosaic_ui(ns("download_indexes"), "Donwnload index")
         )
       ),
@@ -129,9 +135,6 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
 
       finalindex
     })
-    # output$textindex <- renderText({
-    #   print(finalindex())  # Access the reactive value
-    # })
     observeEvent(input$computeindex, {
       if(is.null(mosaic_data$mosaic)){
         show_alert("Ops, an error occured.",
@@ -175,6 +178,9 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                     index = finalindex(),
                                     plot = FALSE)
           req(indextemp)
+          updatePickerInput(session, "indextodownload",
+                            choices = names(indextemp),
+                            selected = names(indextemp))
           waiter_hide()
           sendSweetAlert(
             session = session,
@@ -197,8 +203,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                                           index = input$indextosync))
             }
           })
-
-          mod_download_mosaic_server("download_indexes", index$index, "indexes")
+          indextodownload <- input$indextodownload
+          mod_download_mosaic_server("download_indexes", indextemp[[input$indextodownload]], "indexes")
         }
       }
     })

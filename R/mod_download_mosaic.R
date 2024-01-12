@@ -29,16 +29,27 @@ mod_download_mosaic_ui <- function(id, button_label = "Download mosaic") {
 #'
 #' @noRd
 mod_download_mosaic_server <- function(id, data, name = "mosaic") {
+
   moduleServer(
     id,
     function(input, output, session) {
+
       ns <- session$ns
       output$downloadmosaic <- downloadHandler(
         filename = function() {
           paste(name, input$formatmosaic, sep = "")
         },
         content = function(file) {
-          terra::writeRaster(data, file, gdal=c("COMPRESS=LZW"))
+          if(nlyr(data) > 4 & input$formatmosaic == ".png"){
+            sendSweetAlert(
+              session = session,
+              title = "Error",
+              text = paste0("PNG driver doesn't support ", paste0(nlyr(data)), " bands.  Must be 1 (grey), 2 (grey+alpha), 3 (rgb) or 4 (rgba) bands"),
+              type = "error"
+            )
+          }else{
+            terra::writeRaster(data, file, gdal=c("COMPRESS=LZW"))
+          }
         }
       )
     }

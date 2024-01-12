@@ -109,14 +109,6 @@ mod_mosaic_prepare_ui <- function(id){
         ),
         hl(),
         div(class = "prep7",
-            materialSwitch(
-              inputId = ns("mosaiccrop"),
-              label = "Crop the mosaic?",
-              value = FALSE,
-              status = "danger"
-            )
-        ),
-        div(class = "prep8",
             mod_download_mosaic_ui(ns("downloadmosaic"))
         )
 
