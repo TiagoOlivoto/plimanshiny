@@ -33,7 +33,7 @@ mod_manipula_ui <- function(id){
       tabPanel(
         title = "Plot Clips",
         icon = icon("grip"),
-        h2("Coming soon")
+        mod_plotclip_ui("plotclip_1")
       ),
       tabPanel(
         title = "Bind",

@@ -155,7 +155,7 @@ mod_shapefile_prepare_ui <- function(id){
                              "Import a shapefile (.shp, .rds)",
                              accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE),
                    selectInput(ns("shapefiletoanalyze"),
-                               label = "Shapefile to use",
+                               label = "Active Shapefile",
                                choices = NULL)
           ),
           tags$hr(),

@@ -94,7 +94,7 @@ mod_mosaic_prepare_ui <- function(id){
         ),
         div(class = "prep5",
             selectInput(ns("mosaictoanalyze"),
-                        label = "Mosaic to be analyzed",
+                        label = "Active Mosaic",
                         choices = NULL)
         ),
         hl(),
