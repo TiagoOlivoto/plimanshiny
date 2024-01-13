@@ -153,7 +153,10 @@ mod_shapefile_prepare_ui <- function(id){
           divclass("shapeimp1",
                    fileInput(ns("import_shapefile"),
                              "Import a shapefile (.shp, .rds)",
-                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE)
+                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE),
+                   selectInput(ns("shapefiletoanalyze"),
+                               label = "Shapefile to use",
+                               choices = NULL)
           ),
           tags$hr(),
           divclass("shapeimp2",
@@ -412,38 +415,116 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
         )
       }
     })
+    # observeEvent(input$import_shapefile, {
+    # files <- input$import_shapefile$datapath
+    # exts <- c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg")
+    # if(!any(file_extension(files)  %in% sub(".", "", exts))){
+    #   sendSweetAlert(
+    #     session = session,
+    #     title = "Invalid file format",
+    #     text = paste("Invalid file format while uploading the shapefile. Ensure that the file extension are one of", paste0(exts, collapse = ", ")),
+    #     type = "error"
+    #   )
+    #   return()
+    # } else{
+    #   reqshp <- c("shp", "dbf", "prj", "shx")
+    #   if(any(file_extension(files)  %in%  reqshp)){
+    #     if (!all(reqshp %in% file_extension(files))) {
+    #       sendSweetAlert(
+    #         session = session,
+    #         title = "Required files",
+    #         text = "When importing a '.shp' file, make sure to also import the
+    #         mandatory files companion *.dbf, *.prj, and *.shx. Select the multiple
+    #         required files and try again.",
+    #         type = "error"
+    #       )
+    #       return()
+    #     } else{
+    #       shapefile$shapefile <- import_shp(input$import_shapefile)
+    #     }
+    #   } else{
+    #     shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
+    #   }
+    # }
+    # shapefile$shapefile <-
+
+
     observeEvent(input$import_shapefile, {
-      files <- input$import_shapefile$datapath
-      exts <- c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg")
-      if(!any(file_extension(files)  %in% sub(".", "", exts))){
-        sendSweetAlert(
-          session = session,
-          title = "Invalid file format",
-          text = paste("Invalid file format while uploading the shapefile. Ensure that the file extension are one of", paste0(exts, collapse = ", ")),
-          type = "error"
+      newshpname <- input$import_shapefile$name
+      # Check if the mosaic already exists in shapefile
+      if (any(newshpname %in% names(shapefile))) {
+        # If it exists, update the existing reactiveValues
+        moname <- newshpname[newshpname %in% names(shapefile)]
+        ask_confirmation(
+          inputId = "confirmashpname",
+          type = "warning",
+          title = "Shapefile already imported",
+          text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
+          btn_labels = c("Nope", "Yep"),
+          btn_colors = c("#FE642E", "#04B404")
         )
-        return()
-      } else{
-        reqshp <- c("shp", "dbf", "prj", "shx")
-        if(any(file_extension(files)  %in%  reqshp)){
-          if (!all(reqshp %in% file_extension(files))) {
-            sendSweetAlert(
-              session = session,
-              title = "Required files",
-              text = "When importing a '.shp' file, make sure to also import the
-              mandatory files companion *.dbf, *.prj, and *.shx. Select the multiple
-              required files and try again.",
-              type = "error"
-            )
-            return()
-          } else{
-            shapefile$shapefile <- import_shp(input$import_shapefile)
+        observe({
+          if (!is.null(input$confirmashpname)) {
+            if (input$confirmashpname) {
+              if("shp" %in% file_extension(input$import_shapefile$datapath)){
+                shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
+                  create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
+                                                                                             input$import_shapefile,
+                                                                                             session))
+              } else{
+                for (i in 1:length(newshpname)) {
+                  shapefile[[newshpname[[i]]]] <-
+                    create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
+                                                                    input$import_shapefile[[i]],
+                                                                    session))
+                }
+              }
+            } else {
+              return()
+            }
           }
+        })
+      } else {
+        # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
+        if("shp" %in% file_extension(input$import_shapefile$datapath)){
+          shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
+            create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
+                                                                                       input$import_shapefile,
+                                                                                       session))
         } else{
-          shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
+          for (i in 1:length(newshpname)) {
+            shapefile[[newshpname[[i]]]] <-
+              create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
+                                                              input$import_shapefile[[i]],
+                                                              session))
+          }
         }
       }
 
+      observe({
+        shapefilenames <-  setdiff(names(shapefile), "shapefile")
+        # Update selectInput choices
+        updateSelectInput(session, "shapefiletoanalyze",
+                          choices = shapefilenames,
+                          selected = shapefilenames[[length(shapefilenames)]])
+      })
+    })
+
+    observe({
+      # Check if a mosaic is selected
+      req(input$shapefiletoanalyze)
+
+      # Get the selected mosaic data
+      selected_shp <- shapefile[[input$shapefiletoanalyze]]
+      # # Check if the selected_mosaic is not NULL and has the 'data' field
+      if ('data' %in% names(selected_shp)) {
+        shapefile$shapefile <- selected_shp$data
+      }
+    })
+
+
+
+    observe({
       req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
 
       updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))

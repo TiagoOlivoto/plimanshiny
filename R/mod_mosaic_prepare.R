@@ -92,12 +92,12 @@ mod_mosaic_prepare_ui <- function(id){
                       accept = c('.tif','.tiff','.jpg'),
                       multiple = TRUE)
         ),
-        hl(),
         div(class = "prep5",
             selectInput(ns("mosaictoanalyze"),
                         label = "Mosaic to be analyzed",
                         choices = NULL)
         ),
+        hl(),
         div(class = "prep6",
             awesomeRadio(
               inputId = ns("showmosaic"),
@@ -168,9 +168,6 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       nir$nir <- input$nir_band
     })
 
-
-
-
     observeEvent(input$import_mosaic, {
       new_mosaic_name <- input$import_mosaic$name
       # Check if the mosaic already exists in mosaic_data
@@ -211,6 +208,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
                           selected = mosaicnames[[1]])
       })
     })
+
 
     observe({
       # Check if a mosaic is selected

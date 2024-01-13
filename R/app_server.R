@@ -24,7 +24,7 @@ app_server <- function(input, output, session) {
   mod_mosaic_prepare_server("mosaic_prepare_1", mosaic_data, r, g, b, re, nir, basemap)
   # shapefile
 
-  shapefile <- reactiveValues(shapefile = NULL)
+  shapefile <- reactiveValues()
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
 
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index)
@@ -34,5 +34,6 @@ app_server <- function(input, output, session) {
 
   # manipulation
   mod_crop_server("crop_1", mosaic_data, r, g, b)
+  mod_mask_server("mask_1", mosaic_data, r, g, b)
 }
 

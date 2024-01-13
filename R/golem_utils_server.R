@@ -126,6 +126,41 @@ import_shp <- function(shp){
   filetemp <- paste(uploaddirectory, shp$name[grep(pattern="*.shp$", shp$name)], sep="/")
   shapefile_input(filetemp, info = FALSE)
 }
+
+import_shp_mod <- function(datapath, file, session){
+  files <- datapath
+  exts <- c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg")
+  if(!any(file_extension(files)  %in% sub(".", "", exts))){
+    sendSweetAlert(
+      session = session,
+      title = "Invalid file format",
+      text = paste("Invalid file format while uploading the shapefile. Ensure that the file extension are one of", paste0(exts, collapse = ", ")),
+      type = "error"
+    )
+    return()
+  } else{
+    reqshp <- c("shp", "dbf", "prj", "shx")
+    if(any(file_extension(files)  %in%  reqshp)){
+      if (!all(reqshp %in% file_extension(files))) {
+        sendSweetAlert(
+          session = session,
+          title = "Required files",
+          text = "When importing a '.shp' file, make sure to also import the
+              mandatory files companion *.dbf, *.prj, and *.shx. Select the multiple
+              required files and try again.",
+          type = "error"
+        )
+        return()
+      } else{
+        shp <- import_shp(file)
+      }
+    } else{
+      shp <- shapefile_input(datapath, info = FALSE)
+    }
+    return(shp)
+  }
+}
+
 write_shp <- function(data, file){
   temp_shp <- tempdir()
   # write shp files

@@ -100,7 +100,6 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
     observeEvent(input$imgbands, {
       # Check if imgbands is empty
       if (length(input$imgbands) == 0) {
-        print("No bands selected, resetting to default")
         # Reset to default state
         updatePickerInput(session, "plotindexes",
                           choices = list(),

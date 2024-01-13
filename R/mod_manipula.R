@@ -26,6 +26,11 @@ mod_manipula_ui <- function(id){
         mod_crop_ui("crop_1")
       ),
       tabPanel(
+        title = "Mask",
+        icon = icon("mask"),
+        mod_mask_ui("mask_1")
+      ),
+      tabPanel(
         title = "Bind",
         icon = icon("layer-group"),
         h2("Coming soon")
