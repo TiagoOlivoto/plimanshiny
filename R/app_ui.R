@@ -69,7 +69,7 @@ app_ui <- function(request) {
           ),
           bs4SidebarMenuItem(
             "Analyze orthomosaics",
-            icon = shiny::icon("mountain-sun"),
+            icon = shiny::icon("camera"),
             startExpanded = F,
             bs4SidebarMenuSubItem(
               text = "Mosaic",
@@ -97,7 +97,63 @@ app_ui <- function(request) {
               icon = shiny::icon("chart-line")
             )
 
+          ),
+### to be included ###
+          bs4SidebarMenuItem(
+            "Analyze Surface Elevation",
+            icon = shiny::icon("mountain-sun"),
+            startExpanded = F,
+            bs4SidebarMenuSubItem(
+              text = "DSM",
+              tabName = "dsmcimport",
+              icon = shiny::icon("file-upload", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Manipulate",
+              tabName = "dsmamanipulate",
+              icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Analyze",
+              tabName = "dsmanalyze",
+              icon = shiny::icon("chart-line")
+            )
+
+          ),
+
+          bs4SidebarMenuItem(
+            "Drone traits",
+            icon = shiny::icon("chart-line"),
+            startExpanded = F,
+            bs4SidebarMenuSubItem(
+              text = "Plant Height",
+              tabName = "phanalyze",
+              icon = shiny::icon("ruler-combined")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Crop Surface",
+              tabName = "coveranalyze",
+              icon = shiny::icon("seedling")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Plot uniformity",
+              tabName = "plotunifanalyze",
+              icon = shiny::icon("layer-group")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Plant Count",
+              tabName = "plcountanalyze",
+              icon = shiny::icon("leaf")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Plant Maturity",
+              tabName = "matanalyze",
+              icon = shiny::icon("calendar-check")
+            )
+
           )
+####
+
         )
       ),
       body = bs4DashBody(
