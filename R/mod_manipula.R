@@ -31,6 +31,11 @@ mod_manipula_ui <- function(id){
         mod_mask_ui("mask_1")
       ),
       tabPanel(
+        title = "Plot Clips",
+        icon = icon("grip"),
+        h2("Coming soon")
+      ),
+      tabPanel(
         title = "Bind",
         icon = icon("layer-group"),
         h2("Coming soon")

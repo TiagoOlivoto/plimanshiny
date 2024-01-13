@@ -60,6 +60,7 @@ app_ui <- function(request) {
         status = "success",
         elevation = 3,
         fixed = TRUE,
+        width = "285px",
         bs4SidebarMenu(
           id = "tabs",
           bs4SidebarHeader("Menu"),
@@ -77,14 +78,14 @@ app_ui <- function(request) {
               icon = shiny::icon("file-upload", verify_fa = FALSE)
             ),
             bs4SidebarMenuSubItem(
-              text = "Manipulate",
-              tabName = "mosaicmanipula",
-              icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
-            ),
-            bs4SidebarMenuSubItem(
               text = "Shapefile",
               tabName = "shapefileimport",
               icon = shiny::icon("draw-polygon")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Manipulate",
+              tabName = "mosaicmanipula",
+              icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
             ),
             bs4SidebarMenuSubItem(
               text = "Index",

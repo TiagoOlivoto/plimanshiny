@@ -33,7 +33,7 @@ app_server <- function(input, output, session) {
 
 
   # manipulation
-  mod_crop_server("crop_1", mosaic_data, r, g, b)
-  mod_mask_server("mask_1", mosaic_data, r, g, b)
+  mod_crop_server("crop_1", mosaic_data, shapefile, r, g, b)
+  mod_mask_server("mask_1", mosaic_data, shapefile, r, g, b)
 }
 
