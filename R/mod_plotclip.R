@@ -16,9 +16,7 @@ mod_plotclip_ui <- function(id){
           title = "Mask Settings",
           collapsible = FALSE,
           width = 12,
-          height = "620px",
-          footer = "Module to clip plots. Select a mosaic, a shapefile and the output directory",
-          hl(),
+          height = "710px",
           h3("Input"),
           selectInput(ns("mosaic_to_clip"),
                       label = "Mosaic to be clipped",
@@ -38,6 +36,26 @@ mod_plotclip_ui <- function(id){
                          class = NULL,
                          icon = NULL,
                          style = NULL),
+          selectInput(ns("clipformat"),
+                      label = "Format",
+                      choices = c(".png", ".tif"),
+                      selected = ".png"),
+          prettyCheckbox(
+            inputId = ns("seeaclippedplot"),
+            label = "Show me a clipped plot",
+            value = FALSE,
+            status = "info",
+            icon = icon("thumbs-up"),
+            plain = TRUE,
+            outline = TRUE,
+            animation = "rotate"
+          ),
+          conditionalPanel(
+            condition = "input.seeaclippedplot == true", ns = ns,
+            selectInput(ns("myclippedplot"),
+                        label = "Clipped Plot",
+                        choices = NULL)
+          ),
           fluidRow(
             col_6(
               actionBttn(ns("startclip"),
@@ -62,15 +80,14 @@ mod_plotclip_ui <- function(id){
           collapsible = FALSE,
           width = 12,
           height = "710px",
-          fluidRow(
-            col_6(
-              h3("Mosaic and Shape"),
-              leafletOutput(ns("mosaicandshape"), height = "640px") |> add_spinner()
-            ),
-            col_6(
-              h3("Cropped mosaic"),
-              leafletOutput(ns("mosaicmasked"), height = "640px") |> add_spinner()
-            )
+          conditionalPanel(
+            condition = "input.seeaclippedplot == true", ns = ns,
+            h3("Clipped Plot"),
+            leafletOutput(ns("clippedplot"), height = "640px") |> add_spinner()
+          ),
+          conditionalPanel(
+            condition = "input.seeaclippedplot == false", ns = ns,
+            leafletOutput(ns("mosaicandshape"), height = "640px") |> add_spinner()
           )
         )
       )
@@ -105,7 +122,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
       sendSweetAlert(
         session = session,
         title = "Clipping plots",
-        text = "First, choose an output directory, then click on 'Clip plots'",
+        text = "First, choose an output directory to save the clipped plots. Select an Unique ID column to name the images, then click on 'Clip plots'",
         type = "info"
       )
       shptocrop <- shapefile[[input$shape_to_clip]]$data
@@ -113,17 +130,17 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
       req(shptocrop)
       req(mosaictocrop)
       updateSelectInput(session, "uniqueid", choices = names(shptocrop))
+      bcrop <-
+        mosaic_view(
+          mosaic_data[[input$mosaic_to_clip]]$data,
+          r = as.numeric(r$r),
+          g = as.numeric(g$g),
+          b = as.numeric(b$b),
+          max_pixels = 500000
+        )
 
       output$mosaicandshape <- renderLeaflet({
-        bcrop <-
-          mosaic_view(
-            mosaic_data[[input$mosaic_to_clip]]$data,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            max_pixels = 500000
-          )
-
+        req(bcrop)
         (bcrop + shapefile_view(shptocrop))@map
       })
 
@@ -163,10 +180,8 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
             ncolid <- which(colnames(shptemp) == input$uniqueid)
             shpname <- shptemp |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
             mosaictmp <- terra::crop(mosaictocrop, shptemp) |> terra::mask(shptemp)
-            terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, ".png"), datatype='INT1U')
+            terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, input$clipformat), overwrite=TRUE)
 
-            # terra::plotRGB()
-            # print(shpname)
           }
           filestoremove <- list.files(diroutput, pattern = "png.aux")
           # print(filestoremove)
@@ -174,7 +189,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
 
           sendSweetAlert(
             session = session,
-            title = "Mosaic successfully masked!!",
+            title = "Mosaic successfully clipped!!",
             text = paste0("The plots have been successfully clipped and can now be found at ", diroutput, "."),
             type = "success"
           )
@@ -182,6 +197,35 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
 
       })
 
+
+      observe({
+        if(input$seeaclippedplot){
+          ncolid <- which(colnames(shptocrop) == input$uniqueid)
+          plots <- shptocrop |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
+
+          updateSelectInput(session, "myclippedplot", choices = plots)
+          req(input$myclippedplot)
+          shptoplot <- shptocrop[which(plots == input$myclippedplot), ]
+          motemp <- terra::crop(mosaictocrop, shptoplot) |> terra::mask(shptoplot)
+
+          output$mosaicandshapeclipped <- renderLeaflet({
+            (bcrop + shapefile_view(shptoplot))@map
+          })
+
+          output$clippedplot <- renderLeaflet({
+            croppplot <-
+              mosaic_view(
+                motemp,
+                r = as.numeric(r$r),
+                g = as.numeric(g$g),
+                b = as.numeric(b$b),
+                max_pixels = 500000
+              )
+            croppplot@map
+          })
+
+        }
+      })
 
     })
   })

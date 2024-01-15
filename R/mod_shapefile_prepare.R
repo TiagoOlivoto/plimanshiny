@@ -104,6 +104,9 @@ mod_shapefile_prepare_ui <- function(id){
           condition = "input.shapetype == 'Build'", ns = ns,
           divclass("shape3",
                    h3("Grid shape"),
+                   textInput(ns("shapenamebuild"),
+                             label = "Shapefile Name",
+                             value = "Shapefile Build"),
                    fluidRow(
                      col_6(
                        numericInput(ns("ncols"),
@@ -296,9 +299,9 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
     observe({
       # req(mosaic_data$mosaic)
       if(!is.null(mosaic_data$mosaic)){
+        req(basemap$map)
         observeEvent(input$shapetype, {
           if (input$shapetype == "Build") {
-            req(basemap$map)
             createdshape <- reactiveValues(shp = NULL)
             cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
 
@@ -333,32 +336,49 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                  layer.name = "shapes")
               mapp@map
             })
+
             observeEvent(input$shapedone,{
               nelem <- length(createdshape$shp)
               req(createdshape$shp[[nelem]])
-              shapefile$shapefile <-
-                createdshape$shp[[nelem]] |>
-                poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
-                                .before = 1)
-              output$plotshapedone <- renderLeaflet({
-                mapp <-
-                  basemap$map +
-                  mapview::mapview(shapefile$shapefile,
-                                   # color = input$colorstroke,
-                                   # col.regions = input$colorfill,
-                                   z.col = "plot_id",
-                                   legend = FALSE,
-                                   alpha.regions = input$alphacolorfill,
-                                   layer.name = "shapes")
-                mapp@map
+              req(input$shapenamebuild)
+
+              observe({
+                shapefile[[input$shapenamebuild]] <-
+                  create_reactval(input$shapenamebuild,
+                                  createdshape$shp[[nelem]] |>
+                                    poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                                                    .before = 1)
+                  )
+
+
+                observe({
+                  shapefilenames <-  setdiff(names(shapefile), "shapefile")
+                  # Update selectInput choices
+                  updateSelectInput(session, "shapefiletoanalyze",
+                                    choices = shapefilenames,
+                                    selected = shapefilenames[[length(shapefilenames)]])
+                })
+                output$plotshapedone <- renderLeaflet({
+                  mapp <-
+                    basemap$map +
+                    mapview::mapview(shapefile[[input$shapenamebuild]]$data,
+                                     color = input$colorstroke,
+                                     col.regions = input$colorfill,
+                                     # z.col = "plot_id",
+                                     legend = FALSE,
+                                     alpha.regions = input$alphacolorfill,
+                                     layer.name = "shapes")
+                  mapp@map
+                })
               })
             })
+
 
             observeEvent(c(input$editplots, !input$editdone),{
               if(input$editplots == TRUE){
                 shapes <-
-                  shapefile$shapefile |>
-                  poorman::mutate(`_leaflet_id` = 1:nrow(shapefile$shapefile),
+                  shapefile[[input$shapenamebuild]]$data |>
+                  poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapenamebuild]]$data),
                                   feature_type = "polygon") |>
                   poorman::relocate(geometry, .after = 2) |>
                   sf::st_transform(crs = 4326)
@@ -384,7 +404,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   if(input$editdone == TRUE){
                     if(!is.null(editedpoints()$all)){
 
-                      shapefile$shapefile <-
+                      shapefile[[input$shapenamebuild]]$data <-
                         editedpoints()$all |>
                         poorman::select(geometry) |>
                         sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic)) |>
@@ -393,7 +413,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                       output$plotshapedone <- renderLeaflet({
                         mapp <-
                           basemap$map +
-                          mapview::mapview(shapefile$shapefile,
+                          mapview::mapview(shapefile[[input$shapenamebuild]]$data,
                                            color = input$colorstroke,
                                            # col.regions = input$colorfill,
                                            z.col = "plot_id",
@@ -415,38 +435,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
         )
       }
     })
-    # observeEvent(input$import_shapefile, {
-    # files <- input$import_shapefile$datapath
-    # exts <- c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg")
-    # if(!any(file_extension(files)  %in% sub(".", "", exts))){
-    #   sendSweetAlert(
-    #     session = session,
-    #     title = "Invalid file format",
-    #     text = paste("Invalid file format while uploading the shapefile. Ensure that the file extension are one of", paste0(exts, collapse = ", ")),
-    #     type = "error"
-    #   )
-    #   return()
-    # } else{
-    #   reqshp <- c("shp", "dbf", "prj", "shx")
-    #   if(any(file_extension(files)  %in%  reqshp)){
-    #     if (!all(reqshp %in% file_extension(files))) {
-    #       sendSweetAlert(
-    #         session = session,
-    #         title = "Required files",
-    #         text = "When importing a '.shp' file, make sure to also import the
-    #         mandatory files companion *.dbf, *.prj, and *.shx. Select the multiple
-    #         required files and try again.",
-    #         type = "error"
-    #       )
-    #       return()
-    #     } else{
-    #       shapefile$shapefile <- import_shp(input$import_shapefile)
-    #     }
-    #   } else{
-    #     shapefile$shapefile <- shapefile_input(input$import_shapefile$datapath, info = FALSE)
-    #   }
-    # }
-    # shapefile$shapefile <-
+
 
 
     observeEvent(input$import_shapefile, {
@@ -459,7 +448,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           inputId = "confirmashpname",
           type = "warning",
           title = "Shapefile already imported",
-          text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
+          text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported shapefiles. Do you really want to overwrite it?"),
           btn_labels = c("Nope", "Yep"),
           btn_colors = c("#FE642E", "#04B404")
         )
@@ -581,8 +570,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
       observeEvent(c(input$editplots, !input$editdoneimpo),{
         if(input$editplots == TRUE){
           shapes <-
-            shapefile$shapefile |>
-            poorman::mutate(`_leaflet_id` = 1:nrow(shapefile$shapefile),
+            shapefile[[input$shapefiletoanalyze]]$data |>
+            poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapefiletoanalyze]]$data),
                             feature_type = "polygon") |>
             poorman::relocate(geometry, .after = 2) |>
             sf::st_transform(crs = 4326)
@@ -621,19 +610,19 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             if(input$editdoneimpo == TRUE){
               if(!is.null(editedpoints()$all)){
 
-                shapefile$shapefile <- editedpoints()$all |> poorman::select(geometry)
+                shapefile[[input$shapefiletoanalyze]]$data <- editedpoints()$all |> poorman::select(geometry)
                 output$plotshapedone <- renderLeaflet({
                   if(is.null(basemap$map)){
                     mapp <-
                       basemap$map +
-                      mapview::mapview(shapefile$shapefile,
+                      mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
                                        color = input$colorstroke,
                                        col.regions = input$colorfill,
                                        alpha.regions = input$alphacolorfill,
                                        layer.name = "shapes")
                   } else{
                     mapp <-
-                      mapview::mapview(shapefile$shapefile,
+                      mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
                                        color = input$colorstroke,
                                        col.regions = input$colorfill,
                                        alpha.regions = input$alphacolorfill,
