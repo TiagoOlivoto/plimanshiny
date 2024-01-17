@@ -38,7 +38,7 @@ mod_manipula_ui <- function(id){
       tabPanel(
         title = "Bind",
         icon = icon("layer-group"),
-        h2("Coming soon")
+        mod_bindlayer_ui("bindlayer_1")
       ),
       tabPanel(
         title = "Aggregate",

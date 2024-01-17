@@ -68,13 +68,31 @@ mod_indexes_ui <- function(id){
         )
       ),
       col_9(
-        bs4Card(
+        # bs4Card(
+        #   width = 12,
+        #   height = "760px",
+        #   title = "Syncked maps after index computation",
+        #   color = "success",
+        #   status = "success",
+        #
+        # )
+        bs4TabCard(
+          id = "tabsindex",
           width = 12,
           height = "760px",
-          title = "Syncked maps after index computation",
-          color = "success",
           status = "success",
-          uiOutput(ns("indexsync"))|> add_spinner()
+          title = "Vegetation Indexes",
+          selected = "Plot Index",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            title = "Plot Index",
+            plotOutput(ns("plotindex"), height = "720px") |> add_spinner()
+          ),
+          tabPanel(
+            title = "Syncked maps",
+            uiOutput(ns("indexsync"))|> add_spinner()
+          )
         )
       )
     )
@@ -195,6 +213,11 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             magg <- indextemp
           }
           req(magg)
+          output$plotindex <- renderPlot({
+            if (input$indextosync != "") {
+              terra::plot(magg[[input$indextosync]])
+            }
+          })
           output$indexsync <- renderUI({
             req(basemap$map)
             if (input$indextosync != "") {

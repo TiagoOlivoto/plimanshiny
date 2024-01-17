@@ -31,6 +31,7 @@ golem::add_module(name = "manipula")
 golem::add_module(name = "crop")
 golem::add_module(name = "mask")
 golem::add_module(name = "plotclip")
+golem::add_module(name = "bindlayer")
 
 ## Add packages
 usethis::use_package("shiny")

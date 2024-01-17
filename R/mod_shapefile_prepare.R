@@ -222,11 +222,11 @@ mod_shapefile_prepare_ui <- function(id){
         conditionalPanel(
           condition = "input.shapetype == 'Build' & input.shapedone == false", ns = ns,
           fluidRow(
-            col_6(
+            col_8(
               h4("Control points"),
               editModUI(ns("shapefile_build"), height = "740px") |> add_spinner()
             ),
-            col_6(
+            col_4(
               h4("Built shapefile"),
               leafletOutput(ns("createdshapes"), height = "740px") |> add_spinner()
             )
