@@ -227,8 +227,6 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
     observe({
       # Check if a mosaic is selected
       req(input$mosaictoanalyze)
-
-      # Get the selected mosaic data
       selected_mosaic <- mosaic_data[[input$mosaictoanalyze]]
       # # Check if the selected_mosaic is not NULL and has the 'data' field
       if ('data' %in% names(selected_mosaic)) {
@@ -238,6 +236,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       updateSelectInput(session, "howtoplot",
                         choices = c("RGB", names(selected_mosaic$data)))
     })
+
     observeEvent(input$mosaicinfomosaic, {
       mosaic_info(mosaic_data$mosaic)
     })
