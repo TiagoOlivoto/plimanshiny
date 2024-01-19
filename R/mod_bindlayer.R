@@ -31,8 +31,8 @@ mod_bindlayer_ui <- function(id){
           actionBttn(ns("bindlayers"),
                      label = "Bind!",
                      style = "pill",
-                     color = "primary",
-                     icon = icon("chart-simple")),
+                     color = "success",
+                     icon = icon("layer-group")),
           hl(),
           mod_download_mosaic_ui(ns("downloadlayersbind"))
         )

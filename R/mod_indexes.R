@@ -15,13 +15,26 @@ mod_indexes_ui <- function(id){
         bs4Card(
           title = "Mosaic index",
           color = "success",
-          actionButton(
-            inputId = ns("guideindex"),
-            label = tagList(
-              icon = icon("question-circle", verify_fa = FALSE), "Guide"
+          fluidRow(
+            col_6(
+              actionButton(
+                inputId = ns("guideindex"),
+                label = tagList(
+                  icon = icon("question-circle", verify_fa = FALSE), "Guide"
+                ),
+                style = "color: white ; background-color: #dd4b39",
+                class = "btn-danger"
+              )
             ),
-            style = "color: white ; background-color: #dd4b39",
-            class = "btn-danger"
+            col_6(
+              actionButton(
+                inputId = ns("mosaicinfoindex"),
+                label = tagList(
+                  icon = icon("circle-info", verify_fa = FALSE), "Mosaic Info"
+                ),
+                status = "info"
+              )
+            )
           ),
           width = 12,
           status = "success",
@@ -114,6 +127,11 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                                           "skipLabel"="Skip",
                                                           steps = helpind),
                                            events = list("oncomplete"=I('alert("Hope it helped!")'))))
+
+    observeEvent(input$mosaicinfoindex, {
+      mosaic_info(mosaic_data$mosaic)
+    })
+
     # Creating a new option to select VIs
     observeEvent(input$imgbands, {
       # Check if imgbands is empty

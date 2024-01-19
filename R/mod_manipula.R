@@ -36,7 +36,7 @@ mod_manipula_ui <- function(id){
         mod_plotclip_ui("plotclip_1")
       ),
       tabPanel(
-        title = "Bind",
+        title = "Bind Layers",
         icon = icon("layer-group"),
         mod_bindlayer_ui("bindlayer_1")
       ),
@@ -46,9 +46,14 @@ mod_manipula_ui <- function(id){
         h2("Coming soon")
       ),
       tabPanel(
+        title = "Resample",
+        icon = icon("arrow-up-right-dots"),
+        h2("Coming soon")
+      ),
+      tabPanel(
         title = "Interpolate",
         icon = icon("chart-line"),
-        h2("Coming soon")
+        mod_interpolate_ui("interpolate_1")
       )
     )
   )

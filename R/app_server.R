@@ -37,5 +37,6 @@ app_server <- function(input, output, session) {
   mod_mask_server("mask_1", mosaic_data, shapefile, r, g, b)
   mod_plotclip_server("plotclip_1", mosaic_data, shapefile, r, g, b)
   mod_bindlayer_server("bindlayer_1", mosaic_data)
+  mod_interpolate_server("interpolate_1", mosaic_data)
 }
 

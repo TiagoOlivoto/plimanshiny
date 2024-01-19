@@ -32,6 +32,7 @@ golem::add_module(name = "crop")
 golem::add_module(name = "mask")
 golem::add_module(name = "plotclip")
 golem::add_module(name = "bindlayer")
+golem::add_module(name = "interpolate")
 
 ## Add packages
 usethis::use_package("shiny")
