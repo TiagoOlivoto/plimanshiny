@@ -81,14 +81,6 @@ mod_indexes_ui <- function(id){
         )
       ),
       col_9(
-        # bs4Card(
-        #   width = 12,
-        #   height = "760px",
-        #   title = "Syncked maps after index computation",
-        #   color = "success",
-        #   status = "success",
-        #
-        # )
         bs4TabCard(
           id = "tabsindex",
           width = 12,

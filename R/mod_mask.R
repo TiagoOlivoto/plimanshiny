@@ -107,7 +107,7 @@ mod_mask_server <- function(id, mosaic_data, shapefile, r, g, b){
     ns <- session$ns
     observe({
       req(mosaic_data)
-      updateSelectInput(session, "mosaic_to_mask", choices = setdiff(names(mosaic_data), "mosaic"), selected = input$mosaic_to_mask)
+      updateSelectInput(session, "mosaic_to_mask", choices = setdiff(names(mosaic_data), "mosaic"), selected = NULL)
       updateSelectInput(session, "shape_to_crop", choices = setdiff(names(shapefile), "shapefile"))
       updateTextInput(session, "new_mask", value = paste0(input$mosaic_to_mask, "_masked"))
     })
