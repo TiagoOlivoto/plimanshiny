@@ -78,7 +78,7 @@ mod_bindlayer_server <- function(id, mosaic_data){
         updated_layer_names <- if (input$newmosaicnames == "") {
           input$layerstobind
         } else {
-          strsplit(input$newmosaicnames, split = ',')[[1]]
+          gsub("[[:space:]]", "", strsplit(input$newmosaicnames, split = ',')[[1]])
         }
         if(nlyr(tmp) != length(updated_layer_names)){
           show_alert("Ops, an error occurred.",
