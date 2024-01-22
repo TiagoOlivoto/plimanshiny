@@ -239,7 +239,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                              main = paste0(names(magg[[input$indextosync]]), " - Otsu: ", round(ots, 4)))
               abline(v = ots,
                      col = "red",
-                     lty = 2)
+                     lty = 2,
+                     )
             }
           })
           output$indexsync <- renderUI({

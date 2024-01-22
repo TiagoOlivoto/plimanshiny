@@ -28,11 +28,22 @@ mod_interpolate_ui <- function(id){
           textInput(ns("saveinterpolateto"),
                     label = "Store interpolated mosaic as",
                     value = "mosaic_interpolated"),
-          actionBttn(ns("interpolatemosaic"),
-                     label = "Interpolate!",
-                     style = "pill",
-                     color = "success",
-                     icon = icon("layer-group")),
+          fluidRow(
+            col_6(
+              actionBttn(ns("startinterpolating"),
+                         label = "Start interpolating!",
+                         style = "pill",
+                         color = "success")
+            ),
+            col_6(
+              actionBttn(ns("interpolatemosaic"),
+                         label = "Interpolate!",
+                         style = "pill",
+                         no_outline = FALSE,
+                         icon = icon("scissors"),
+                         color = "success")
+            )
+          ),
           prettyCheckbox(
             inputId = ns("interpolationdone"),
             label = "Interpolation finished!",
@@ -70,17 +81,21 @@ mod_interpolate_ui <- function(id){
 #' interpolate Server Functions
 #'
 #' @noRd
-mod_interpolate_server <- function(id, mosaic_data){
+mod_interpolate_server <- function(id, mosaic_data, r, g, b){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observe({
       req(mosaic_data$mosaic)
       updatePickerInput(session, "mosaictointerpolate", choices = setdiff(names(mosaic_data), "mosaic"), selected = NULL)
     })
-    observe({
+    observeEvent(input$startinterpolating, {
       req(mosaic_data)
       req(input$mosaictointerpolate)
-      bmap <- mosaic_view(mosaic_data[[input$mosaictointerpolate]]$data)
+      bmap <- mosaic_view(mosaic_data[[input$mosaictointerpolate]]$data,
+                          r = as.numeric(r$r),
+                          g = as.numeric(g$g),
+                          b = as.numeric(b$b),
+                          max_pixels = 500000)
       req(bmap)
       cpoints <- callModule(editMod, "plotinterpol", bmap@map , editor = "leafpm")
 

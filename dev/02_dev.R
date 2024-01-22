@@ -33,6 +33,8 @@ golem::add_module(name = "mask")
 golem::add_module(name = "plotclip")
 golem::add_module(name = "bindlayer")
 golem::add_module(name = "interpolate")
+golem::add_module(name = "aggregate")
+golem::add_module(name = "resample")
 
 ## Add packages
 usethis::use_package("shiny")

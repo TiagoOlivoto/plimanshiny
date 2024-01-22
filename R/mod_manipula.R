@@ -43,12 +43,12 @@ mod_manipula_ui <- function(id){
       tabPanel(
         title = "Aggregate",
         icon = icon("users"),
-        h2("Coming soon")
+        mod_aggregate_ui("aggregate_1")
       ),
       tabPanel(
         title = "Resample",
         icon = icon("arrow-up-right-dots"),
-        h2("Coming soon")
+        mod_resample_ui("resample_1")
       ),
       tabPanel(
         title = "Interpolate",
