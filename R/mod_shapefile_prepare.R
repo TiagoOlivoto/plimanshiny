@@ -100,6 +100,9 @@ mod_shapefile_prepare_ui <- function(id){
             )
           )
         ),
+        selectInput(ns("shapefiletoanalyze"),
+                    label = "Active Shapefile",
+                    choices = NULL),
         conditionalPanel(
           condition = "input.shapetype == 'Build'", ns = ns,
           divclass("shape3",
@@ -156,10 +159,7 @@ mod_shapefile_prepare_ui <- function(id){
           divclass("shapeimp1",
                    fileInput(ns("import_shapefile"),
                              "Import a shapefile (.shp, .rds)",
-                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE),
-                   selectInput(ns("shapefiletoanalyze"),
-                               label = "Active Shapefile",
-                               choices = NULL)
+                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE)
           ),
           tags$hr(),
           divclass("shapeimp2",
