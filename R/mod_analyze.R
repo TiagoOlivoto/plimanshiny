@@ -42,11 +42,16 @@ mod_analyze_ui <- function(id){
                        inputId = ns("summarizefun"),
                        label = "Summarize function(s)",
                        selected = "mean",
-                       choices = c("NULL", "min", "max", "count", "sum", "mean", "median", "stdev", "coefficient_of_variation"),
+                       choices = c("NULL", "min", "max", "count", "sum", "mean", "median", "quantile", "stdev", "coefficient_of_variation"),
                        options = list(
                          `actions-box` = TRUE
                        ),
                        multiple = TRUE
+                     ),
+                     textInput(
+                       inputId = ns("quantilevalue"),
+                       label = "Quantile Values (comma-separated)",
+                       value = ""
                      )
             ),
            hl(),
@@ -577,6 +582,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
       } else {
         topn_upper <- input$topn_upper
       }
+      if("quantile" %in% input$summarizefun){
+        quantiles <- as.numeric(unlist(strsplit(input$quantilevalue, split = ',')))
+      } else{
+        quantiles <- NULL
+      }
 
       if(!t1 & !t2){
 
@@ -602,6 +612,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
                            extension = input$extension,
                            invert = input$invertindex,
                            summarize_fun = input$summarizefun,
+                           summarize_quantiles = quantiles,
                            include_if = input$includeif,
                            threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
                            filter = ifelse(input$filter, input$filterval, FALSE),
@@ -642,6 +653,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
                              extension = input$extension,
                              invert = input$invertindex,
                              summarize_fun = input$summarizefun,
+                             summarize_quantiles = quantiles,
                              include_if = input$includeif,
                              threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
                              filter = ifelse(input$filter, input$filterval, FALSE),
