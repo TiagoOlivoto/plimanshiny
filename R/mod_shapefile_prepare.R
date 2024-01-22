@@ -110,6 +110,16 @@ mod_shapefile_prepare_ui <- function(id){
                    textInput(ns("shapenamebuild"),
                              label = "Shapefile Name",
                              value = "Shapefile Build"),
+                   prettyCheckbox(
+                     inputId = ns("buildshapefile"),
+                     label = "Define the control points",
+                     value = TRUE,
+                     status = "info",
+                     icon = icon("thumbs-up"),
+                     plain = TRUE,
+                     outline = TRUE,
+                     animation = "rotate"
+                   ),
                    fluidRow(
                      col_6(
                        numericInput(ns("ncols"),
@@ -295,6 +305,14 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                                                steps = shapeimp),
                                                 events = list("oncomplete"=I('alert("Hope it helped!")'))))
 
+    observeEvent(input$buildshapefile, {
+      if(!input$buildshapefile){
+        updatePrettyCheckbox(session, "shapedone", value = TRUE)
+      } else{
+        updatePrettyCheckbox(session, "shapedone", value = FALSE)
+      }
+    })
+
     # GUIA
     observe({
       # req(mosaic_data$mosaic)
@@ -305,22 +323,36 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             createdshape <- reactiveValues(shp = NULL)
             cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
 
-            observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow), {
-              if(!is.null(cpoints()$edited)){
-                cpo <- cpoints()$edited
+            observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow, input$buildshapefile), {
+              if(input$buildshapefile){
+                if(!is.null(cpoints()$edited)){
+                  cpo <- cpoints()$edited
+                } else{
+                  cpo <- cpoints()$finished
+                }
+                # Check if edits()$finished is not NULL and shapedone is FALSE
+                if (!is.null(cpoints()$finished) && !input$shapedone) {
+                  shp <- shapefile_build(mosaic_data$mosaic,
+                                         basemap,
+                                         controlpoints = cpo,
+                                         nrow = input$nrows,
+                                         ncol = input$ncols,
+                                         buffer_col = input$buffercol,
+                                         buffer_row = input$bufferrow,
+                                         verbose = FALSE)
+
+                  # Update the reactiveVal with the cropped mosaic
+                  createdshape$shp <- shp
+                }
               } else{
-                cpo <- cpoints()$finished
-              }
-              # Check if edits()$finished is not NULL and shapedone is FALSE
-              if (!is.null(cpoints()$finished) && !input$shapedone) {
-                shp <- shapefile_build(mosaic_data$mosaic, basemap, controlpoints = cpo,
+                shp <- shapefile_build(mosaic_data$mosaic,
+                                       basemap,
                                        nrow = input$nrows,
                                        ncol = input$ncols,
                                        buffer_col = input$buffercol,
                                        buffer_row = input$bufferrow,
+                                       build_shapefile = FALSE,
                                        verbose = FALSE)
-
-                # Update the reactiveVal with the cropped mosaic
                 createdshape$shp <- shp
               }
             })
