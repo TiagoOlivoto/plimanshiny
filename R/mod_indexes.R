@@ -87,12 +87,16 @@ mod_indexes_ui <- function(id){
           height = "760px",
           status = "success",
           title = "Vegetation Indexes",
-          selected = "Plot Index",
+          selected = "Plot Index (raster)",
           solidHeader = FALSE,
           type = "tabs",
           tabPanel(
-            title = "Plot Index",
+            title = "Plot Index (raster)",
             plotOutput(ns("plotindex"), height = "720px") |> add_spinner()
+          ),
+          tabPanel(
+            title = "Plot Index (density)",
+            plotOutput(ns("plotindexhist"), height = "720px") |> add_spinner()
           ),
           tabPanel(
             title = "Syncked maps",
@@ -226,6 +230,16 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           output$plotindex <- renderPlot({
             if (input$indextosync != "") {
               terra::plot(magg[[input$indextosync]])
+            }
+          })
+          output$plotindexhist <- renderPlot({
+            if (input$indextosync != "") {
+              ots <- otsu(na.omit(terra::values(magg[[input$indextosync]])))
+              terra::density(magg[[input$indextosync]],
+                             main = paste0(names(magg[[input$indextosync]]), " - Otsu: ", round(ots, 4)))
+              abline(v = ots,
+                     col = "red",
+                     lty = 2)
             }
           })
           output$indexsync <- renderUI({
