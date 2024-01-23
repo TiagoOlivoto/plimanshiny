@@ -362,12 +362,23 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
           width = 12,
           height = "790px",
           title = "Results",
-          selected = "Mosaic and shapefile",
+          selected = "Segmentation",
           solidHeader = FALSE,
           type = "tabs",
           tabPanel(
+            title = "Segmentation",
+            fluidRow(
+              col_6(
+                plotOutput(ns("previousdensity"), height = "720px") |> add_spinner()
+              ),
+              col_6(
+                plotOutput(ns("previoussegment"), height = "720px") |> add_spinner()
+              )
+            )
+          ),
+          tabPanel(
             title = "Mosaic and shapefile",
-            uiOutput(ns("baseshapeindex"))  |> add_spinner()
+              uiOutput(ns("baseshapeindex")) |> add_spinner()
           ),
           tabPanel(
             title = "Summary",
@@ -424,9 +435,20 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
           height = "780px",
           status = "success",
           title = "Results",
-          selected = "Mosaic and shapefile",
+          selected = "Segmentation",
           solidHeader = FALSE,
           type = "tabs",
+          tabPanel(
+            title = "Segmentation",
+            fluidRow(
+              col_6(
+                plotOutput(ns("previousdensity"), height = "720px") |> add_spinner()
+              ),
+              col_6(
+                plotOutput(ns("previoussegment"), height = "720px") |> add_spinner()
+              )
+            )
+          ),
           tabPanel(
             title = "Mosaic and shapefile",
             uiOutput(ns("baseshapeindex"))  |> add_spinner()
@@ -516,6 +538,25 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
       m1 <-  basemap$map + mapview::mapview(shapefile$shapefile, z.col = "plot_id", legend = FALSE)
       m2 <- mosaic_view(index$index[[layer]], show = "index")
       leafsync::sync(m1@map, m2)
+    })
+
+    output$previousdensity <- renderPlot({
+        layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
+        ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
+        output$previoussegment <- renderPlot({
+          if(input$invertindex){
+            maskplot <- index$index[[layer]] < ots
+          } else{
+            maskplot <- index$index[[layer]] > ots
+          }
+          terra::plot(maskplot)
+        })
+        terra::density(index$index[[layer]],
+                       main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
+        abline(v = ots,
+               col = "red",
+               lty = 2,
+        )
     })
 
     # Analyze
