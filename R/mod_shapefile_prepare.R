@@ -239,11 +239,11 @@ mod_shapefile_prepare_ui <- function(id){
           fluidRow(
             col_8(
               h4("Control points"),
-              editModUI(ns("shapefile_build"), height = "740px") |> add_spinner()
+              editModUI(ns("shapefile_build"), height = "720px") |> add_spinner()
             ),
             col_4(
               h4("Built shapefile"),
-              leafletOutput(ns("createdshapes"), height = "740px") |> add_spinner()
+              leafletOutput(ns("createdshapes"), height = "720px") |> add_spinner()
             )
           )
         ),
@@ -252,13 +252,13 @@ mod_shapefile_prepare_ui <- function(id){
           fluidRow(
             col_6(
               h3("Built shapefile"),
-              leafletOutput(ns("plotshapedone"), height = "740px") |> add_spinner()
+              leafletOutput(ns("plotshapedone"), height = "720px") |> add_spinner()
             ),
             col_6(
               conditionalPanel(
                 condition = "input.editplots == true & input.editdone == false", ns = ns,
                 h3("Plot edition"),
-                editModUI(ns("plotedit"), height = "740px") |> add_spinner()
+                editModUI(ns("plotedit"), height = "720px") |> add_spinner()
               )
             )
           )
@@ -268,13 +268,13 @@ mod_shapefile_prepare_ui <- function(id){
           fluidRow(
             col_6(
               h3("Built shapefile"),
-              leafletOutput(ns("shapefile_mapview"), height = "740px") |> add_spinner()
+              leafletOutput(ns("shapefile_mapview"), height = "720px") |> add_spinner()
             ),
             col_6(
               conditionalPanel(
                 condition = "input.editplotsimpo == true & input.editdoneimpo == false", ns = ns,
                 h3("Plot edition"),
-                editModUI(ns("ploteditimpo"), height = "740px") |> add_spinner()
+                editModUI(ns("ploteditimpo"), height = "720px") |> add_spinner()
               )
             )
           )
