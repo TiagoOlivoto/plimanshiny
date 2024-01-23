@@ -43,7 +43,7 @@ mod_mosaic_prepare_ui <- function(id){
         fluidRow(
           col_2(
             div(class = "prep1",
-                dropdownButton(
+                dropdown(
                   tags$h3("Bands"),
                   selectInput(
                     inputId = ns("r_band"),
@@ -76,10 +76,12 @@ mod_mosaic_prepare_ui <- function(id){
                     selected = 5,
                   ),
                   circle = FALSE,
-                  status = "primary",
-                  icon = icon("gear"),
-                  width = "100px",
-                  tooltip = tooltipOptions(title = "Click to configure the bands!")
+                  status = "success",
+                  style = "unite",
+                  width = "150px",
+                  icon = icon("layer-group"),
+                  animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
+                  tooltip = tooltipOptions(title = "Configure the bands")
                 )
             )
           ),
@@ -238,6 +240,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
     })
 
     observeEvent(input$mosaicinfomosaic, {
+      req(mosaic_data$mosaic)
       mosaic_info(mosaic_data$mosaic)
     })
 
