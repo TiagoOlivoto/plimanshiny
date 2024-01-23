@@ -159,9 +159,32 @@ mod_shapefile_prepare_ui <- function(id){
                      plain = TRUE,
                      outline = TRUE,
                      animation = "rotate"
+                   ),
+                   conditionalPanel(
+                     condition = "input.shapedone == true", ns = ns,
+                     divclass("shapeimp3",
+                              materialSwitch(
+                                inputId = ns("editplots"),
+                                label = "Edit the drawn plots?",
+                                value = FALSE,
+                                status = "danger"
+                              ),
+                              conditionalPanel(
+                                condition = "input.editplots == true", ns = ns,
+                                prettyCheckbox(
+                                  inputId = ns("editdone"),
+                                  label = "Edition finished!",
+                                  value = FALSE,
+                                  status = "info",
+                                  icon = icon("thumbs-up"),
+                                  plain = TRUE,
+                                  outline = TRUE,
+                                  animation = "rotate"
+                                )
+                              )
+                     )
                    )
-          ),
-          tags$hr(),
+          )
         ),
         conditionalPanel(
           condition = "input.shapetype == 'Import'", ns = ns,
@@ -176,33 +199,15 @@ mod_shapefile_prepare_ui <- function(id){
                    selectInput(ns("colorshapeimport"),
                                label = "Fill color",
                                choices = NULL)
-          )
-        ),
-        conditionalPanel(
-          condition = "input.shapedone == true | input.shapetype == 'Import'", ns = ns,
+          ),
           materialSwitch(
-            inputId = ns("editplots"),
-            label = "Edit the drawn plots?",
+            inputId = ns("editplotsimpo"),
+            label = "Edit Shapefile?",
             value = FALSE,
             status = "danger"
           ),
           conditionalPanel(
-            condition = "input.editplots == true & input.shapetype != 'Import'", ns = ns,
-            divclass("shapeimp3",
-                     prettyCheckbox(
-                       inputId = ns("editdone"),
-                       label = "Edition finished!",
-                       value = FALSE,
-                       status = "info",
-                       icon = icon("thumbs-up"),
-                       plain = TRUE,
-                       outline = TRUE,
-                       animation = "rotate"
-                     )
-            )
-          ),
-          conditionalPanel(
-            condition = "input.editplots == true & input.shapetype == 'Import'", ns = ns,
+            condition = "input.editplotsimpo == true", ns = ns,
             divclass("shapeimp4",
                      prettyCheckbox(
                        inputId = ns("editdoneimpo"),
@@ -215,10 +220,10 @@ mod_shapefile_prepare_ui <- function(id){
                        animation = "rotate"
                      ), br()
             )
-          ),
-          tags$hr(),
-          mod_download_shapefile_ui(ns("downloadshapefile"))
-        )
+          )
+        ),
+        tags$hr(),
+        mod_download_shapefile_ui(ns("downloadshapefile"))
       )
     ),
     col_9(
@@ -267,7 +272,7 @@ mod_shapefile_prepare_ui <- function(id){
             ),
             col_6(
               conditionalPanel(
-                condition = "input.editplots == true & input.editdoneimpo == false", ns = ns,
+                condition = "input.editplotsimpo == true & input.editdoneimpo == false", ns = ns,
                 h3("Plot edition"),
                 editModUI(ns("ploteditimpo"), height = "740px") |> add_spinner()
               )
@@ -315,363 +320,367 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
     # GUIA
     observe({
-      # req(mosaic_data$mosaic)
+      # observeEvent(input$shapetype, {
       if(!is.null(mosaic_data$mosaic)){
         req(basemap$map)
-        observeEvent(input$shapetype, {
-          if (input$shapetype == "Build") {
-            createdshape <- reactiveValues(shp = NULL)
-            cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
+        if (input$shapetype == "Build") {
+          createdshape <- reactiveValues(shp = NULL)
+          cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
 
-            observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow, input$buildshapefile), {
-              if(input$buildshapefile){
-                if(!is.null(cpoints()$edited)){
-                  cpo <- cpoints()$edited
-                } else{
-                  cpo <- cpoints()$finished
-                }
-                # Check if edits()$finished is not NULL and shapedone is FALSE
-                if (!is.null(cpoints()$finished) && !input$shapedone) {
-                  shp <- shapefile_build(mosaic_data$mosaic,
-                                         basemap,
-                                         controlpoints = cpo,
-                                         nrow = input$nrows,
-                                         ncol = input$ncols,
-                                         buffer_col = input$buffercol,
-                                         buffer_row = input$bufferrow,
-                                         verbose = FALSE)
-
-                  # Update the reactiveVal with the cropped mosaic
-                  createdshape$shp <- shp
-                }
+          observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow, input$buildshapefile), {
+            if(input$buildshapefile){
+              if(!is.null(cpoints()$edited)){
+                cpo <- cpoints()$edited
               } else{
+                cpo <- cpoints()$finished
+              }
+              # Check if edits()$finished is not NULL and shapedone is FALSE
+              if (!is.null(cpoints()$finished) && !input$shapedone) {
                 shp <- shapefile_build(mosaic_data$mosaic,
                                        basemap,
+                                       controlpoints = cpo,
                                        nrow = input$nrows,
                                        ncol = input$ncols,
                                        buffer_col = input$buffercol,
                                        buffer_row = input$bufferrow,
-                                       build_shapefile = FALSE,
                                        verbose = FALSE)
+
+                # Update the reactiveVal with the cropped mosaic
                 createdshape$shp <- shp
               }
-            })
+            } else{
+              shp <- shapefile_build(mosaic_data$mosaic,
+                                     basemap,
+                                     nrow = input$nrows,
+                                     ncol = input$ncols,
+                                     buffer_col = input$buffercol,
+                                     buffer_row = input$bufferrow,
+                                     build_shapefile = FALSE,
+                                     verbose = FALSE)
+              createdshape$shp <- shp
+            }
+          })
 
-            output$createdshapes <- renderLeaflet({
-              nelem <- length(createdshape$shp)
+          output$createdshapes <- renderLeaflet({
+            nelem <- length(createdshape$shp)
+            mapp <-
+              basemap$map +
+              mapview::mapview(createdshape$shp[[nelem]],
+                               color = input$colorstroke,
+                               col.regions = input$colorfill,
+                               alpha.regions = input$alphacolorfill,
+                               layer.name = "shapes")
+            mapp@map
+          })
+
+          observeEvent(input$shapedone,{
+            nelem <- length(createdshape$shp)
+            req(createdshape$shp[[nelem]])
+            req(input$shapenamebuild)
+            observe({
+              shapefile[[input$shapenamebuild]] <-
+                create_reactval(input$shapenamebuild,
+                                createdshape$shp[[nelem]] |>
+                                  poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                                                  .before = 1)
+                )
+
+
+              observe({
+                shapefilenames <-  setdiff(names(shapefile), "shapefile")
+                # Update selectInput choices
+                updateSelectInput(session, "shapefiletoanalyze",
+                                  choices = shapefilenames,
+                                  selected = shapefilenames[[length(shapefilenames)]])
+              })
+              output$plotshapedone <- renderLeaflet({
+                mapp <-
+                  basemap$map +
+                  mapview::mapview(shapefile[[input$shapenamebuild]]$data,
+                                   color = input$colorstroke,
+                                   col.regions = input$colorfill,
+                                   # z.col = "plot_id",
+                                   legend = FALSE,
+                                   alpha.regions = input$alphacolorfill,
+                                   layer.name = "shapes")
+                mapp@map
+              })
+            })
+          })
+
+
+          observeEvent(c(input$editplots, !input$editdone),{
+            if(input$editplots == TRUE){
+              shapes <-
+                shapefile[[input$shapenamebuild]]$data |>
+                poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapenamebuild]]$data),
+                                feature_type = "polygon") |>
+                poorman::relocate(geometry, .after = 2) |>
+                sf::st_transform(crs = 4326)
+
+
               mapp <-
-                basemap$map +
-                mapview::mapview(createdshape$shp[[nelem]],
-                                 color = input$colorstroke,
-                                 col.regions = input$colorfill,
-                                 alpha.regions = input$alphacolorfill,
-                                 layer.name = "shapes")
+                basemap$map@map |>
+                leaflet::addPolygons(
+                  data = shapes,
+                  weight = 3,
+                  color = input$colorstroke,
+                  fillColor = input$colorfill,
+                  opacity = 1,
+                  fillOpacity = input$alphacolorfill,
+                  group = "editable"
+                )
+
+              editedpoints <- callModule(editMod, "plotedit",
+                                         leafmap = mapp,
+                                         targetLayerId = "editable")
+
+              observeEvent(input$editdone,{
+                if(input$editdone == TRUE){
+                  if(!is.null(editedpoints()$all)){
+                    shapefile[[input$shapenamebuild]]$data <-
+                      editedpoints()$all |>
+                      poorman::select(geometry) |>
+                      sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic)) |>
+                      poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(editedpoints()$all), 4)),
+                                      .before = 1)
+                    output$plotshapedone <- renderLeaflet({
+                      mapp <-
+                        basemap$map +
+                        mapview::mapview(shapefile[[input$shapenamebuild]]$data,
+                                         color = input$colorstroke,
+                                         # col.regions = input$colorfill,
+                                         z.col = "plot_id",
+                                         alpha.regions = input$alphacolorfill,
+                                         legend = FALSE,
+                                         layer.name = "shapes")
+                      mapp@map
+                    })
+                  }
+                  updateMaterialSwitch(session, "editplots", value = FALSE)
+                }
+              })
+            }
+          })
+          observe({
+            # Check if a mosaic is selected
+            req(input$shapefiletoanalyze)
+            selected_shp <- shapefile[[input$shapefiletoanalyze]]
+            if ('data' %in% names(selected_shp)) {
+              shapefile$shapefile <- selected_shp$data
+            }
+          })
+        }
+      }
+      # })
+    })
+
+    # Import a shapefile
+    observeEvent(input$import_shapefile, {
+      observeEvent(input$shapetype, {
+        if (input$shapetype == "Import") {
+          newshpname <- input$import_shapefile$name
+          # Check if the mosaic already exists in shapefile
+          if (any(newshpname %in% names(shapefile))) {
+            # If it exists, update the existing reactiveValues
+            moname <- newshpname[newshpname %in% names(shapefile)]
+            ask_confirmation(
+              inputId = "confirmashpname",
+              type = "warning",
+              title = "Shapefile already imported",
+              text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported shapefiles. Do you really want to overwrite it?"),
+              btn_labels = c("Nope", "Yep"),
+              btn_colors = c("#FE642E", "#04B404")
+            )
+            observe({
+              if (!is.null(input$confirmashpname)) {
+                if (input$confirmashpname) {
+                  if("shp" %in% file_extension(input$import_shapefile$datapath)){
+                    shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
+                      create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
+                                                                                                 input$import_shapefile,
+                                                                                                 session))
+                  } else{
+                    for (i in 1:length(newshpname)) {
+                      shapefile[[newshpname[[i]]]] <-
+                        create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
+                                                                        input$import_shapefile[[i]],
+                                                                        session))
+                    }
+                  }
+                } else {
+                  return()
+                }
+              }
+            })
+          } else {
+            # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
+            if("shp" %in% file_extension(input$import_shapefile$datapath)){
+              shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
+                create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
+                                                                                           input$import_shapefile,
+                                                                                           session))
+            } else{
+              for (i in 1:length(newshpname)) {
+                shapefile[[newshpname[[i]]]] <-
+                  create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
+                                                                  input$import_shapefile[[i]],
+                                                                  session))
+              }
+            }
+          }
+
+          observe({
+            shapefilenames <-  setdiff(names(shapefile), "shapefile")
+            # Update selectInput choices
+            updateSelectInput(session, "shapefiletoanalyze",
+                              choices = shapefilenames,
+                              selected = shapefilenames[[length(shapefilenames)]])
+          })
+
+
+          observe({
+            # Check if a mosaic is selected
+            req(input$shapefiletoanalyze)
+            selected_shp <- shapefile[[input$shapefiletoanalyze]]
+            if ('data' %in% names(selected_shp)) {
+              shapefile$shapefile <- selected_shp$data
+            }
+          })
+
+
+
+          observe({
+            req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
+
+            updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))
+            if(!is.null(mosaic_data$mosaic)){
+              if(sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic)){
+                sendSweetAlert(
+                  session = session,
+                  title = "Invalid CRS",
+                  text = "The Coordinate Reference System (CRS) of the shapefile does
+            not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
+            type = "warning"
+                )
+                shp <- shapefile$shapefile |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
+                shapefile$shapefile <- shp
+              }
+            }
+            output$shapefile_mapview <- renderLeaflet({
+              if(is.null(basemap$map)){
+                if(ncol(shapefile$shapefile) ==1){
+                  mapp <- mapview::mapview(shapefile$shapefile, layer.name = "shapes")
+                } else{
+                  req(input$colorshapeimport)
+
+                  mapp <- mapview::mapview(shapefile$shapefile,
+                                           zcol = input$colorshapeimport,
+                                           color = input$colorstroke,
+                                           # col.regions = input$colorfill,
+                                           alpha.regions = input$alphacolorfill,
+                                           layer.name = "shapes")
+                }
+              } else{
+                if(ncol(shapefile$shapefile) ==1){
+                  mapp <-
+                    basemap$map +
+                    mapview::mapview(shapefile$shapefile,
+                                     color = input$colorstroke,
+                                     col.regions = input$colorfill,
+                                     alpha.regions = input$alphacolorfill,
+                                     layer.name = "shapes")
+
+                } else{
+                  req(input$colorshapeimport)
+                  mapp <-
+                    basemap$map +
+                    mapview::mapview(shapefile$shapefile,
+                                     zcol = input$colorshapeimport,
+                                     color = input$colorstroke,
+                                     alpha.regions = input$alphacolorfill,
+                                     layer.name = "shapes")
+                }
+              }
               mapp@map
             })
 
-            observeEvent(input$shapedone,{
-              nelem <- length(createdshape$shp)
-              req(createdshape$shp[[nelem]])
-              req(input$shapenamebuild)
-
-              observe({
-                shapefile[[input$shapenamebuild]] <-
-                  create_reactval(input$shapenamebuild,
-                                  createdshape$shp[[nelem]] |>
-                                    poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
-                                                    .before = 1)
-                  )
-
-
-                observe({
-                  shapefilenames <-  setdiff(names(shapefile), "shapefile")
-                  # Update selectInput choices
-                  updateSelectInput(session, "shapefiletoanalyze",
-                                    choices = shapefilenames,
-                                    selected = shapefilenames[[length(shapefilenames)]])
-                })
-                output$plotshapedone <- renderLeaflet({
-                  mapp <-
-                    basemap$map +
-                    mapview::mapview(shapefile[[input$shapenamebuild]]$data,
-                                     color = input$colorstroke,
-                                     col.regions = input$colorfill,
-                                     # z.col = "plot_id",
-                                     legend = FALSE,
-                                     alpha.regions = input$alphacolorfill,
-                                     layer.name = "shapes")
-                  mapp@map
-                })
-              })
-            })
-
-
-            observeEvent(c(input$editplots, !input$editdone),{
-              if(input$editplots == TRUE){
+            observeEvent(c(input$editplotsimpo, !input$editdoneimpo),{
+              if(input$editplotsimpo == TRUE){
                 shapes <-
-                  shapefile[[input$shapenamebuild]]$data |>
-                  poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapenamebuild]]$data),
+                  shapefile[[input$shapefiletoanalyze]]$data |>
+                  poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapefiletoanalyze]]$data),
                                   feature_type = "polygon") |>
                   poorman::relocate(geometry, .after = 2) |>
                   sf::st_transform(crs = 4326)
 
 
-                mapp <-
-                  basemap$map@map |>
-                  leaflet::addPolygons(
-                    data = shapes,
-                    weight = 3,
-                    color = input$colorstroke,
-                    fillColor = input$colorfill,
-                    opacity = 1,
-                    fillOpacity = input$alphacolorfill,
-                    group = "editable"
-                  )
+                if(is.null(basemap$map)){
+                  mapp <-
+                    leaflet::leaflet() |>
+                    addTiles(options = tileOptions(minZoom = 1, maxZoom = 30)) |>
+                    leaflet::addPolygons(
+                      data = shapes,
+                      color = input$colorstroke,
+                      fillColor = input$colorfill,
+                      opacity = 1,
+                      fillOpacity = input$alphacolorfill,
+                      group = "editable"
+                    )
+                } else{
+                  mapp <-
+                    basemap$map@map |>
+                    leaflet::addPolygons(
+                      data = shapes,
+                      color = input$colorstroke,
+                      fillColor = input$colorfill,
+                      opacity = 1,
+                      fillOpacity = input$alphacolorfill,
+                      group = "editable"
+                    )
+                }
 
-                editedpoints <- callModule(editMod, "plotedit",
+                editedpoints <- callModule(editMod, "ploteditimpo",
                                            leafmap = mapp,
                                            targetLayerId = "editable")
 
-                observeEvent(input$editdone,{
-                  if(input$editdone == TRUE){
+                observeEvent(input$editdoneimpo,{
+                  if(input$editdoneimpo == TRUE){
                     if(!is.null(editedpoints()$all)){
 
-                      shapefile[[input$shapenamebuild]]$data <-
+                      shapefile[[input$shapefiletoanalyze]]$data <-
                         editedpoints()$all |>
-                        poorman::select(geometry) |>
                         sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic)) |>
-                        poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(editedpoints()$all), 4)),
-                                        .before = 1)
+                        poorman::select(geometry)
                       output$plotshapedone <- renderLeaflet({
-                        mapp <-
-                          basemap$map +
-                          mapview::mapview(shapefile[[input$shapenamebuild]]$data,
-                                           color = input$colorstroke,
-                                           # col.regions = input$colorfill,
-                                           z.col = "plot_id",
-                                           alpha.regions = input$alphacolorfill,
-                                           legend = FALSE,
-                                           layer.name = "shapes")
+                        if(is.null(basemap$map)){
+                          mapp <-
+                            basemap$map +
+                            mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
+                                             color = input$colorstroke,
+                                             col.regions = input$colorfill,
+                                             alpha.regions = input$alphacolorfill,
+                                             layer.name = "shapes")
+                        } else{
+                          mapp <-
+                            mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
+                                             color = input$colorstroke,
+                                             col.regions = input$colorfill,
+                                             alpha.regions = input$alphacolorfill,
+                                             layer.name = "shapes")
+                        }
                         mapp@map
                       })
                     }
-                    updateMaterialSwitch(session, "editplots", value = FALSE)
+                    updateMaterialSwitch(session, "editplotsimpo", value = FALSE)
                   }
                 })
               }
             })
-
-
-          }
-        }
-        )
-      }
-    })
-
-
-
-    observeEvent(input$import_shapefile, {
-      newshpname <- input$import_shapefile$name
-      # Check if the mosaic already exists in shapefile
-      if (any(newshpname %in% names(shapefile))) {
-        # If it exists, update the existing reactiveValues
-        moname <- newshpname[newshpname %in% names(shapefile)]
-        ask_confirmation(
-          inputId = "confirmashpname",
-          type = "warning",
-          title = "Shapefile already imported",
-          text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported shapefiles. Do you really want to overwrite it?"),
-          btn_labels = c("Nope", "Yep"),
-          btn_colors = c("#FE642E", "#04B404")
-        )
-        observe({
-          if (!is.null(input$confirmashpname)) {
-            if (input$confirmashpname) {
-              if("shp" %in% file_extension(input$import_shapefile$datapath)){
-                shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
-                  create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
-                                                                                             input$import_shapefile,
-                                                                                             session))
-              } else{
-                for (i in 1:length(newshpname)) {
-                  shapefile[[newshpname[[i]]]] <-
-                    create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
-                                                                    input$import_shapefile[[i]],
-                                                                    session))
-                }
-              }
-            } else {
-              return()
-            }
-          }
-        })
-      } else {
-        # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
-        if("shp" %in% file_extension(input$import_shapefile$datapath)){
-          shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
-            create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
-                                                                                       input$import_shapefile,
-                                                                                       session))
-        } else{
-          for (i in 1:length(newshpname)) {
-            shapefile[[newshpname[[i]]]] <-
-              create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
-                                                              input$import_shapefile[[i]],
-                                                              session))
-          }
-        }
-      }
-
-      observe({
-        shapefilenames <-  setdiff(names(shapefile), "shapefile")
-        # Update selectInput choices
-        updateSelectInput(session, "shapefiletoanalyze",
-                          choices = shapefilenames,
-                          selected = shapefilenames[[length(shapefilenames)]])
-      })
-    })
-
-    observe({
-      # Check if a mosaic is selected
-      req(input$shapefiletoanalyze)
-
-      # Get the selected mosaic data
-      selected_shp <- shapefile[[input$shapefiletoanalyze]]
-      # # Check if the selected_mosaic is not NULL and has the 'data' field
-      if ('data' %in% names(selected_shp)) {
-        shapefile$shapefile <- selected_shp$data
-      }
-    })
-
-
-
-    observe({
-      req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
-
-      updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))
-      if(!is.null(mosaic_data$mosaic)){
-        if(sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic)){
-          sendSweetAlert(
-            session = session,
-            title = "Invalid CRS",
-            text = "The Coordinate Reference System (CRS) of the shapefile does
-            not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
-            type = "warning"
-          )
-          shp <- shapefile$shapefile |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
-          shapefile$shapefile <- shp
-        }
-      }
-      output$shapefile_mapview <- renderLeaflet({
-        if(is.null(basemap$map)){
-          if(ncol(shapefile$shapefile) ==1){
-            mapp <- mapview::mapview(shapefile$shapefile, layer.name = "shapes")
-          } else{
-            req(input$colorshapeimport)
-
-            mapp <- mapview::mapview(shapefile$shapefile,
-                                     zcol = input$colorshapeimport,
-                                     color = input$colorstroke,
-                                     # col.regions = input$colorfill,
-                                     alpha.regions = input$alphacolorfill,
-                                     layer.name = "shapes")
-          }
-        } else{
-          if(ncol(shapefile$shapefile) ==1){
-            mapp <-
-              basemap$map +
-              mapview::mapview(shapefile$shapefile,
-                               color = input$colorstroke,
-                               col.regions = input$colorfill,
-                               alpha.regions = input$alphacolorfill,
-                               layer.name = "shapes")
-
-          } else{
-            req(input$colorshapeimport)
-            mapp <-
-              basemap$map +
-              mapview::mapview(shapefile$shapefile,
-                               zcol = input$colorshapeimport,
-                               color = input$colorstroke,
-                               alpha.regions = input$alphacolorfill,
-                               layer.name = "shapes")
-          }
-        }
-        mapp@map
-      })
-      observeEvent(c(input$editplots, !input$editdoneimpo),{
-        if(input$editplots == TRUE){
-          shapes <-
-            shapefile[[input$shapefiletoanalyze]]$data |>
-            poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapefiletoanalyze]]$data),
-                            feature_type = "polygon") |>
-            poorman::relocate(geometry, .after = 2) |>
-            sf::st_transform(crs = 4326)
-
-          if(is.null(basemap$map)){
-            mapp <-
-              leaflet::leaflet() |>
-              addTiles(options = tileOptions(minZoom = 1, maxZoom = 30)) |>
-              leaflet::addPolygons(
-                data = shapes,
-                color = input$colorstroke,
-                fillColor = input$colorfill,
-                opacity = 1,
-                fillOpacity = input$alphacolorfill,
-                group = "editable"
-              )
-          } else{
-            mapp <-
-              basemap$map@map |>
-              leaflet::addPolygons(
-                data = shapes,
-                color = input$colorstroke,
-                fillColor = input$colorfill,
-                opacity = 1,
-                fillOpacity = input$alphacolorfill,
-                group = "editable"
-              )
-          }
-
-
-          editedpoints <- callModule(editMod, "ploteditimpo",
-                                     leafmap = mapp,
-                                     targetLayerId = "editable")
-
-          observeEvent(input$editdoneimpo,{
-            if(input$editdoneimpo == TRUE){
-              if(!is.null(editedpoints()$all)){
-
-                shapefile[[input$shapefiletoanalyze]]$data <- editedpoints()$all |> poorman::select(geometry)
-                output$plotshapedone <- renderLeaflet({
-                  if(is.null(basemap$map)){
-                    mapp <-
-                      basemap$map +
-                      mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
-                                       color = input$colorstroke,
-                                       col.regions = input$colorfill,
-                                       alpha.regions = input$alphacolorfill,
-                                       layer.name = "shapes")
-                  } else{
-                    mapp <-
-                      mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
-                                       color = input$colorstroke,
-                                       col.regions = input$colorfill,
-                                       alpha.regions = input$alphacolorfill,
-                                       layer.name = "shapes")
-                  }
-                  mapp@map
-                })
-              }
-            }
           })
         }
       })
-
-
     })
-
-
 
     mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefile))
 
