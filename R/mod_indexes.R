@@ -125,6 +125,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                            events = list("oncomplete"=I('alert("Hope it helped!")'))))
 
     observeEvent(input$mosaicinfoindex, {
+      req(mosaic_data$mosaic)
       mosaic_info(mosaic_data$mosaic)
     })
 
