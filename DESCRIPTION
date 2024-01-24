@@ -8,8 +8,10 @@ License: MIT + file LICENSE
 Imports: 
     bs4Dash,
     config (>= 0.3.2),
+    doParallel,
     DT,
     esquisse,
+    foreach,
     ggplot2,
     golem (>= 0.4.1),
     grDevices,
@@ -18,6 +20,7 @@ Imports:
     leafsync,
     mapedit,
     mapview (>= 2.11.2),
+    parallel,
     pliman,
     plotly,
     poorman,

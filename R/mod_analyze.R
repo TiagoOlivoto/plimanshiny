@@ -36,7 +36,7 @@ mod_analyze_ui <- function(id){
                            status = "success")
               )
             ),
-           hl(),
+            hl(),
             divclass("anal1",
                      pickerInput(
                        inputId = ns("summarizefun"),
@@ -54,7 +54,7 @@ mod_analyze_ui <- function(id){
                        value = ""
                      )
             ),
-           hl(),
+            hl(),
             h3("Settings"),
             fluidRow(
               col_6(
@@ -82,6 +82,28 @@ mod_analyze_ui <- function(id){
                            label = "Analysis by shape?",
                            value = FALSE,
                            status = "success"
+                         ),
+                         conditionalPanel(
+                           condition = "input.byplot == true",  ns = ns,
+                           fluidRow(
+                             col_7(
+                               switchInput(
+                                 inputId = ns("parallelanalysis"),
+                                 label = "Parallel",
+                                 onLabel = "Yes",
+                                 offLabel = "No",
+                                 labelWidth = "80px"
+                               )
+                             ),
+                             col_5(
+                               conditionalPanel(
+                                 condition = "input.parallelanalysis == true",  ns = ns,
+                                 numericInput(ns("numworkers"),
+                                              label = "Clusters",
+                                              value = NULL)
+                               )
+                             )
+                           )
                          )
                 )
               ),
@@ -179,7 +201,7 @@ mod_analyze_ui <- function(id){
                     )
                   )
                 ),
-               hl(),
+                hl(),
                 h4("Handling noises"),
                 fluidRow(
                   divclass("anal11",
@@ -236,7 +258,7 @@ mod_analyze_ui <- function(id){
                 )
               )
             ),
-           hl(),
+            hl(),
           ),
           tabPanel(
             title = "Configure the output",
@@ -248,7 +270,7 @@ mod_analyze_ui <- function(id){
               style = "color: white ; background-color: #dd4b39",
               class = "btn-danger"
             ),
-           hl(),
+            hl(),
             divclass("out1",
                      pickerInput(
                        inputId = ns("summarizefunoutput"),
@@ -287,7 +309,7 @@ mod_analyze_ui <- function(id){
                 )
               )
             ),
-           hl(),
+            hl(),
             h3("Export the results"),
             divclass("out4",
                      mod_download_shapefile_ui(ns("downresplot"), label = "Plot results")
@@ -298,7 +320,7 @@ mod_analyze_ui <- function(id){
                        mod_download_shapefile_ui(ns("downresindiv"), label = "Individual results")
               )
             ),
-           hl(),
+            hl(),
             h3("Assign output to the R environment"),
             fluidRow(
               col_4(
@@ -378,7 +400,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
           ),
           tabPanel(
             title = "Mosaic and shapefile",
-              uiOutput(ns("baseshapeindex")) |> add_spinner()
+            uiOutput(ns("baseshapeindex")) |> add_spinner()
           ),
           tabPanel(
             title = "Summary",
@@ -526,6 +548,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
         req(index$index)
         updateSelectInput(session, "segmentindex", choices = names(index$index))
       }
+      availablecl <- parallel::detectCores()
+      updateNumericInput(session, "numworkers", value = round(availablecl * 0.5), max = availablecl - 2)
     })
 
     output$baseshapeindex <- renderUI({
@@ -541,22 +565,23 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
     })
 
     output$previousdensity <- renderPlot({
-        layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-        ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
-        output$previoussegment <- renderPlot({
-          if(input$invertindex){
-            maskplot <- index$index[[layer]] < ots
-          } else{
-            maskplot <- index$index[[layer]] > ots
-          }
-          terra::plot(maskplot)
-        })
-        terra::density(index$index[[layer]],
-                       main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
-        abline(v = ots,
-               col = "red",
-               lty = 2,
-        )
+      req(index$index)
+      layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
+      ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
+      output$previoussegment <- renderPlot({
+        if(input$invertindex){
+          maskplot <- index$index[[layer]] < ots
+        } else{
+          maskplot <- index$index[[layer]] > ots
+        }
+        terra::plot(maskplot)
+      })
+      terra::density(index$index[[layer]],
+                     main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
+      abline(v = ots,
+             col = "red",
+             lty = 2,
+      )
     })
 
     # Analyze
@@ -635,7 +660,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
           waiter_show(
             html = tagList(
               spin_google(),
-              "Analyzing the mosaic. Please, wait."
+              h2("Analyzing the mosaic. Please, wait.")
             ),
             color = "#228B227F"
           )
@@ -664,46 +689,115 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
                            topn_upper = topn_upper,
                            verbose = FALSE)
         } else{
-          # Analyze the mosaic by plot
-          bind <- list()
-          progressSweetAlert(
-            session = session, id = "myprogress",
-            title = "Start",
-            display_pct = TRUE,
-            value = 0,
-            total = nrow(shapefile$shapefile)
-          )
-          for (i in 1:nrow(shapefile$shapefile)) {
-            updateProgressBar(
-              session = session,
-              id = "myprogress",
-              value = i,
-              title = paste0("Working in progress, Please, wait."),
+          if(!input$parallelanalysis){
+            # Analyze the mosaic by plot
+            bind <- list()
+            progressSweetAlert(
+              session = session, id = "myprogress",
+              title = "Start",
+              display_pct = TRUE,
+              value = 0,
               total = nrow(shapefile$shapefile)
             )
+            for (i in 1:nrow(shapefile$shapefile)) {
+              updateProgressBar(
+                session = session,
+                id = "myprogress",
+                value = i,
+                title = paste0("Working in progress, Please, wait."),
+                total = nrow(shapefile$shapefile)
+              )
 
-            bind[[paste0("P", leading_zeros(i, 4))]] <-
-              mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
-                             indexes = terra::crop(index$index, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
-                             shapefile = shapefile$shapefile[i, ],
-                             segment_plot = input$segmentplot,
-                             segment_individuals = input$segmentindividuals,
-                             segment_index = indcomp,
-                             watershed = input$watershed,
-                             tolerance = input$tolerance,
-                             extension = input$extension,
-                             invert = input$invertindex,
-                             summarize_fun = input$summarizefun,
-                             summarize_quantiles = quantiles,
-                             include_if = input$includeif,
-                             threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
-                             filter = ifelse(input$filter, input$filterval, FALSE),
-                             lower_noise = input$lower_noise,
-                             lower_size = lower_size,
-                             upper_size = upper_size,
-                             topn_lower = topn_lower,
-                             topn_upper = topn_upper,
-                             verbose = FALSE)
+              bind[[paste0("P", leading_zeros(i, 4))]] <-
+                mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
+                               indexes = terra::crop(index$index, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
+                               plot = FALSE,
+                               shapefile = shapefile$shapefile[i, ],
+                               segment_plot = input$segmentplot,
+                               segment_individuals = input$segmentindividuals,
+                               segment_index = indcomp,
+                               watershed = input$watershed,
+                               tolerance = input$tolerance,
+                               extension = input$extension,
+                               invert = input$invertindex,
+                               summarize_fun = input$summarizefun,
+                               summarize_quantiles = quantiles,
+                               include_if = input$includeif,
+                               threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
+                               filter = ifelse(input$filter, input$filterval, FALSE),
+                               lower_noise = input$lower_noise,
+                               lower_size = lower_size,
+                               upper_size = upper_size,
+                               topn_lower = topn_lower,
+                               topn_upper = topn_upper,
+                               verbose = FALSE)
+            }
+          } else{
+
+
+            req(input$numworkers)
+            cl <- parallel::makeCluster(input$numworkers)
+            doParallel::registerDoParallel(cl)
+            on.exit(parallel::stopCluster(cl))
+
+            waiter_show(
+              html = tagList(
+                spin_google(),
+                h2(paste0("Analyzing the mosaic using parallel processing (",input$numworkers ,"). Please, wait."))
+              ),
+              color = "#228B227F"
+            )
+
+            ## declare alias for dopar command
+            `%dopar%` <- foreach::`%dopar%`
+            tmpterra <- tempdir()
+            mosaic_export(mosaic_data$mosaic, paste0(tmpterra, "/tmpraster.tif"), overwrite = TRUE)
+            mosaic_export(index$index, paste0(tmpterra, "/tmpindex.tif"), overwrite = TRUE)
+            shp <- reactive(shapefile$shapefile)()
+            segment_plot <- input$segmentplot
+            segment_individuals <- input$segmentindividuals
+            segmentplot <- input$segmentplot
+            watershed <- input$watershed
+            tolerance <- input$tolerance
+            extension <- input$extension
+            invert <- input$invertindex
+            summarize_fun <- input$summarizefun
+            summarize_quantiles <- quantiles
+            include_if <- input$includeif
+            threshold <- ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue)
+            filter <- ifelse(input$filter, input$filterval, FALSE)
+            lower_noise <- input$lower_noise
+
+            bind <-
+              foreach::foreach(i = 1:nrow(shp),
+                               .packages = c("pliman")) %dopar%{
+                                   mosaic_analyze(terra::crop(mosaic_input(paste0(tmpterra, "/tmpraster.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext()),
+                                                  indexes = terra::crop(mosaic_input(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext()),
+                                                  plot = FALSE,
+                                                  shapefile = shp[i, ],
+                                                  segment_plot = segment_plot,
+                                                  segment_individuals = segment_individuals,
+                                                  segment_index = indcomp,
+                                                  watershed = watershed,
+                                                  tolerance = tolerance,
+                                                  extension = extension,
+                                                  invert = invert,
+                                                  summarize_fun = summarize_fun,
+                                                  summarize_quantiles = summarize_quantiles,
+                                                  include_if = include_if,
+                                                  threshold = threshold,
+                                                  filter = filter,
+                                                  lower_noise = lower_noise,
+                                                  lower_size = lower_size,
+                                                  upper_size = upper_size,
+                                                  topn_lower = topn_lower,
+                                                  topn_upper = topn_upper,
+                                                  verbose = FALSE)
+                               }
+
+            req(bind)
+            names(bind) <- paste0("P", leading_zeros(1:length(bind), 4))
+
           }
 
 
