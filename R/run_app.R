@@ -7,7 +7,9 @@
 #' @importFrom golem with_golem_options
 #' @importFrom plotly ggplotly renderPlotly plotlyOutput
 #' @importFrom shiny shinyApp
-#' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach
 #' @rawNamespace import(bs4Dash, except = c(progressBar, insertTab, actionButton, updateTabsetPanel, column, tabsetPanel, tabPanel, navbarMenu))
 #' @rawNamespace import(terra, except = c(panel, shift, distance))
 #' @rawNamespace import(leaflet.extras2, except = c(menuItem, addSpinner))

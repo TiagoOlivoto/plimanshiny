@@ -27,6 +27,25 @@ mod_plotclip_ui <- function(id){
           selectInput(ns("uniqueid"),
                       label = "Unique ID",
                       choices = NULL),
+          fluidRow(
+            col_7(
+              switchInput(
+                inputId = ns("clipinparallel"),
+                label = "Parallel",
+                onLabel = "Yes",
+                offLabel = "No",
+                labelWidth = "80px"
+              )
+            ),
+            col_5(
+              conditionalPanel(
+                condition = "input.clipinparallel == true",  ns = ns,
+                numericInput(ns("numworkersclip"),
+                             label = "Clusters",
+                             value = NULL)
+              )
+            )
+          ),
           hl(),
           h3("Output"),
           shinyDirButton(id=ns("folderclip"),
@@ -106,9 +125,11 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
       updateSelectInput(session, "mosaic_to_clip", choices = setdiff(names(mosaic_data), "mosaic"), selected = input$mosaic_to_clip)
       updateSelectInput(session, "shape_to_clip", choices = setdiff(names(shapefile), "shapefile"))
       updateTextInput(session, "new_mask", value = paste0(input$mosaic_to_clip, "_masked"))
+      availablecl <- parallel::detectCores()
+      updateNumericInput(session, "numworkersclip", value = round(availablecl * 0.5), max = availablecl - 2)
     })
 
-    volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), getVolumes()())
+    volumes <- c("R Installation" = R.home(), getVolumes()())
     shinyDirChoose(input, "folderclip",
                    roots = volumes,
                    session = session,
@@ -118,13 +139,13 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
     # Observe event for mosaic crop action
     observeEvent(input$startclip, {
 
-
       sendSweetAlert(
         session = session,
         title = "Clipping plots",
         text = "First, choose an output directory to save the clipped plots. Select an Unique ID column to name the images, then click on 'Clip plots'",
         type = "info"
       )
+      req(input$mosaic_to_clip)
       shptocrop <- shapefile[[input$shape_to_clip]]$data
       mosaictocrop <- mosaic_data[[input$mosaic_to_clip]]$data
       req(shptocrop)
@@ -159,33 +180,68 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
             type = "error"
           )
         } else{
-
-          req(input$uniqueid)
-          progressSweetAlert(
-            session = session, id = "myprogressclip",
-            title = "Start",
-            display_pct = TRUE,
-            value = 0,
-            total = nrow(shptocrop)
-          )
-          for(i in 1:nrow(shptocrop)){
-            updateProgressBar(
-              session = session,
-              id = "myprogressclip",
-              value = i,
-              title = paste0("Working in progress, Please, wait."),
+          if(!input$clipinparallel){
+            req(input$uniqueid)
+            progressSweetAlert(
+              session = session, id = "myprogressclip",
+              title = "Start",
+              display_pct = TRUE,
+              value = 0,
               total = nrow(shptocrop)
             )
-            shptemp <- shptocrop[i, ]
-            ncolid <- which(colnames(shptemp) == input$uniqueid)
-            shpname <- shptemp |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
-            mosaictmp <- terra::crop(mosaictocrop, shptemp) |> terra::mask(shptemp)
-            terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, input$clipformat), overwrite=TRUE)
+            for(i in 1:nrow(shptocrop)){
+              updateProgressBar(
+                session = session,
+                id = "myprogressclip",
+                value = i,
+                title = paste0("Working in progress, Please, wait."),
+                total = nrow(shptocrop)
+              )
+              shptemp <- shptocrop[i, ]
+              ncolid <- which(colnames(shptemp) == input$uniqueid)
+              shpname <- shptemp |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
+              mosaictmp <- terra::crop(mosaictocrop, shptemp) |> terra::mask(shptemp)
+              terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, input$clipformat), overwrite=TRUE)
 
+            }
+          } else{
+            req(input$numworkersclip)
+            cl <- parallel::makeCluster(input$numworkersclip)
+            doParallel::registerDoParallel(cl)
+            on.exit(parallel::stopCluster(cl))
+
+            waiter_show(
+              html = tagList(
+                spin_google(),
+                h2(paste0("Clipping plots using parallel processing in multiple sessions (",input$numworkersclip ,"). Please, wait."))
+              ),
+              color = "#228B227F"
+            )
+
+            ## declare alias for dopar command
+            `%dopar%` <- foreach::`%dopar%`
+            uniqueid <- input$uniqueid
+            shptocrop <- shapefile[[input$shape_to_clip]]$data
+            req(shptocrop)
+            tmpterra <- tempdir()
+            mosaic_export(mosaictocrop, paste0(tmpterra, "/tmpclip.tif"), overwrite = TRUE)
+            format <- input$clipformat
+
+            foreach::foreach(i = 1:nrow(shptocrop),
+                             .packages = c("terra")) %dopar%{
+                               shptemp <- shptocrop[i, ]
+                               ncolid <- which(colnames(shptemp) == uniqueid)
+                               shpname <- shptemp |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
+                               mosaictmp <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpclip.tif")), shptemp) |> terra::mask(shptemp)
+                               terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, format), overwrite=TRUE)
+                             }
           }
+
+
           filestoremove <- list.files(diroutput, pattern = "png.aux")
           # print(filestoremove)
           file.remove(paste0(diroutput, "/", filestoremove))
+          waiter_hide()
 
           sendSweetAlert(
             session = session,

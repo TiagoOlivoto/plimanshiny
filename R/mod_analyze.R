@@ -743,7 +743,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             waiter_show(
               html = tagList(
                 spin_google(),
-                h2(paste0("Analyzing the mosaic using parallel processing (",input$numworkers ,"). Please, wait."))
+                h2(paste0("Analyzing the mosaic using parallel processing in multiple sessions (",input$numworkers ,"). Please, wait."))
               ),
               color = "#228B227F"
             )
