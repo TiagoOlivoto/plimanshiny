@@ -197,7 +197,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           waiter_show(
             html = tagList(
               spin_google(),
-              "Computing the indexes. Please, wait."
+              h2("Computing the indexes. Please, wait.")
             ),
             color = "#228B227F"
           )

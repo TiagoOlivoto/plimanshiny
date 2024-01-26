@@ -48,7 +48,7 @@ mod_download_mosaic_server <- function(id, data, name = "mosaic") {
               type = "error"
             )
           }else{
-            terra::writeRaster(data, file, gdal=c("COMPRESS=LZW"))
+            terra::writeRaster(data, file, gdal=c("COMPRESS=DEFLATE"))
           }
         }
       )

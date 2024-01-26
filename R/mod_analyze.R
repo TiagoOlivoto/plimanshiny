@@ -147,6 +147,16 @@ mod_analyze_ui <- function(id){
                                animation = "rotate"
                              )
                     ),
+                    divclass("anal7",
+                             prettyCheckbox(
+                               inputId = ns("simplify"),
+                               label = "Simplify",
+                               value = FALSE,
+                               icon = icon("check"),
+                               status = "success",
+                               animation = "rotate"
+                             )
+                    ),
                     divclass("anal8",
                              prettyCheckbox(
                                inputId = ns("invertindex"),
@@ -359,7 +369,7 @@ helpout <-
 #' analyze Server Functions
 #'
 #' @noRd
-mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
+mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathmosaic){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -545,48 +555,62 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
         updateMaterialSwitch(session, "segmentindividuals", value = FALSE)
       }
       if(input$segmentplot | input$segmentindividuals){
-        req(index$index)
-        updateSelectInput(session, "segmentindex", choices = names(index$index))
+        if(input$byplot){
+          if(is.null(index$index)){
+            updateSelectInput(session, "segmentindex", choices = pliman_indexes())
+          } else{
+
+          }
+        } else{
+          req(index$index)
+          updateSelectInput(session, "segmentindex", choices = names(index$index))
+        }
+
       }
       availablecl <- parallel::detectCores()
-      updateNumericInput(session, "numworkers", value = round(availablecl * 0.5), max = availablecl - 2)
+      updateNumericInput(session, "numworkers", value = round(availablecl * 0.4), max = availablecl - 2)
+
     })
 
     output$baseshapeindex <- renderUI({
-      req(index$index)  # Ensure mosaic_data$mosaic is not NULL
-      req(mosaic_data$mosaic)
-      req(basemap$map)
-      req(shapefile$shapefile)
-      req(input$segmentindex)
-      layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-      m1 <-  basemap$map + mapview::mapview(shapefile$shapefile, z.col = "plot_id", legend = FALSE)
-      m2 <- mosaic_view(index$index[[layer]], show = "index")
-      leafsync::sync(m1@map, m2)
+      if(!input$byplot){
+        req(index$index)  # Ensure mosaic_data$mosaic is not NULL
+        req(mosaic_data$mosaic)
+        req(basemap$map)
+        req(shapefile$shapefile)
+        req(input$segmentindex)
+        layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
+        m1 <-  basemap$map + mapview::mapview(shapefile$shapefile, z.col = "plot_id", legend = FALSE)
+        m2 <- mosaic_view(index$index[[layer]], show = "index")
+        leafsync::sync(m1@map, m2)
+      }
     })
 
     output$previousdensity <- renderPlot({
-      req(index$index)
-      layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-      ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
-      output$previoussegment <- renderPlot({
-        if(input$invertindex){
-          maskplot <- index$index[[layer]] < ots
-        } else{
-          maskplot <- index$index[[layer]] > ots
-        }
-        terra::plot(maskplot)
-      })
-      terra::density(index$index[[layer]],
-                     main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
-      abline(v = ots,
-             col = "red",
-             lty = 2,
-      )
+      if(!input$byplot){
+        req(index$index)
+        layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
+        ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
+        output$previoussegment <- renderPlot({
+          if(input$invertindex){
+            maskplot <- index$index[[layer]] < ots
+          } else{
+            maskplot <- index$index[[layer]] > ots
+          }
+          terra::plot(maskplot)
+        })
+        terra::density(index$index[[layer]],
+                       main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
+        abline(v = ots,
+               col = "red",
+               lty = 2,
+        )
+      }
     })
 
     # Analyze
     observeEvent(input$analyzemosaic, {
-      if(is.null(index$index) | is.null(mosaic_data$mosaic) | is.null(basemap$map) | is.null(shapefile$shapefile)){
+      if(c(!input$byplot & is.null(index$index)) | is.null(mosaic_data$mosaic) | is.null(basemap$map) | is.null(shapefile$shapefile)){
         sendSweetAlert(
           session = session,
           title = "Did you skip any steps?",
@@ -594,10 +618,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
           type = "error"
         )
       }
-      req(index$index)  # Ensure mosaic_data$mosaic is not NULL
-      req(mosaic_data$mosaic)
-      req(basemap$map)
-      req(shapefile$shapefile)
+
       t1 <- !is.na(input$lower_size) & !is.na(input$topn_lower)
       if(t1){
         sendSweetAlert(
@@ -657,6 +678,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
       if(!t1 & !t2){
 
         if(!input$byplot){
+          req(index$index)  # Ensure mosaic_data$mosaic is not NULL
+          req(mosaic_data$mosaic)
+          req(basemap$map)
+          req(shapefile$shapefile)
           waiter_show(
             html = tagList(
               spin_google(),
@@ -672,6 +697,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
                            plot = FALSE,
                            segment_plot = input$segmentplot,
                            segment_individuals = input$segmentindividuals,
+                           simplify = input$simplify,
                            segment_index = indcomp,
                            watershed = input$watershed,
                            tolerance = input$tolerance,
@@ -699,6 +725,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
               value = 0,
               total = nrow(shapefile$shapefile)
             )
+            if(!is.null(index$index)){
+              indexnull <- FALSE
+            } else{
+              indexnull <- TRUE
+            }
             for (i in 1:nrow(shapefile$shapefile)) {
               updateProgressBar(
                 session = session,
@@ -707,14 +738,19 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
                 title = paste0("Working in progress, Please, wait."),
                 total = nrow(shapefile$shapefile)
               )
-
+              if(indexnull){
+                indexes <- NULL
+              } else{
+                indexes <- terra::crop(index$index, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext())
+              }
               bind[[paste0("P", leading_zeros(i, 4))]] <-
                 mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
-                               indexes = terra::crop(index$index, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
+                               indexes = indexes,
                                plot = FALSE,
                                shapefile = shapefile$shapefile[i, ],
                                segment_plot = input$segmentplot,
                                segment_individuals = input$segmentindividuals,
+                               simplify = input$simplify,
                                segment_index = indcomp,
                                watershed = input$watershed,
                                tolerance = input$tolerance,
@@ -734,12 +770,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             }
           } else{
 
-
             req(input$numworkers)
             cl <- parallel::makeCluster(input$numworkers)
             doParallel::registerDoParallel(cl)
-            on.exit(parallel::stopCluster(cl))
-
             waiter_show(
               html = tagList(
                 spin_google(),
@@ -751,8 +784,18 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             ## declare alias for dopar command
             `%dopar%` <- foreach::`%dopar%`
             tmpterra <- tempdir()
-            mosaic_export(mosaic_data$mosaic, paste0(tmpterra, "/tmpraster.tif"), overwrite = TRUE)
-            mosaic_export(index$index, paste0(tmpterra, "/tmpindex.tif"), overwrite = TRUE)
+            if(!is.null(index$index)){
+              mosaic_export(index$index, paste0(tmpterra, "/tmpindex.tif"), overwrite = TRUE)
+              indexnull <- FALSE
+            } else{
+              indexnull <- TRUE
+            }
+            on.exit({
+              parallel::stopCluster(cl)
+              if(!is.null(index$index)){
+                file.remove(paste0(tmpterra, "/tmpindex.tif"))
+              }
+            })
             shp <- reactive(shapefile$shapefile)()
             segment_plot <- input$segmentplot
             segment_individuals <- input$segmentindividuals
@@ -767,32 +810,40 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index){
             threshold <- ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue)
             filter <- ifelse(input$filter, input$filterval, FALSE)
             lower_noise <- input$lower_noise
+            simplify <- input$simplify
+            pathmosaic <- pathmosaic$path
 
             bind <-
               foreach::foreach(i = 1:nrow(shp),
                                .packages = c("pliman")) %dopar%{
-                                   mosaic_analyze(terra::crop(mosaic_input(paste0(tmpterra, "/tmpraster.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext()),
-                                                  indexes = terra::crop(mosaic_input(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext()),
-                                                  plot = FALSE,
-                                                  shapefile = shp[i, ],
-                                                  segment_plot = segment_plot,
-                                                  segment_individuals = segment_individuals,
-                                                  segment_index = indcomp,
-                                                  watershed = watershed,
-                                                  tolerance = tolerance,
-                                                  extension = extension,
-                                                  invert = invert,
-                                                  summarize_fun = summarize_fun,
-                                                  summarize_quantiles = summarize_quantiles,
-                                                  include_if = include_if,
-                                                  threshold = threshold,
-                                                  filter = filter,
-                                                  lower_noise = lower_noise,
-                                                  lower_size = lower_size,
-                                                  upper_size = upper_size,
-                                                  topn_lower = topn_lower,
-                                                  topn_upper = topn_upper,
-                                                  verbose = FALSE)
+                                 if(indexnull){
+                                   indexes <- NULL
+                                 } else{
+                                   indexes <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext())
+                                 }
+                                 mosaic_analyze(terra::crop(mosaic_input(pathmosaic), terra::vect(shp$geometry[[i]]) |> terra::ext()),
+                                                indexes = indexes,
+                                                plot = FALSE,
+                                                shapefile = shp[i, ],
+                                                segment_plot = segment_plot,
+                                                segment_individuals = segment_individuals,
+                                                simplify = simplify,
+                                                segment_index = indcomp,
+                                                watershed = watershed,
+                                                tolerance = tolerance,
+                                                extension = extension,
+                                                invert = invert,
+                                                summarize_fun = summarize_fun,
+                                                summarize_quantiles = summarize_quantiles,
+                                                include_if = include_if,
+                                                threshold = threshold,
+                                                filter = filter,
+                                                lower_noise = lower_noise,
+                                                lower_size = lower_size,
+                                                upper_size = upper_size,
+                                                topn_lower = topn_lower,
+                                                topn_upper = topn_upper,
+                                                verbose = FALSE)
                                }
 
             req(bind)

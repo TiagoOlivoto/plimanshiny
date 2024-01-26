@@ -164,7 +164,7 @@ helpmo <-
 #' mosaic_prepare Server Functions
 #'
 #' @noRd
-mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap) {
+mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, pathmosaic) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     observeEvent(input$guidemosaic, introjs(session,
@@ -186,6 +186,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
 
     observeEvent(input$import_mosaic, {
       new_mosaic_name <- input$import_mosaic$name
+      pathmosaic$path <- input$import_mosaic$datapath
       # Check if the mosaic already exists in mosaic_data
       if (any(new_mosaic_name %in% names(mosaic_data))) {
         # If it exists, update the existing reactiveValues

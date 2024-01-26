@@ -18,17 +18,18 @@ app_server <- function(input, output, session) {
   basemap <- reactiveValues(map = NULL)
   bmap <- reactiveValues(map = NULL)
   index <- reactiveValues(index = NULL)
+  pathmosaic <- reactiveValues(path = NULL)
 
 
   # Call the import mosaic module
-  mod_mosaic_prepare_server("mosaic_prepare_1", mosaic_data, r, g, b, re, nir, basemap)
+  mod_mosaic_prepare_server("mosaic_prepare_1", mosaic_data, r, g, b, re, nir, basemap, pathmosaic)
   # shapefile
 
   shapefile <- reactiveValues()
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
 
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index)
-  mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index)
+  mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic)
 
 
 
