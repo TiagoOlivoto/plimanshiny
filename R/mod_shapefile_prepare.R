@@ -110,43 +110,57 @@ mod_shapefile_prepare_ui <- function(id){
                    textInput(ns("shapenamebuild"),
                              label = "Shapefile Name",
                              value = "Shapefile Build"),
-                   prettyCheckbox(
-                     inputId = ns("buildshapefile"),
-                     label = "Define the control points",
-                     value = TRUE,
-                     status = "info",
-                     icon = icon("thumbs-up"),
-                     plain = TRUE,
-                     outline = TRUE,
-                     animation = "rotate"
+                   fluidRow(
+                     col_6(
+                       prettyCheckbox(
+                         inputId = ns("buildshapefile"),
+                         label = "Control points",
+                         value = TRUE,
+                         status = "info",
+                         icon = icon("thumbs-up"),
+                         plain = TRUE,
+                         outline = TRUE,
+                         animation = "rotate"
+                       )
+                     ),
+                     col_6(
+                       prettyCheckbox(
+                         inputId = ns("buildblocks"),
+                         label = "Blocks",
+                         value = FALSE,
+                         status = "info",
+                         icon = icon("thumbs-up"),
+                         plain = TRUE,
+                         outline = TRUE,
+                         animation = "rotate"
+                       )
+                     )
                    ),
                    fluidRow(
                      col_6(
-                       numericInput(ns("ncols"),
-                                    label = "Number of columns",
-                                    value = 1)
+                       textInput(ns("ncols"),
+                                 label = "Number of columns",
+                                 value = 1)
                      ),
                      col_6(
-                       numericInput(ns("nrows"),
-                                    label = "Number of rows",
-                                    value = 1)
+                       textInput(ns("nrows"),
+                                 label = "Number of rows",
+                                 value = 1)
                      )
                    )
           ),
           divclass("shape4",
-                   sliderInput(ns("buffercol"),
-                               label = "Column buffer",
-                               value = 0,
-                               min = -0.5,
-                               max = 0.5,
-                               step = 0.01
-                   ),
-                   sliderInput(ns("bufferrow"),
-                               label = "Row buffer",
-                               value = 0,
-                               min = -0.5,
-                               max = 0.5,
-                               step = 0.01
+                   fluidRow(
+                     col_6(
+                       textInput(ns("buffercol"),
+                                 label = "Column buffer",
+                                 value = 0)
+                     ),
+                     col_6(
+                       textInput(ns("bufferrow"),
+                                 label = "Row buffer",
+                                 value = 0)
+                     )
                    )
           ),
           divclass("shape5",
@@ -339,10 +353,10 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 shp <- shapefile_build(mosaic_data$mosaic,
                                        basemap,
                                        controlpoints = cpo,
-                                       nrow = input$nrows,
-                                       ncol = input$ncols,
-                                       buffer_col = input$buffercol,
-                                       buffer_row = input$bufferrow,
+                                       nrow = input$nrows |> chrv2numv(),
+                                       ncol = input$ncols |> chrv2numv(),
+                                       buffer_col = input$buffercol |> chrv2numv(),
+                                       buffer_row = input$bufferrow |> chrv2numv(),
                                        verbose = FALSE)
 
                 # Update the reactiveVal with the cropped mosaic
@@ -362,28 +376,53 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           })
 
           output$createdshapes <- renderLeaflet({
-            nelem <- length(createdshape$shp)
-            mapp <-
-              basemap$map +
-              mapview::mapview(createdshape$shp[[nelem]],
-                               color = input$colorstroke,
-                               col.regions = input$colorfill,
-                               alpha.regions = input$alphacolorfill,
-                               layer.name = "shapes")
+            if(input$buildblocks){
+              mapp <-
+                basemap$map +
+                mapview::mapview(createdshape$shp,
+                                 color = input$colorstroke,
+                                 col.regions = input$colorfill,
+                                 alpha.regions = input$alphacolorfill,
+                                 layer.name = "shapes")
+            } else{
+              nelem <- length(createdshape$shp)
+              mapp <-
+                basemap$map +
+                mapview::mapview(createdshape$shp[[nelem]],
+                                 color = input$colorstroke,
+                                 col.regions = input$colorfill,
+                                 alpha.regions = input$alphacolorfill,
+                                 layer.name = "shapes")
+            }
+
             mapp@map
           })
 
           observeEvent(input$shapedone,{
-            nelem <- length(createdshape$shp)
-            req(createdshape$shp[[nelem]])
+
             req(input$shapenamebuild)
             observe({
-              shapefile[[input$shapenamebuild]] <-
-                create_reactval(input$shapenamebuild,
-                                createdshape$shp[[nelem]] |>
-                                  poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
-                                                  .before = 1)
-                )
+              if(input$buildblocks){
+                req(createdshape$shp)
+                createdshape$shp <-
+                  lapply(seq_along(createdshape$shp), function(i){
+                    createdshape$shp[[i]] |>
+                      poorman::mutate(block = paste0("B", leading_zeros(i, 2)),
+                                      plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[i]]), 4)),
+                                      .before = 1)
+                  })
+                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
+              } else{
+                nelem <- length(createdshape$shp)
+                req(createdshape$shp[[nelem]])
+                shapefile[[input$shapenamebuild]] <-
+                  create_reactval(input$shapenamebuild,
+                                  createdshape$shp[[nelem]] |>
+                                    poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                                                    .before = 1)
+                  )
+
+              }
 
 
               observe({

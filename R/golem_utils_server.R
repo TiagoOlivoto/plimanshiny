@@ -223,3 +223,8 @@ mosaic_info <- function(mo){
 create_reactval <- function(name, data) {
   reactiveValues(name = name, data = data)
 }
+
+chrv2numv <- function(chr){
+  as.numeric(gsub("[[:space:]]", "", unlist(strsplit(as.character(chr), split = ','))))
+}
+

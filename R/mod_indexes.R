@@ -55,7 +55,18 @@ mod_indexes_ui <- function(id){
                    ),
                    textInput(ns("myindex"),
                              label = "My personalized index",
-                             value = "")
+                             value = ""),
+                   prettyCheckbox(
+                     inputId = ns("inmemory"),
+                     label = "Compute indexes in memory?",
+                     value = TRUE,
+                     icon = icon("check"),
+                     status = "success",
+                     animation = "rotate"
+                   ),
+                   numericInput(ns("workers"),
+                                label = "Number of workers",
+                                value = 1)
           ),
           actionBttn(
             inputId = ns("computeindex"),
@@ -68,6 +79,9 @@ mod_indexes_ui <- function(id){
           divclass("ind2",
                    selectInput(ns("indextosync"),
                                label = "Index to sync with basemap",
+                               choices = NULL),
+                   selectInput(ns("shapefiletoplot"),
+                               label = "Shapefile",
                                choices = NULL)
           ),
           hl(),
@@ -99,6 +113,11 @@ mod_indexes_ui <- function(id){
             plotOutput(ns("plotindexhist"), height = "720px") |> add_spinner()
           ),
           tabPanel(
+            title = "Plot Index (shapefile)",
+            pickerpalette(id, "palplotindex", selected = "RdYlGn"),
+            leafletOutput(ns("indexshp"), height = "680px")|> add_spinner()
+          ),
+          tabPanel(
             title = "Syncked maps",
             uiOutput(ns("indexsync"))|> add_spinner()
           )
@@ -114,7 +133,7 @@ helpind <-
 #' indexes Server Functions
 #'
 #' @noRd
-mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index){
+mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observeEvent(input$guideindex, introjs(session,
@@ -123,6 +142,12 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                                           "skipLabel"="Skip",
                                                           steps = helpind),
                                            events = list("oncomplete"=I('alert("Hope it helped!")'))))
+
+    observe({
+      updateSelectInput(session, "shapefiletoplot",
+                        choices = c("none", setdiff(names(shapefile), "shapefile")),
+                        selected = "none")
+    })
 
     observeEvent(input$mosaicinfoindex, {
       req(mosaic_data$mosaic)
@@ -208,6 +233,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                     re = as.numeric(re$re),
                                     nir = as.numeric(nir$nir),
                                     index = finalindex(),
+                                    workers = input$workers,
+                                    in_memory = input$inmemory,
                                     plot = FALSE)
           req(indextemp)
           updatePickerInput(session, "indextodownload",
@@ -223,7 +250,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           index$index <- indextemp
           aggr <- find_aggrfact(indextemp)
           if(aggr > 0){
-            magg <- terra::aggregate(indextemp, aggr)
+            magg <- mosaic_aggregate(indextemp, round(100 / aggr))
           } else{
             magg <- indextemp
           }
@@ -251,8 +278,23 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                                           index = input$indextosync))
             }
           })
+          output$indexshp <- renderLeaflet({
+            if (input$indextosync != "") {
+              if(input$shapefiletoplot != "none"){
+                indp <-  terra::mask(magg[[input$indextosync]],
+                                     shapefile[[input$shapefiletoplot]]$data |> shapefile_input(as_sf = FALSE, info = FALSE))
+                # mosaic_view(indp)@map
+                (basemap$map + mosaic_view(indp,
+                                           max_pixels = 3000000,
+                                           downsample_fun = "average",
+                                           show = "index",
+                                           color_regions = return_colors(input$palplotindex)))@map
+              }
+            }
+          })
           indextodownload <- input$indextodownload
           mod_download_mosaic_server("download_indexes", indextemp[[input$indextodownload]], "indexes")
+
         }
       }
     })

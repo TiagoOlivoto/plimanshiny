@@ -28,7 +28,7 @@ app_server <- function(input, output, session) {
   shapefile <- reactiveValues()
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
 
-  mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index)
+  mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index, shapefile)
   mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic)
 
 

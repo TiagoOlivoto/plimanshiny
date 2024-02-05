@@ -21,9 +21,13 @@ mod_aggregate_ui <- function(id){
           selectInput(ns("mosaic_to_aggr"),
                       label = "Mosaic to aggregate",
                       choices = NULL),
+          selectInput(ns("aggregatefun"),
+                      label = "Resampling function",
+                      choices = c('nearest', 'average', 'rms', 'bilinear', 'cubic', 'cubicspline', 'lanczos', 'mode'),
+                      selected = "nearest"),
           numericInput(ns("aggregatefct"),
-                       label = "Aggregation factor",
-                       value = 2),
+                       label = "Fraction of input raster",
+                       value = 50),
           hl(),
           h3("Output"),
           textInput(ns("new_aggr"),
@@ -99,8 +103,11 @@ mod_aggregate_server <- function(id, mosaic_data, r, g, b){
       })
     })
     observeEvent(input$aggregate, {
-      myaggr <- terra::aggregate(mosaic_data[[input$mosaic_to_aggr]]$data,
-                                 fact = input$aggregatefct)
+
+
+      myaggr <- mosaic_aggregate(mosaic_data[[input$mosaic_to_aggr]]$data,
+                                 pct = chrv2numv(input$aggregatefct),
+                                 fun = input$aggregatefun)
       output$mosaicaggr <- renderLeaflet({
         bcrop2 <-
           mosaic_view(

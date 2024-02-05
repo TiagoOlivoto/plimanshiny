@@ -257,7 +257,8 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
             mosaic_data$mosaic,
             r = as.numeric(r$r),
             g = as.numeric(g$g),
-            b = as.numeric(b$b)
+            b = as.numeric(b$b),
+            stretch = "lin"
           )
         }
 
@@ -285,7 +286,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         mosaictmp <- mosaic_data$mosaic
         aggr <- find_aggrfact(mosaictmp)
         if(aggr > 0){
-          magg <- terra::aggregate(mosaictmp, aggr)
+          magg <- mosaic_aggregate(mosaictmp, round(100 / aggr))
         } else{
           magg <- mosaictmp
         }
