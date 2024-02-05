@@ -580,7 +580,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         req(shapefile$shapefile)
         req(input$segmentindex)
         layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-        m1 <-  basemap$map + mapview::mapview(shapefile$shapefile, z.col = "plot_id", legend = FALSE)
+        m1 <-  basemap$map + mapview::mapview(do.call(rbind, lapply(shapefile$shapefile, function(x){x})),
+                                              z.col = "plot_id",
+                                              legend = FALSE)
         m2 <- mosaic_view(index$index[[layer]], show = "index")
         leafsync::sync(m1@map, m2)
       }
@@ -689,6 +691,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             ),
             color = "#228B227F"
           )
+
           res <-
             mosaic_analyze(mosaic = mosaic_data$mosaic,
                            basemap = basemap$map,
@@ -716,6 +719,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                            verbose = FALSE)
         } else{
           if(!input$parallelanalysis){
+            shp <- do.call(rbind,
+                           lapply(shapefile$shapefile, function(x){
+                             x |> poorman::select(geometry)
+                           }))
             # Analyze the mosaic by plot
             bind <- list()
             progressSweetAlert(
@@ -723,31 +730,31 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               title = "Start",
               display_pct = TRUE,
               value = 0,
-              total = nrow(shapefile$shapefile)
+              total = nrow(shp)
             )
             if(!is.null(index$index)){
               indexnull <- FALSE
             } else{
               indexnull <- TRUE
             }
-            for (i in 1:nrow(shapefile$shapefile)) {
+            for (i in 1:nrow(shp)) {
               updateProgressBar(
                 session = session,
                 id = "myprogress",
                 value = i,
                 title = paste0("Working in progress, Please, wait."),
-                total = nrow(shapefile$shapefile)
+                total = nrow(shp)
               )
               if(indexnull){
                 indexes <- NULL
               } else{
-                indexes <- terra::crop(index$index, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext())
+                indexes <- terra::crop(index$index, terra::vect(shp$geometry[[i]]) |> terra::ext())
               }
               bind[[paste0("P", leading_zeros(i, 4))]] <-
-                mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shapefile$shapefile$geometry[[i]]) |> terra::ext()),
+                mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shp$geometry[[i]]) |> terra::ext()),
                                indexes = indexes,
                                plot = FALSE,
-                               shapefile = shapefile$shapefile[i, ],
+                               shapefile = shp[i, ],
                                segment_plot = input$segmentplot,
                                segment_individuals = input$segmentindividuals,
                                simplify = input$simplify,
@@ -796,7 +803,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                 file.remove(paste0(tmpterra, "/tmpindex.tif"))
               }
             })
-            shp <- reactive(shapefile$shapefile)()
+            shp <- reactive(shp)()
             segment_plot <- input$segmentplot
             segment_individuals <- input$segmentindividuals
             segmentplot <- input$segmentplot

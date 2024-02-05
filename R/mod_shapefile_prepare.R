@@ -350,19 +350,28 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               }
               # Check if edits()$finished is not NULL and shapedone is FALSE
               if (!is.null(cpoints()$finished) && !input$shapedone) {
-                shp <- shapefile_build(mosaic_data$mosaic,
-                                       basemap,
-                                       controlpoints = cpo,
-                                       nrow = input$nrows |> chrv2numv(),
-                                       ncol = input$ncols |> chrv2numv(),
-                                       buffer_col = input$buffercol |> chrv2numv(),
-                                       buffer_row = input$bufferrow |> chrv2numv(),
-                                       verbose = FALSE)
-
-                # Update the reactiveVal with the cropped mosaic
-                createdshape$shp <- shp
+                nr <- input$nrows |> chrv2numv()
+                nc <- input$ncols |> chrv2numv()
+                bc <- input$buffercol |> chrv2numv()
+                bf <- input$bufferrow |> chrv2numv()
+                if(all(!is.na(nc)) & all(!is.na(nr)) & all(!is.na(bc)) & all(!is.na(bf))){
+                  shp <- shapefile_build(mosaic_data$mosaic,
+                                         basemap,
+                                         controlpoints = cpo,
+                                         nrow = nr,
+                                         ncol = nc,
+                                         buffer_col = bc,
+                                         buffer_row = bf,
+                                         verbose = FALSE)
+                  # Update the reactiveVal with the cropped mosaic
+                  createdshape$shp <- shp
+                }
               }
             } else{
+              req(input$nrows)
+              req(input$ncols)
+              req(input$buffercol)
+              req(input$bufferrow)
               shp <- shapefile_build(mosaic_data$mosaic,
                                      basemap,
                                      nrow = input$nrows,
@@ -372,10 +381,12 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                      build_shapefile = FALSE,
                                      verbose = FALSE)
               createdshape$shp <- shp
+
             }
           })
 
           output$createdshapes <- renderLeaflet({
+            req(createdshape$shp)
             if(input$buildblocks){
               mapp <-
                 basemap$map +
@@ -413,18 +424,16 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   })
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
               } else{
+                req(createdshape$shp)
                 nelem <- length(createdshape$shp)
-                req(createdshape$shp[[nelem]])
-                shapefile[[input$shapenamebuild]] <-
-                  create_reactval(input$shapenamebuild,
-                                  createdshape$shp[[nelem]] |>
-                                    poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
-                                                    .before = 1)
-                  )
+                createdshape$shp <-
+                    createdshape$shp[[nelem]] |>
+                      poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                                      .before = 1) |>
+                  list()
+                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
 
               }
-
-
               observe({
                 shapefilenames <-  setdiff(names(shapefile), "shapefile")
                 # Update selectInput choices
@@ -720,8 +729,11 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
         }
       })
     })
-
-    mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefile))
+    # observe({
+    #   req(shapefile$shapefile)
+    #   print(shapefile$shapefile)
+    # })
+    mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE))
 
 
   })

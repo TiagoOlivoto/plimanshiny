@@ -225,6 +225,7 @@ create_reactval <- function(name, data) {
 }
 
 chrv2numv <- function(chr){
+  unlist(strsplit(as.character(chr), split = ','))
   as.numeric(gsub("[[:space:]]", "", unlist(strsplit(as.character(chr), split = ','))))
 }
 
