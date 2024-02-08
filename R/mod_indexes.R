@@ -129,7 +129,7 @@ mod_indexes_ui <- function(id){
 
 helpind <-
   read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
-  poorman::filter(type == "index")
+  dplyr::filter(type == "index")
 #' indexes Server Functions
 #'
 #' @noRd

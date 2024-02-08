@@ -160,7 +160,7 @@ mod_mosaic_prepare_ui <- function(id){
 
 helpmo <-
   read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
-  poorman::filter(type == "mosaic")
+  dplyr::filter(type == "mosaic")
 #' mosaic_prepare Server Functions
 #'
 #' @noRd

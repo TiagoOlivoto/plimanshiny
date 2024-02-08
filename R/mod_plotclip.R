@@ -199,7 +199,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
               )
               shptemp <- shptocrop[i, ]
               ncolid <- which(colnames(shptemp) == input$uniqueid)
-              shpname <- shptemp |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
+              shpname <- shptemp |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
               mosaictmp <- terra::crop(mosaictocrop, shptemp) |> terra::mask(shptemp)
               terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, input$clipformat), overwrite=TRUE)
 
@@ -231,7 +231,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
                              .packages = c("terra")) %dopar%{
                                shptemp <- shptocrop[i, ]
                                ncolid <- which(colnames(shptemp) == uniqueid)
-                               shpname <- shptemp |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
+                               shpname <- shptemp |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
                                mosaictmp <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpclip.tif")), shptemp) |> terra::mask(shptemp)
                                terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, format), overwrite=TRUE)
                              }
@@ -257,7 +257,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
       observe({
         if(input$seeaclippedplot){
           ncolid <- which(colnames(shptocrop) == input$uniqueid)
-          plots <- shptocrop |> as.data.frame() |>  poorman::select(ncolid) |> poorman::pull()
+          plots <- shptocrop |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
 
           updateSelectInput(session, "myclippedplot", choices = plots)
           req(input$myclippedplot)

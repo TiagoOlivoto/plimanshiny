@@ -301,10 +301,10 @@ mod_shapefile_prepare_ui <- function(id){
 
 helpshp <-
   read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
-  poorman::filter(type == "shape")
+  dplyr::filter(type == "shape")
 shapeimp <-
   read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
-  poorman::filter(type == "shapeimp")
+  dplyr::filter(type == "shapeimp")
 #' shapefile_prepare Server Functions
 #'
 #' @noRd
@@ -418,7 +418,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 createdshape$shp <-
                   lapply(seq_along(createdshape$shp), function(i){
                     createdshape$shp[[i]] |>
-                      poorman::mutate(block = paste0("B", leading_zeros(i, 2)),
+                      dplyr::mutate(block = paste0("B", leading_zeros(i, 2)),
                                       plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[i]]), 4)),
                                       .before = 1)
                   })
@@ -428,7 +428,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 nelem <- length(createdshape$shp)
                 createdshape$shp <-
                     createdshape$shp[[nelem]] |>
-                      poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                      dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
                                       .before = 1) |>
                   list()
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
@@ -458,13 +458,20 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
 
           observeEvent(c(input$editplots, !input$editdone),{
+            if(inherits(shapefile[[input$shapenamebuild]]$data, "list")){
+              shptmp <- do.call(rbind, shapefile[[input$shapenamebuild]]$data)
+            } else{
+              shptmp <- shapefile[[input$shapenamebuild]]$data
+            }
+
             if(input$editplots == TRUE){
               shapes <-
-                shapefile[[input$shapenamebuild]]$data |>
-                poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapenamebuild]]$data),
+                shptmp |>
+                dplyr::mutate(`_leaflet_id` = 1:nrow(shptmp),
                                 feature_type = "polygon") |>
-                poorman::relocate(geometry, .after = 2) |>
+                dplyr::relocate(geometry, .after = 2) |>
                 sf::st_transform(crs = 4326)
+              print(shapes)
 
 
               mapp <-
@@ -486,12 +493,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               observeEvent(input$editdone,{
                 if(input$editdone == TRUE){
                   if(!is.null(editedpoints()$all)){
-                    shapefile[[input$shapenamebuild]]$data <-
-                      editedpoints()$all |>
-                      poorman::select(geometry) |>
-                      sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic)) |>
-                      poorman::mutate(plot_id = paste0("P", leading_zeros(1:nrow(editedpoints()$all), 4)),
-                                      .before = 1)
+                    centplot <- sf::st_centroid(shapes)
+                    shapefile[[input$shapenamebuild]]$data <- editedpoints()$all
                     output$plotshapedone <- renderLeaflet({
                       mapp <-
                         basemap$map +
@@ -657,9 +660,9 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               if(input$editplotsimpo == TRUE){
                 shapes <-
                   shapefile[[input$shapefiletoanalyze]]$data |>
-                  poorman::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapefiletoanalyze]]$data),
+                  dplyr::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapefiletoanalyze]]$data),
                                   feature_type = "polygon") |>
-                  poorman::relocate(geometry, .after = 2) |>
+                  dplyr::relocate(geometry, .after = 2) |>
                   sf::st_transform(crs = 4326)
 
 
@@ -699,7 +702,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                       shapefile[[input$shapefiletoanalyze]]$data <-
                         editedpoints()$all |>
                         sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic)) |>
-                        poorman::select(geometry)
+                        dplyr::select(geometry)
                       output$plotshapedone <- renderLeaflet({
                         if(is.null(basemap$map)){
                           mapp <-
@@ -729,10 +732,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
         }
       })
     })
-    # observe({
-    #   req(shapefile$shapefile)
-    #   print(shapefile$shapefile)
-    # })
     mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE))
 
 

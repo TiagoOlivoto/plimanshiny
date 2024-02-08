@@ -42,7 +42,7 @@ mod_analyze_ui <- function(id){
                        inputId = ns("summarizefun"),
                        label = "Summarize function(s)",
                        selected = "mean",
-                       choices = c("NULL", "min", "max", "count", "sum", "mean", "median", "quantile", "stdev", "coefficient_of_variation"),
+                       choices = c("none", "min", "max", "count", "sum", "mean", "median", "quantile", "stdev", "coefficient_of_variation"),
                        options = list(
                          `actions-box` = TRUE
                        ),
@@ -362,10 +362,10 @@ mod_analyze_ui <- function(id){
 
 helpanal <-
   read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
-  poorman::filter(type == "analyze")
+  dplyr::filter(type == "analyze")
 helpout <-
   read.csv(file = system.file("app/www/helps.csv", package = "plimanshiny", mustWork = TRUE), sep = ";") |>
-  poorman::filter(type == "output")
+  dplyr::filter(type == "output")
 #' analyze Server Functions
 #'
 #' @noRd
@@ -541,8 +541,14 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         )
       }
     })
-
+    shptemp <- reactiveValues(shapefile = NULL)
     observe({
+      req(shapefile$shapefile)
+      if(!inherits(shapefile$shapefile, "list")){
+        shptemp$shapefile <- list(shapefile$shapefile)
+      } else{
+        shptemp$shapefile <- shapefile$shapefile
+      }
       updatePickerInput(session, "summarizefunoutput", choices = input$summarizefun, selected = input$summarizefunoutput[[1]])
 
       if(input$segmentplot & input$segmentindividuals){
@@ -577,10 +583,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         req(index$index)  # Ensure mosaic_data$mosaic is not NULL
         req(mosaic_data$mosaic)
         req(basemap$map)
-        req(shapefile$shapefile)
         req(input$segmentindex)
         layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-        m1 <-  basemap$map + mapview::mapview(do.call(rbind, lapply(shapefile$shapefile, function(x){x})),
+        m1 <-  basemap$map + mapview::mapview(do.call(rbind, lapply(shptemp$shapefile, function(x){x})),
                                               z.col = "plot_id",
                                               legend = FALSE)
         m2 <- mosaic_view(index$index[[layer]], show = "index")
@@ -612,7 +617,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
     # Analyze
     observeEvent(input$analyzemosaic, {
-      if(c(!input$byplot & is.null(index$index)) | is.null(mosaic_data$mosaic) | is.null(basemap$map) | is.null(shapefile$shapefile)){
+      if(c(!input$byplot & is.null(index$index)) | is.null(mosaic_data$mosaic) | is.null(basemap$map) | is.null(shptemp$shapefile)){
         sendSweetAlert(
           session = session,
           title = "Did you skip any steps?",
@@ -644,6 +649,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         indcomp <- input$segmentindex
       } else{
         indcomp <- NULL
+      }
+      if(input$summarizefun == "none"){
+        summf <- NULL
+      } else{
+        summf <- input$summarizefun
       }
 
       if(is.na(input$lower_size)){
@@ -683,7 +693,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           req(index$index)  # Ensure mosaic_data$mosaic is not NULL
           req(mosaic_data$mosaic)
           req(basemap$map)
-          req(shapefile$shapefile)
+          req(shptemp$shapefile)
           waiter_show(
             html = tagList(
               spin_google(),
@@ -695,7 +705,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           res <-
             mosaic_analyze(mosaic = mosaic_data$mosaic,
                            basemap = basemap$map,
-                           shapefile = shapefile$shapefile,
+                           shapefile = shptemp$shapefile,
                            indexes = index$index,
                            plot = FALSE,
                            segment_plot = input$segmentplot,
@@ -706,7 +716,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                            tolerance = input$tolerance,
                            extension = input$extension,
                            invert = input$invertindex,
-                           summarize_fun = input$summarizefun,
+                           summarize_fun = summf,
                            summarize_quantiles = quantiles,
                            include_if = input$includeif,
                            threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
@@ -720,8 +730,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         } else{
           if(!input$parallelanalysis){
             shp <- do.call(rbind,
-                           lapply(shapefile$shapefile, function(x){
-                             x |> poorman::select(geometry)
+                           lapply(shptemp$shapefile, function(x){
+                             x |> dplyr::select(geometry)
                            }))
             # Analyze the mosaic by plot
             bind <- list()
@@ -763,7 +773,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                                tolerance = input$tolerance,
                                extension = input$extension,
                                invert = input$invertindex,
-                               summarize_fun = input$summarizefun,
+                               summarize_fun = summf,
                                summarize_quantiles = quantiles,
                                include_if = input$includeif,
                                threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
@@ -811,7 +821,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             tolerance <- input$tolerance
             extension <- input$extension
             invert <- input$invertindex
-            summarize_fun <- input$summarizefun
+            # summarize_fun <- input$summarizefun
             summarize_quantiles <- quantiles
             include_if <- input$includeif
             threshold <- ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue)
@@ -840,7 +850,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                                                 tolerance = tolerance,
                                                 extension = extension,
                                                 invert = invert,
-                                                summarize_fun = summarize_fun,
+                                                summarize_fun = summf,
                                                 summarize_quantiles = summarize_quantiles,
                                                 include_if = include_if,
                                                 threshold = threshold,
@@ -865,7 +875,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           if(is.null(bind[[1]]$result_indiv)){
             result_indiv <- result_plot_summ <- NULL
           } else{
-            result_indiv <- poorman::bind_rows(
+            result_indiv <- dplyr::bind_rows(
               lapply(bind, function(x){
                 tmp <- x$result_indiv
                 tmp$plot_id <- NULL
@@ -873,10 +883,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               }),
               .id = "plot_id"
             ) |>
-              poorman::relocate(plot_id, .after = block) |>
+              dplyr::relocate(plot_id, .after = block) |>
               sf::st_as_sf()
 
-            result_plot_summ <- poorman::bind_rows(
+            result_plot_summ <- dplyr::bind_rows(
               lapply(bind, function(x){
                 tmp <- x$result_plot_summ
                 tmp$plot_id <- NULL
@@ -884,11 +894,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               }),
               .id = "plot_id"
             ) |>
-              poorman::relocate(plot_id, .after = block) |>
+              dplyr::relocate(plot_id, .after = block) |>
               sf::st_as_sf()
           }
 
-          result_plot <- poorman::bind_rows(
+          result_plot <- dplyr::bind_rows(
             lapply(bind, function(x){
               tmp <- x$result_plot
               tmp$plot_id <- NULL
@@ -896,7 +906,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             }),
             .id = "plot_id"
           ) |>
-            poorman::relocate(plot_id, .after = block) |>
+            dplyr::relocate(plot_id, .after = block) |>
             sf::st_as_sf()
 
           res <-
@@ -911,12 +921,70 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         }
 
         req(res)
+        if("data" %in% colnames(res$result_plot)){
+          if(input$segmentindividuals){
+            unndata <-
+              res$result_indiv |>
+              sf::st_drop_geometry() |>
+              dplyr::select(block, plot_id, individual, data) |>
+              tidyr::unnest(cols = data) |>
+              dplyr::group_by(block, plot_id, individual) |>
+              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
+
+            result_indiv <- dplyr::left_join(res$result_indiv |> dplyr::select(-data), unndata, by = dplyr::join_by(block, plot_id, individual))
+            unndata <-
+              res$result_plot |>
+              sf::st_drop_geometry() |>
+              tidyr::unnest(cols = data) |>
+              dplyr::group_by(block, plot_id) |>
+              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
+              sf::st_drop_geometry()
+            result_plot_summ<- dplyr::left_join(res$result_plot_summ, unndata, by = dplyr::join_by(block, plot_id))
+
+            result_plot <-
+              res$result_plot |>
+              # sf::st_drop_geometry() |>
+              tidyr::unnest(cols = data) |>
+              dplyr::group_by(block, plot_id) |>
+              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
+          }
+
+          if(input$segmentplot){
+            unndata <-
+              res$result_plot |>
+              sf::st_drop_geometry() |>
+              tidyr::unnest(cols = data) |>
+              dplyr::group_by(block, plot_id) |>
+              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
+              sf::st_drop_geometry() |>
+              dplyr::select(-c(3:5))
+            result_plot <- dplyr::left_join(res$result_plot |> dplyr::select(-data), unndata, by = dplyr::join_by(block, plot_id))
+            result_indiv <- res$result_indiv
+            result_plot_summ <- res$result_plot_summ
+          }
+          if(!input$segmentindividuals & !input$segmentplot){
+            result_plot <-
+              res$result_plot |>
+              # sf::st_drop_geometry() |>
+              tidyr::unnest(cols = data) |>
+              dplyr::group_by(block, plot_id) |>
+              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
+            result_indiv <- res$result_indiv
+            result_plot_summ <- res$result_plot_summ
+          }
+        } else{
+          result_indiv <- res$result_indiv
+          result_plot_summ <- res$result_plot_summ
+          result_plot <- res$result_plot
+        }
+
+        # if(!is.null(indcomp)){
         if(input$segmentindividuals){
-          updateSelectInput(session, "plotattribute", choices = names(res$result_plot_summ), selected = "coverage")
-          updateSelectInput(session, "indivattribute", choices = names(res$result_indiv), selected = "diam_mean")
+          updateSelectInput(session, "plotattribute", choices = names(result_plot_summ), selected = "coverage")
+          updateSelectInput(session, "indivattribute", choices = names(result_indiv), selected = "diam_mean")
           output$vbnplots <- renderValueBox({
             valueBox(
-              value = nrow(res$result_plot),
+              value = nrow(result_plot),
               subtitle = "Number of plots",
               color = "success",
               icon = icon("table-cells")
@@ -924,7 +992,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$vbnindiv <- renderValueBox({
             valueBox(
-              value = nrow(res$result_indiv),
+              value = nrow(result_indiv),
               subtitle = "Number of individuals",
               color = "success",
               icon = icon("seedling")
@@ -932,7 +1000,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$vbnindivplotmean <- renderValueBox({
             valueBox(
-              value = round(nrow(res$result_indiv) / nrow(res$result_plot), 3),
+              value = round(nrow(result_indiv) / nrow(result_plot), 3),
               subtitle = "Average number of individuals per plot",
               color = "success",
               icon = icon("seedling")
@@ -940,7 +1008,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$vbcoverage <- renderValueBox({
             valueBox(
-              value = round(mean(res$result_plot_summ$coverage), 3),
+              value = round(mean(result_plot_summ$coverage), 3),
               subtitle = "Average canopy coverage",
               color = "success",
               icon = icon("chart-pie")
@@ -948,7 +1016,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$largerindiv <- renderValueBox({
             valueBox(
-              value = round(max(res$result_indiv$diam_mean), 3),
+              value = round(max(result_indiv$diam_mean), 3),
               subtitle = "Larger individual (diameter)",
               color = "success",
               icon = icon("up-right-and-down-left-from-center")
@@ -956,7 +1024,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$smallerindiv <- renderValueBox({
             valueBox(
-              value = round(min(res$result_indiv$diam_mean), 3),
+              value = round(min(result_indiv$diam_mean), 3),
               subtitle = "Smaller individual (diameter)",
               color = "success",
               icon = icon("up-right-and-down-left-from-center")
@@ -964,14 +1032,27 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
 
           output$boxresults <- renderPlotly({
-            plot_ind <-
-              res$result_plot_summ |>
-              as.data.frame() |>
-              my_select(my_contains(names(res$result_plot_summ), paste0(input$summarizefunoutput, "."))) |>
-              poorman::pivot_longer(poorman::everything()) |>
-              pliman::separate_col(name, into = c("statistic", "index"))
+
+            if(input$summarizefunoutput == "none"){
+              print(input$plotattribute)
+              plot_ind <-
+                result_plot_summ |>
+                as.data.frame() |>
+                dplyr::select(input$plotattribute) |>
+                stack() |>
+                dplyr::rename(values = values, index = ind)
+            } else{
+              b <-
+                result_plot_summ |>
+                as.data.frame() |>
+                dplyr::select(dplyr::contains(input$summarizefunoutput)) |>
+                stack()
+              b$ind <- as.character(b$ind)
+              plot_ind <- pliman::separate_col(b, ind, into = c("statistic", "index"))
+              rm(b)
+            }
             p <-
-              ggplot(plot_ind, aes(y = value)) +
+              ggplot(plot_ind, aes(y = values)) +
               geom_boxplot(fill = "#28a745") +
               facet_wrap(~index, scales = "free_y") +
               theme_bw() +
@@ -980,12 +1061,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
             plotly::ggplotly(p, dynamicTicks = TRUE)
           })
-
           output$plotatribres <- renderPlotly({
             plotatt <-
-              res$result_plot_summ |>
+              result_plot_summ |>
               as.data.frame() |>
-              my_select(my_contains(names(res$result_plot_summ), input$plotattribute))
+              dplyr::select(dplyr::contains(input$plotattribute))
             patr <-
               ggplot(plotatt, aes( y = !!sym(input$plotattribute))) +
               geom_boxplot(fill = "#28a745") +
@@ -997,9 +1077,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
           output$indivatribres <- renderPlotly({
             indivp <-
-              res$result_plot_summ |>
+              result_plot_summ |>
               as.data.frame() |>
-              my_select(my_contains(names(res$result_plot_summ), input$indivattribute))
+              dplyr::select(dplyr::contains(input$indivattribute))
             indat <-
               ggplot(indivp, aes( y = !!sym(input$indivattribute))) +
               geom_boxplot(fill = "#28a745") +
@@ -1010,9 +1090,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
 
           output$resultplottab <- DT::renderDataTable(
-            res$result_plot_summ |>
+            result_plot_summ |>
               as.data.frame() |>
-              poorman::select(-geometry) |>
+              dplyr::select(-geometry) |>
               roundcols(),
 
             extensions = 'Buttons',
@@ -1028,9 +1108,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           )
 
           output$resultsindivtab <- DT::renderDataTable(
-            res$result_indiv |>
+            result_indiv |>
               as.data.frame() |>
-              poorman::select(-geometry) |>
+              dplyr::select(-geometry) |>
               roundcols(),
             extensions = 'Buttons',
             rownames = FALSE,
@@ -1044,15 +1124,15 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
           )
 
-          mod_download_shapefile_server("downresplot", terra::vect(res$result_plot_summ), name = "plot_level_results")
-          mod_download_shapefile_server("downresindiv", terra::vect(res$result_indiv), name = "individual_results")
+          mod_download_shapefile_server("downresplot", terra::vect(result_plot_summ), name = "plot_level_results")
+          mod_download_shapefile_server("downresindiv", terra::vect(result_indiv), name = "individual_results")
 
         } else if(input$segmentplot){
-          updateSelectInput(session, "plotattribute", choices = names(res$result_plot), selected = "coverage")
+          updateSelectInput(session, "plotattribute", choices = names(result_plot), selected = "coverage")
 
           output$vbnplots <- renderValueBox({
             valueBox(
-              value = nrow(res$result_plot),
+              value = nrow(result_plot),
               subtitle = "Number of plots",
               color = "success",
               icon = icon("table-cells")
@@ -1060,7 +1140,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$vbcoverage <- renderValueBox({
             valueBox(
-              value = round(mean(res$result_plot$coverage), 3),
+              value = round(mean(result_plot$coverage), 3),
               subtitle = "Average canopy coverage",
               color = "success",
               icon = icon("chart-pie")
@@ -1068,7 +1148,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$mincoverage <- renderValueBox({
             valueBox(
-              value = round(min(res$result_plot$coverage), 3),
+              value = round(min(result_plot$coverage), 3),
               subtitle = "Minmum canopy coverage",
               color = "success",
               icon = icon("chart-pie")
@@ -1076,21 +1156,33 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$maxcoverage <- renderValueBox({
             valueBox(
-              value = round(max(res$result_plot$coverage), 3),
+              value = round(max(result_plot$coverage), 3),
               subtitle = "Maximum canopy coverage",
               color = "success",
               icon = icon("chart-pie")
             )
           })
           output$boxresults <- renderPlotly({
-            plot_ind <-
-              res$result_plot|>
-              as.data.frame() |>
-              my_select(my_contains(names(res$result_plot), paste0(input$summarizefunoutput, "."))) |>
-              poorman::pivot_longer(poorman::everything()) |>
-              pliman::separate_col(name, into = c("statistic", "index"))
+            if(input$summarizefunoutput == "none"){
+              print(input$plotattribute)
+              plot_ind <-
+                result_plot |>
+                as.data.frame() |>
+                dplyr::select(input$plotattribute) |>
+                stack() |>
+                dplyr::rename(values = values, index = ind)
+            } else{
+              b <-
+                result_plot |>
+                as.data.frame() |>
+                dplyr::select(dplyr::contains(input$summarizefunoutput)) |>
+                stack()
+              b$ind <- as.character(b$ind)
+              plot_ind <- pliman::separate_col(b, ind, into = c("statistic", "index"))
+              rm(b)
+            }
             p <-
-              ggplot(plot_ind, aes(y = value)) +
+              ggplot(plot_ind, aes(y = values)) +
               geom_boxplot(fill = "#28a745") +
               facet_wrap(~index, scales = "free_y") +
               theme_bw() +
@@ -1102,9 +1194,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
 
           output$resultplottab <- DT::renderDataTable(
-            res$result_plot |>
+            result_plot |>
               as.data.frame() |>
-              poorman::select(-geometry) |>
+              dplyr::select(-geometry) |>
               roundcols(),
 
             extensions = 'Buttons',
@@ -1119,33 +1211,46 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
           )
 
-          mod_download_shapefile_server("downresplot", terra::vect(res$result_plot), name = "plot_level_results")
+          mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
 
 
         } else {
-          updateSelectInput(session, "plotattribute", choices = names(res$result_plot), selected = names(res$result_plot)[[3]])
+          updateSelectInput(session, "plotattribute", choices = names(result_plot), selected = names(result_plot)[[3]])
           output$boxresults <- renderPlotly({
-            plot_ind <-
-              res$result_plot|>
-              as.data.frame() |>
-              my_select(my_contains(names(res$result_plot), paste0(input$summarizefunoutput, "."))) |>
-              poorman::pivot_longer(poorman::everything()) |>
-              pliman::separate_col(name, into = c("statistic", "index"))
+            if(input$summarizefunoutput == "none"){
+              print(input$plotattribute)
+              plot_ind <-
+                result_plot |>
+                as.data.frame() |>
+                dplyr::select(input$plotattribute) |>
+                stack() |>
+                dplyr::rename(values = values, index = ind)
+            } else{
+              b <-
+                result_plot |>
+                as.data.frame() |>
+                dplyr::select(dplyr::contains(input$summarizefunoutput)) |>
+                stack()
+              b$ind <- as.character(b$ind)
+              plot_ind <- pliman::separate_col(b, ind, into = c("statistic", "index"))
+              rm(b)
+            }
             p <-
-              ggplot(plot_ind, aes(y = value)) +
+              ggplot(plot_ind, aes(y = values)) +
               geom_boxplot(fill = "#28a745") +
               facet_wrap(~index, scales = "free_y") +
               theme_bw() +
               theme(axis.text.x = element_blank(),
                     axis.ticks.x = element_blank())
 
+
             plotly::ggplotly(p, dynamicTicks = TRUE)
           })
 
           output$resultplottab <- DT::renderDataTable(
-            res$result_plot |>
+            result_plot |>
               as.data.frame() |>
-              poorman::select(-geometry) |>
+              dplyr::select(-geometry) |>
               roundcols(),
 
             extensions = 'Buttons',
@@ -1160,57 +1265,72 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
           )
 
-          mod_download_shapefile_server("downresplot", terra::vect(res$result_plot), name = "plot_level_results")
+          mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
         }
+        # }
         waiter_hide()
 
-        sendSweetAlert(
-          session = session,
-          title = "Mosaic successfully analyzed!!",
-          text = "The mosaic has been analyzed and the results can now be seen in the tabs",
-          type = "success"
-        )
+        if(!is.null(summf)){
+          sendSweetAlert(
+            session = session,
+            title = "Mosaic successfully analyzed!!",
+            text = "The mosaic has been analyzed and the results can now be seen in the tabs",
+            type = "success"
+          )
+        } else{
+          sendSweetAlert(
+            session = session,
+            title = "Mosaic successfully analyzed!!",
+            text = "To see the raw data, go to 'Configure the output' tab, and assign the results to a variable in the R environment",
+            type = "success"
+          )
+        }
         mapshape <- reactiveValues(mapshape = NULL)
         bmshape <- reactiveValues(bmshape = NULL)
         mapindiv <- reactiveValues(mapindiv = NULL)
 
+        # if(!is.null(summf)){
         observe({
           req(input$plotattribute)
           req(input$indivattribute)
+
           if(input$segmentindividuals){
-            mshp <- shapefile_view(res$result_plot_summ,
+
+            mshp <- shapefile_view(result_plot_summ,
                                    attribute = input$plotattribute,
                                    color_regions = return_colors(input$palplot),
                                    alpha.regions = input$alpharesplot)
-            bmshp <- mapview::mapview(res$result_plot, alpha.regions = 0, legend = FALSE)
+            bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <-
-              shapefile_view(res$result_indiv,
+              shapefile_view(result_indiv,
                              attribute = input$indivattribute,
                              color_regions = return_colors(input$palind),
                              alpha.regions = input$alpharesindiv)
           } else if(input$segmentplot){
-            if(!input$plotattribute %in% colnames(res$result_plot)){
+
+            if((!input$plotattribute %in% colnames(result_plot)) & !is.null(summf)){
               attrib <- paste0(input$summarizefun[[1]], ".", input$segmentindex)
             } else{
               attrib <- input$plotattribute
             }
-            mshp <- shapefile_view(res$result_plot,
+            print(result_plot)
+            mshp <- shapefile_view(result_plot,
                                    attribute = attrib,
                                    color_regions = return_colors(input$palplot),
                                    alpha.regions = input$alpharesplot)
-            bmshp <- mapview::mapview(res$result_plot, alpha.regions = 0, legend = FALSE)
+            bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <- NULL
           } else{
-            if(!input$plotattribute %in% colnames(res$result_plot)){
+            if((!input$plotattribute %in% colnames(result_plot)) & !is.null(summf)){
               attrib <- paste0(input$summarizefun[[1]], ".", input$segmentindex)
             } else{
               attrib <- input$plotattribute
             }
-            mshp <- shapefile_view(res$result_plot,
+            mshp <- shapefile_view(result_plot,
                                    attribute = attrib,
                                    color_regions = return_colors(input$palplot),
                                    alpha.regions = input$alpharesplot)
-            bmshp <- mapview::mapview(res$result_plot, alpha.regions = 0, legend = FALSE)
+            bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <- NULL
 
           }
@@ -1247,6 +1367,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
           }
         )
+        # }
       }
 
       # send the results to the global environment
@@ -1258,17 +1379,17 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                  result_individ = res$result_indiv,
                  map_plot = (basemap$map + mapshape$mapshape),
                  map_individual = (basemap$map + mapindiv$mapindiv),
-                 shapefile = shapefile$shapefile)
+                 shapefile = shptemp$shapefile)
         } else if(input$segmentplot){
           report <-
             list(result_plot = res$result_plot,
                  map_plot = (basemap$map + mapshape$mapshape),
-                 shapefile = shapefile$shapefile)
+                 shapefile = shptemp$shapefile)
         } else{
           report <-
             list(result_plot = res$result_plot,
                  map_plot = (basemap$map + mapshape$mapshape),
-                 shapefile = shapefile$shapefile)
+                 shapefile = shptemp$shapefile)
 
         }
         if (exists(input$globalvarname, envir = globalenv())) {

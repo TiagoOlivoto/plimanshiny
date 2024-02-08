@@ -9,6 +9,7 @@ Imports:
     bs4Dash,
     config (>= 0.3.2),
     doParallel,
+    dplyr,
     DT,
     esquisse,
     foreach,
@@ -23,7 +24,6 @@ Imports:
     parallel,
     pliman,
     plotly,
-    poorman,
     rintrojs,
     scales,
     sf,
@@ -32,6 +32,7 @@ Imports:
     shinyFiles,
     shinyWidgets,
     terra,
+    tidyr,
     utils,
     waiter
 Remotes: 

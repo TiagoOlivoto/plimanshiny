@@ -77,37 +77,29 @@ find_aggrfact <- function(mosaic, max_pixels = 1e6){
   return(downsample)
 }
 
-# Custom select function
-my_select <- function(data, columns) {
-  data[, columns, drop = FALSE]
-}
-
-# Custom contains function
-my_contains <- function(names, substring) {
-  grepl(substring, names)
-}
-
 
 roundcols <- function(df, ..., digits = 3){
   is_mat <- is.matrix(df)
   if (is_mat == TRUE) {
-    df <- df %>% as.data.frame() %>% poorman::rownames_to_column()
+    df <- df %>% as.data.frame() %>% dplyr::rownames_to_column()
   }
-  rn_test <- poorman::has_rownames(df)
-  if (rn_test == TRUE) {
+  has_rownames <- function(x) {
+    Negate(is.null)(rownames(x))
+  }
+  if (has_rownames(df)) {
     rnames <- rownames(df)
   }
   if (missing(...)) {
     df <-
       df |>
-      poorman::mutate(poorman::across(poorman::where(is.numeric), \(x){round(x, digits = digits)}))
+      dplyr::mutate(dplyr::across(dplyr::where(is.numeric), \(x){round(x, digits = digits)}))
   }
   else {
     df <-
       df |>
-      poorman::mutate(poorman::across(c(...), \(x){round(x, digits = digits)}))
+      dplyr::mutate(dplyr::across(c(...), \(x){round(x, digits = digits)}))
   }
-  if (rn_test == TRUE) {
+  if (has_rownames(df)) {
     rownames(df) <- rnames
   }
   return(df)
