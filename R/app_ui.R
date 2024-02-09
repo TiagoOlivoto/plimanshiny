@@ -152,6 +152,18 @@ app_ui <- function(request) {
               icon = shiny::icon("calendar-check")
             )
 
+          ),
+          bs4SidebarMenuItem(
+            "Phytopathometry",
+            icon = shiny::icon("leaf"),
+            startExpanded = F
+
+          ),
+          bs4SidebarMenuItem(
+            "Image analysis",
+            icon = shiny::icon("images"),
+            startExpanded = F
+
           )
 ####
 
