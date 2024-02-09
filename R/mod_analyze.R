@@ -577,8 +577,18 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         maskval$mask <- NULL
       } else{
         maskval$mask <- mosaic_data[[input$availablemasks]]$data
+
+        if(terra::crs(maskval$mask) != terra::crs(mosaic_data$mosaic)){
+          sendSweetAlert(
+            session = session,
+            title = "Invalid CRS",
+            text = "The Coordinate Reference System (CRS) of the mask does
+            not match the input mosaic. Trying to set the mask's CRS to match the mosaic one.",
+            type = "warning"
+          )
+        }
+
       }
-      # print(mask)
       if(input$segmentplot & input$segmentindividuals){
         sendSweetAlert(
           session = session,
@@ -642,12 +652,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                  lty = 2,
           )
         } else{
+          output$previoussegment <- renderPlot({
+            terra::plot(maskval$mask)
+          })
 
         }
-      } else{
-        output$previoussegment <- renderPlot({
-          terra::plot(maskval$mask)
-        })
       }
     })
 
