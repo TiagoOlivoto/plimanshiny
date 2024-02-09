@@ -113,28 +113,45 @@ mod_analyze_ui <- function(id){
                 h4("Indexes and inclusion criteria"),
                 fluidRow(
                   col_6(
-                    divclass("anal4",
-                             selectInput(ns("segmentindex"),
-                                         label = "Index for segmentation",
-                                         choices = NULL)
+                    switchInput(
+                      inputId = ns("usemaskorind"),
+                      label = "Segmentation",
+                      labelWidth = "80px",
+                      onLabel = "Index",
+                      offLabel = "Mask",
+                      value = TRUE
+                    ),
+                    conditionalPanel(
+                      condition = "input.usemaskorind == true", ns = ns,
+                      divclass("anal4",
+                               selectInput(ns("segmentindex"),
+                                           label = "Index for segmentation",
+                                           choices = NULL)
+                      ),
+                      divclass("anal6",
+                               selectInput(ns("threshold"),
+                                           label = "Threshold method",
+                                           choices = c("Otsu", "numeric")),
+                               conditionalPanel(
+                                 condition = "input.threshold == 'numeric'", ns = ns,
+                                 numericInput(ns("threshvalue"),
+                                              label = "Threshold",
+                                              value = NA)
+
+                               )
+                      )
+                    ),
+                    conditionalPanel(
+                      condition = "input.usemaskorind == false", ns = ns,
+                      selectInput(ns("availablemasks"),
+                                  label = "Mask for segmentation",
+                                  choices = NULL)
                     ),
                     divclass("anal5",
                              selectInput(ns("includeif"),
                                          label = "Inclusion criteria",
                                          choices = c("centroid", "covered", "overlap", "intersect"))
-                    ),
-                    divclass("anal6",
-                             selectInput(ns("threshold"),
-                                         label = "Threshold method",
-                                         choices = c("Otsu", "numeric")),
-                             conditionalPanel(
-                               condition = "input.threshold == 'numeric'", ns = ns,
-                               numericInput(ns("threshvalue"),
-                                            label = "Threshold",
-                                            value = NA)
-
-                             )
-                    ),
+                    )
                   ),
                   col_6(
                     divclass("anal7",
@@ -541,7 +558,13 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         )
       }
     })
+
     shptemp <- reactiveValues(shapefile = NULL)
+    observe({
+      updateSelectInput(session, "availablemasks", choices = c("none", setdiff(names(mosaic_data), "mosaic")), selected = "none")
+      updatePickerInput(session, "summarizefunoutput", choices = input$summarizefun, selected = input$summarizefunoutput[[1]])
+    })
+    maskval <- reactiveValues(mask = NULL)
     observe({
       req(shapefile$shapefile)
       if(!inherits(shapefile$shapefile, "list")){
@@ -549,8 +572,13 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
       } else{
         shptemp$shapefile <- shapefile$shapefile
       }
-      updatePickerInput(session, "summarizefunoutput", choices = input$summarizefun, selected = input$summarizefunoutput[[1]])
-
+      req(input$availablemasks)
+      if(input$availablemasks == "none"){
+        maskval$mask <- NULL
+      } else{
+        maskval$mask <- mosaic_data[[input$availablemasks]]$data
+      }
+      # print(mask)
       if(input$segmentplot & input$segmentindividuals){
         sendSweetAlert(
           session = session,
@@ -580,7 +608,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
     output$baseshapeindex <- renderUI({
       if(!input$byplot){
-        req(index$index)  # Ensure mosaic_data$mosaic is not NULL
+        req(index$index)
         req(mosaic_data$mosaic)
         req(basemap$map)
         req(input$segmentindex)
@@ -595,23 +623,31 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
     output$previousdensity <- renderPlot({
       if(!input$byplot){
-        req(index$index)
-        layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-        ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
+        if(is.null(maskval$mask)){
+          req(index$index)
+          layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
+          ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
+          output$previoussegment <- renderPlot({
+            if(input$invertindex){
+              maskplot <- index$index[[layer]] < ots
+            } else{
+              maskplot <- index$index[[layer]] > ots
+            }
+            terra::plot(maskplot)
+          })
+          terra::density(index$index[[layer]],
+                         main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
+          abline(v = ots,
+                 col = "red",
+                 lty = 2,
+          )
+        } else{
+
+        }
+      } else{
         output$previoussegment <- renderPlot({
-          if(input$invertindex){
-            maskplot <- index$index[[layer]] < ots
-          } else{
-            maskplot <- index$index[[layer]] > ots
-          }
-          terra::plot(maskplot)
+          terra::plot(maskval$mask)
         })
-        terra::density(index$index[[layer]],
-                       main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
-        abline(v = ots,
-               col = "red",
-               lty = 2,
-        )
       }
     })
 
@@ -707,6 +743,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                            basemap = basemap$map,
                            shapefile = shptemp$shapefile,
                            indexes = index$index,
+                           mask = maskval$mask,
                            plot = FALSE,
                            segment_plot = input$segmentplot,
                            segment_individuals = input$segmentindividuals,
@@ -763,6 +800,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               bind[[paste0("P", leading_zeros(i, 4))]] <-
                 mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shp$geometry[[i]]) |> terra::ext()),
                                indexes = indexes,
+                               mask = maskval$mask,
                                plot = FALSE,
                                shapefile = shp[i, ],
                                segment_plot = input$segmentplot,
@@ -840,6 +878,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                                  }
                                  mosaic_analyze(terra::crop(mosaic_input(pathmosaic), terra::vect(shp$geometry[[i]]) |> terra::ext()),
                                                 indexes = indexes,
+                                                mask = maskval$mask,
                                                 plot = FALSE,
                                                 shapefile = shp[i, ],
                                                 segment_plot = segment_plot,
@@ -1034,7 +1073,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           output$boxresults <- renderPlotly({
 
             if(input$summarizefunoutput == "none"){
-              print(input$plotattribute)
               plot_ind <-
                 result_plot_summ |>
                 as.data.frame() |>
@@ -1164,7 +1202,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
           output$boxresults <- renderPlotly({
             if(input$summarizefunoutput == "none"){
-              print(input$plotattribute)
               plot_ind <-
                 result_plot |>
                 as.data.frame() |>
@@ -1218,7 +1255,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           updateSelectInput(session, "plotattribute", choices = names(result_plot), selected = names(result_plot)[[3]])
           output$boxresults <- renderPlotly({
             if(input$summarizefunoutput == "none"){
-              print(input$plotattribute)
               plot_ind <-
                 result_plot |>
                 as.data.frame() |>
@@ -1313,7 +1349,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             } else{
               attrib <- input$plotattribute
             }
-            print(result_plot)
             mshp <- shapefile_view(result_plot,
                                    attribute = attrib,
                                    color_regions = return_colors(input$palplot),
