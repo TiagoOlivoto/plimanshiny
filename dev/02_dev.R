@@ -35,6 +35,7 @@ golem::add_module(name = "bindlayer")
 golem::add_module(name = "interpolate")
 golem::add_module(name = "aggregate")
 golem::add_module(name = "resample")
+golem::add_module(name = "segment")
 
 ## Add packages
 usethis::use_package("shiny")

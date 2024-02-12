@@ -26,9 +26,9 @@ mod_manipula_ui <- function(id){
         mod_crop_ui("crop_1")
       ),
       tabPanel(
-        title = "Mask",
+        title = "Mask/Segment",
         icon = icon("mask"),
-        mod_mask_ui("mask_1")
+        mod_segment_ui("segment_1")
       ),
       tabPanel(
         title = "Plot Clips",

@@ -38,6 +38,14 @@ mod_crop_ui <- function(id){
                                        label = "Shapefile",
                                        choices = NULL),
           ),
+          awesomeRadio(
+            inputId = ns("cropormask"),
+            label = "Type",
+            choices = c("Crop", "Mask"),
+            selected = "Crop",
+            inline = FALSE,
+            status = "success"
+          ),
           hl(),
           h3("Output"),
           textInput(ns("new_cropped"),
@@ -151,9 +159,12 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b){
             grids <-
               edits()$finished |>
               sf::st_transform(sf::st_crs(mosaic_data$mosaic)) |>
-              terra::vect() |>
-              terra::ext()
-            mosaiccr <- terra::crop(mosaic_data$mosaic, grids)
+              terra::vect()
+            if(input$cropormask == "Crop"){
+              mosaiccr <- terra::crop(mosaic_data$mosaic, grids |> terra::ext())
+            } else{
+              mosaiccr <- terra::mask(mosaic_data$mosaic, grids)
+            }
             cropped_mosaic(mosaiccr)
           }
         })
