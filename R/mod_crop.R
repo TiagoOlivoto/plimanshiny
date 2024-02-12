@@ -89,7 +89,7 @@ mod_crop_ui <- function(id){
             ),
             col_6(
               h3("Cropped mosaic"),
-              leafletOutput(ns("mosaiccropped"), height = "640px") |> add_spinner()
+              plotOutput(ns("mosaiccropped"), height = "640px") |> add_spinner()
             )
           )
         )
@@ -101,13 +101,13 @@ mod_crop_ui <- function(id){
 #' crop Server Functions
 #'
 #' @noRd
-mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b){
+mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observe({
       req(shapefile)
       req(mosaic_data)
-      updateSelectInput(session, "mosaic_to_crop", choices = setdiff(names(mosaic_data), "mosaic"), selected = NULL)
+      updateSelectInput(session, "mosaic_to_crop", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = "Active mosaic")
       updateSelectInput(session, "shape_to_crop", choices = setdiff(names(shapefile), "shapefile"))
       updateTextInput(session, "new_cropped", value = paste0(input$mosaic_to_crop, "_cropped"))
     })
@@ -119,14 +119,18 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b){
       if(input$shapemanipula){
         shptocrop <- shapefile[[input$shape_to_crop]]$data
         output$mosaic_cropshp <- renderLeaflet({
-          bcrop <-
-            mosaic_view(
-              mosaic_data[[input$mosaic_to_crop]]$data,
-              r = as.numeric(r$r),
-              g = as.numeric(g$g),
-              b = as.numeric(b$b),
-              max_pixels = 500000
-            )
+          if(input$mosaic_to_crop == "Active mosaic"){
+            bcrop <- basemap$map
+          } else{
+            bcrop <-
+              mosaic_view(
+                mosaic_data[[input$mosaic_to_crop]]$data,
+                r = as.numeric(r$r),
+                g = as.numeric(g$g),
+                b = as.numeric(b$b),
+                max_pixels = 500000
+              )
+          }
 
           (bcrop + shapefile_view(shptocrop))@map
         })
@@ -142,14 +146,18 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b){
           type = "info"
         )
         # Reactive expression to store the cropped mosaic
-        mapcrop <-
-          mosaic_view(
-            mosaic_data[[input$mosaic_to_crop]]$data,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            max_pixels = 300000
-          )@map
+        if(input$mosaic_to_crop == "Active mosaic"){
+          mapcrop <- basemap$map@map
+        } else{
+          mapcrop <-
+            mosaic_view(
+              mosaic_data[[input$mosaic_to_crop]]$data,
+              r = as.numeric(r$r),
+              g = as.numeric(g$g),
+              b = as.numeric(b$b),
+              max_pixels = 300000
+            )@map
+        }
         # # Attempt to get edits
         edits <- callModule(editMod, "mosaic_crop", mapcrop, editor = "leafpm")
         #
@@ -170,18 +178,19 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b){
         })
       }
 
-      output$mosaiccropped <- renderLeaflet({
+      output$mosaiccropped <- renderPlot({
         req(cropped_mosaic())  # Ensure cropped_mosaic is not NULL
         # Print the updated mosaic_data$mosaic
         # Render the cropped mosaic
-        bcrop <-
-          mosaic_view(
-            cropped_mosaic(),
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b)
-          )
-        bcrop@map
+        # bcrop <-
+        #   mosaic_view(
+        #     cropped_mosaic(),
+        #     r = as.numeric(r$r),
+        #     g = as.numeric(g$g),
+        #     b = as.numeric(b$b)
+        #   )
+        # bcrop@map
+        terra::plotRGB(cropped_mosaic())
       })
 
       # Observe event for mosaic crop action

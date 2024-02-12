@@ -77,34 +77,35 @@ mod_aggregate_ui <- function(id){
 #' aggregate Server Functions
 #'
 #' @noRd
-mod_aggregate_server <- function(id, mosaic_data, r, g, b){
+mod_aggregate_server <- function(id, mosaic_data, r, g, b, basemap){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     observe({
       req(mosaic_data)
-      updateSelectInput(session, "mosaic_to_aggr", choices = setdiff(names(mosaic_data), "mosaic"), selected = NULL)
+      updateSelectInput(session, "mosaic_to_aggr", choices = c("Active mosaic", setdiff(names(mosaic_data)), "mosaic"), selected = "Active mosaic")
       updateTextInput(session, "new_aggr", value = paste0(input$mosaic_to_aggr, "_aggregated"))
 
     })
 
     observeEvent(input$startaggr, {
       output$mosaicori <- renderLeaflet({
-        bcrop <-
-          mosaic_view(
-            mosaic_data[[input$mosaic_to_aggr]]$data,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            max_pixels = 500000
-          )
-
+        if(input$mosaic_to_aggr == "Active mosaic"){
+          bcrop <- basemap$map
+        } else{
+          bcrop <-
+            mosaic_view(
+              mosaic_data[[input$mosaic_to_aggr]]$data,
+              r = as.numeric(r$r),
+              g = as.numeric(g$g),
+              b = as.numeric(b$b),
+              max_pixels = 500000
+            )
+        }
         bcrop@map
       })
     })
     observeEvent(input$aggregate, {
-
-
       myaggr <- mosaic_aggregate(mosaic_data[[input$mosaic_to_aggr]]$data,
                                  pct = chrv2numv(input$aggregatefct),
                                  fun = input$aggregatefun)

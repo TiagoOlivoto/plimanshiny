@@ -117,12 +117,12 @@ mod_plotclip_ui <- function(id){
 #' plotclip Server Functions
 #'
 #' @noRd
-mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
+mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observe({
       req(mosaic_data)
-      updateSelectInput(session, "mosaic_to_clip", choices = setdiff(names(mosaic_data), "mosaic"), selected = input$mosaic_to_clip)
+      updateSelectInput(session, "mosaic_to_clip", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = "Active mosaic")
       updateSelectInput(session, "shape_to_clip", choices = setdiff(names(shapefile), "shapefile"))
       updateTextInput(session, "new_mask", value = paste0(input$mosaic_to_clip, "_masked"))
       availablecl <- parallel::detectCores()
@@ -151,14 +151,20 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b){
       req(shptocrop)
       req(mosaictocrop)
       updateSelectInput(session, "uniqueid", choices = names(shptocrop))
-      bcrop <-
-        mosaic_view(
-          mosaic_data[[input$mosaic_to_clip]]$data,
-          r = as.numeric(r$r),
-          g = as.numeric(g$g),
-          b = as.numeric(b$b),
-          max_pixels = 500000
-        )
+      if(input$mosaic_to_clip == "Active mosaic"){
+        bcrop <- basemap$map
+      } else{
+        bcrop <-
+          mosaic_view(
+            mosaic_data[[input$mosaic_to_clip]]$data,
+            r = as.numeric(r$r),
+            g = as.numeric(g$g),
+            b = as.numeric(b$b),
+            max_pixels = 500000
+          )
+      }
+
+
 
       output$mosaicandshape <- renderLeaflet({
         req(bcrop)

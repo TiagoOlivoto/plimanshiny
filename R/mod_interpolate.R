@@ -81,21 +81,25 @@ mod_interpolate_ui <- function(id){
 #' interpolate Server Functions
 #'
 #' @noRd
-mod_interpolate_server <- function(id, mosaic_data, r, g, b){
+mod_interpolate_server <- function(id, mosaic_data, r, g, b, basemap){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observe({
       req(mosaic_data$mosaic)
-      updatePickerInput(session, "mosaictointerpolate", choices = setdiff(names(mosaic_data), "mosaic"), selected = NULL)
+      updatePickerInput(session, "mosaictointerpolate", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = "Active mosaic")
     })
     observeEvent(input$startinterpolating, {
       req(mosaic_data)
       req(input$mosaictointerpolate)
-      bmap <- mosaic_view(mosaic_data[[input$mosaictointerpolate]]$data,
-                          r = as.numeric(r$r),
-                          g = as.numeric(g$g),
-                          b = as.numeric(b$b),
-                          max_pixels = 500000)
+      if(input$mosaictointerpolate == "Active mosaic"){
+        bmap <- basemap$map
+      } else{
+        bmap <- mosaic_view(mosaic_data[[input$mosaictointerpolate]]$data,
+                            r = as.numeric(r$r),
+                            g = as.numeric(g$g),
+                            b = as.numeric(b$b),
+                            max_pixels = 500000)
+      }
       req(bmap)
       cpoints <- callModule(editMod, "plotinterpol", bmap@map , editor = "leafpm")
 

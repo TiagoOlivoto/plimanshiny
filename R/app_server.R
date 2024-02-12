@@ -34,11 +34,11 @@ app_server <- function(input, output, session) {
 
 
   # manipulation
-  mod_crop_server("crop_1", mosaic_data, shapefile, r, g, b)
-  mod_plotclip_server("plotclip_1", mosaic_data, shapefile, r, g, b)
+  mod_crop_server("crop_1", mosaic_data, shapefile, r, g, b, basemap)
+  mod_plotclip_server("plotclip_1", mosaic_data, shapefile, r, g, b, basemap)
   mod_bindlayer_server("bindlayer_1", mosaic_data)
-  mod_interpolate_server("interpolate_1", mosaic_data, r, g, b)
-  mod_aggregate_server("aggregate_1", mosaic_data, r, g, b)
+  mod_interpolate_server("interpolate_1", mosaic_data, r, g, b, basemap)
+  mod_aggregate_server("aggregate_1", mosaic_data, r, g, b, basemap)
   mod_resample_server("resample_1", mosaic_data)
   mod_segment_server("segment_1", mosaic_data, r, g, b, re, nir)
 }
