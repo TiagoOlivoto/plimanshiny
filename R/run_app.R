@@ -8,6 +8,10 @@
 #' @importFrom plotly ggplotly renderPlotly plotlyOutput
 #' @importFrom shiny shinyApp
 #' @importFrom tidyr unnest
+#' @importFrom graphics abline
+#' @importFrom stats binomial glm
+#' @importFrom utils data stack
+#' @importFrom exactextractr exact_extract
 #' @importFrom parallel makeCluster stopCluster
 #' @importFrom doParallel registerDoParallel
 #' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach

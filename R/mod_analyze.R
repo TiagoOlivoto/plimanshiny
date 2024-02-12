@@ -977,7 +977,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               dplyr::select(block, plot_id, individual, data) |>
               tidyr::unnest(cols = data) |>
               dplyr::group_by(block, plot_id, individual) |>
-              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
+              dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
 
             result_indiv <- dplyr::left_join(res$result_indiv |> dplyr::select(-data), unndata, by = dplyr::join_by(block, plot_id, individual))
             unndata <-
@@ -985,7 +985,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               sf::st_drop_geometry() |>
               tidyr::unnest(cols = data) |>
               dplyr::group_by(block, plot_id) |>
-              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
+              dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
               sf::st_drop_geometry()
             result_plot_summ<- dplyr::left_join(res$result_plot_summ, unndata, by = dplyr::join_by(block, plot_id))
 
@@ -994,7 +994,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               # sf::st_drop_geometry() |>
               tidyr::unnest(cols = data) |>
               dplyr::group_by(block, plot_id) |>
-              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
+              dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
           }
 
           if(input$segmentplot){
@@ -1003,7 +1003,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               sf::st_drop_geometry() |>
               tidyr::unnest(cols = data) |>
               dplyr::group_by(block, plot_id) |>
-              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
+              dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
               sf::st_drop_geometry() |>
               dplyr::select(-c(3:5))
             result_plot <- dplyr::left_join(res$result_plot |> dplyr::select(-data), unndata, by = dplyr::join_by(block, plot_id))
@@ -1016,7 +1016,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               # sf::st_drop_geometry() |>
               tidyr::unnest(cols = data) |>
               dplyr::group_by(block, plot_id) |>
-              dplyr::summarise(across(where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
+              dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
             result_indiv <- res$result_indiv
             result_plot_summ <- res$result_plot_summ
           }

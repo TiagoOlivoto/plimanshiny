@@ -76,12 +76,23 @@ find_aggrfact <- function(mosaic, max_pixels = 1e6){
   downsample <- ifelse(downsample == 1, 0, downsample)
   return(downsample)
 }
-
+sf_to_polygon <- function(shps) {
+  if(inherits(shps, "list")){
+    shps <- do.call(rbind, shps)
+  }
+  classes <- sapply(lapply(sf::st_geometry(shps$geometry), class), function(x){x[2]})
+  shps[classes %in% c("POINT", "LINESTRING"), ] <-
+    shps[classes %in% c("POINT", "LINESTRING"), ] |>
+    sf::st_buffer(0.0000001) |>
+    sf::st_cast("POLYGON") |>
+    sf::st_simplify(preserveTopology = TRUE)
+  return(shps)
+}
 
 roundcols <- function(df, ..., digits = 3){
   is_mat <- is.matrix(df)
   if (is_mat == TRUE) {
-    df <- df %>% as.data.frame() %>% dplyr::rownames_to_column()
+    df <- df %>% as.data.frame() %>% pliman::rownames_to_column()
   }
   has_rownames <- function(x) {
     Negate(is.null)(rownames(x))
