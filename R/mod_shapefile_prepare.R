@@ -419,17 +419,17 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   lapply(seq_along(createdshape$shp), function(i){
                     createdshape$shp[[i]] |>
                       dplyr::mutate(block = paste0("B", leading_zeros(i, 2)),
-                                      plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[i]]), 4)),
-                                      .before = 1)
+                                    plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[i]]), 4)),
+                                    .before = 1)
                   })
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
               } else{
                 req(createdshape$shp)
                 nelem <- length(createdshape$shp)
                 createdshape$shp <-
-                    createdshape$shp[[nelem]] |>
-                      dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
-                                      .before = 1) |>
+                  createdshape$shp[[nelem]] |>
+                  dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
+                                .before = 1) |>
                   list()
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
 
@@ -468,7 +468,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               shapes <-
                 shptmp |>
                 dplyr::mutate(`_leaflet_id` = 1:nrow(shptmp),
-                                feature_type = "polygon") |>
+                              feature_type = "polygon") |>
                 dplyr::relocate(geometry, .after = 2) |>
                 sf::st_transform(crs = 4326)
               print(shapes)
@@ -513,17 +513,18 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               })
             }
           })
+
           observe({
             # Check if a mosaic is selected
             req(input$shapefiletoanalyze)
             selected_shp <- shapefile[[input$shapefiletoanalyze]]
             if ('data' %in% names(selected_shp)) {
               shapefile$shapefile <- selected_shp$data
+
             }
           })
         }
       }
-      # })
     })
 
     # Import a shapefile
@@ -661,7 +662,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 shapes <-
                   shapefile[[input$shapefiletoanalyze]]$data |>
                   dplyr::mutate(`_leaflet_id` = 1:nrow(shapefile[[input$shapefiletoanalyze]]$data),
-                                  feature_type = "polygon") |>
+                                feature_type = "polygon") |>
                   dplyr::relocate(geometry, .after = 2) |>
                   sf::st_transform(crs = 4326)
 
@@ -732,6 +733,13 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
         }
       })
     })
+
+
+
+
+    # shape
+    # terra::crop(mosaic, terra::ext(terra::vect(shape)))
+
     mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE))
 
 

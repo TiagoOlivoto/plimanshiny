@@ -131,7 +131,7 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b){
           (bcrop + shapefile_view(shptocrop))@map
         })
 
-        mosaiccr <- terra::crop(mosaic_data$mosaic, shptocrop)
+        mosaiccr <- terra::crop(mosaic_data$mosaic, terra::ext(shapefile_input(shptocrop, as_sf = FALSE, info = FALSE)))
         cropped_mosaic(mosaiccr)
 
       } else{
