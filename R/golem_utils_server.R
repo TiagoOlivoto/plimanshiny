@@ -203,6 +203,7 @@ mosaic_info <- function(mo){
   } else{
     crsname <- "CRS not available"
   }
+  dt <- terra::datatype(mo)[[1]]
   content <- tags$span(
     tags$h1(icon("info"), "Mosaic information", style = "color: steelblue;"),
     icon("border-all"),tags$b("Number of columns: "), paste0(terra::ncol(mo)), tags$br(),
@@ -210,7 +211,8 @@ mosaic_info <- function(mo){
     icon("layer-group"),tags$b("Number of layers: "), paste0(terra::nlyr(mo), " (",paste0(names(mo), collapse = ", ") , ")"), tags$br(),
     icon("ruler-combined"),tags$b("Resolution: "), paste0(paste(round(terra::res(mo), 5), collapse = ", "), " (x, y)"), tags$br(),
     icon("ruler-combined"),tags$b("Extend: "), paste0(sub("^ext\\((.*)\\)$", "\\1", paste0(round(terra::ext(mo), 2))), " (xmin, xmax, ymin, ymax)"), tags$br(),
-    icon("earth-americas"),tags$b("CRS: "), paste0(crsname), tags$br()
+    icon("earth-americas"),tags$b("CRS: "), paste0(crsname), tags$br(),
+    icon("database"),tags$b("Data Type: "), paste0(dt), tags$br()
   )
 
   show_alert(

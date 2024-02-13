@@ -5,10 +5,6 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
-  # Your application server logic
-
-
-  # Create the reactiveValues object to store the mosaic data
   mosaic_data <- reactiveValues()
   r <- reactiveValues(r = NULL)
   g <- reactiveValues(g = NULL)
@@ -19,20 +15,11 @@ app_server <- function(input, output, session) {
   bmap <- reactiveValues(map = NULL)
   index <- reactiveValues(index = NULL)
   pathmosaic <- reactiveValues(path = NULL)
-
-
-  # Call the import mosaic module
   mod_mosaic_prepare_server("mosaic_prepare_1", mosaic_data, r, g, b, re, nir, basemap, pathmosaic)
-  # shapefile
-
   shapefile <- reactiveValues()
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
-
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index, shapefile)
   mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic)
-
-
-
   # manipulation
   mod_crop_server("crop_1", mosaic_data, shapefile, r, g, b, basemap)
   mod_plotclip_server("plotclip_1", mosaic_data, shapefile, r, g, b, basemap)

@@ -83,7 +83,7 @@ mod_aggregate_server <- function(id, mosaic_data, r, g, b, basemap){
 
     observe({
       req(mosaic_data)
-      updateSelectInput(session, "mosaic_to_aggr", choices = c("Active mosaic", setdiff(names(mosaic_data)), "mosaic"), selected = "Active mosaic")
+      updateSelectInput(session, "mosaic_to_aggr", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = "Active mosaic")
       updateTextInput(session, "new_aggr", value = paste0(input$mosaic_to_aggr, "_aggregated"))
 
     })

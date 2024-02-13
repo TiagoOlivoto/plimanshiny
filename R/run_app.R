@@ -22,6 +22,7 @@
 run_app <- function(upload_size = 10000,
                     ...) {
   options(shiny.maxRequestSize = 10000 * 1024^2)
+  terra::terraOptions(memfrac = 0.8)
   with_golem_options(
     app = shinyApp(
       ui = app_ui,
