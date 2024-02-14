@@ -23,7 +23,7 @@ mod_download_mosaic_ui <- function(id, button_label = "Download") {
       ),
       col_4(
         selectInput(ns("datatype"),
-                    label = "Datatype",
+                    label = "Data type",
                     choices = c("auto", "INT1U", "INT2U", "INT2S", "INT4U", "INT8U", "INT8S", "INT4S", "FLT4S", "FLT8S"),
                     selected = "auto")
       )

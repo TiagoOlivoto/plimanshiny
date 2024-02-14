@@ -142,18 +142,22 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                                           "skipLabel"="Skip",
                                                           steps = helpind),
                                            events = list("oncomplete"=I('alert("Hope it helped!")'))))
-
+    mosaictmp <- reactiveValues(mosaic =NULL)
     observe({
       updateSelectInput(session, "shapefiletoplot",
                         choices = c("none", setdiff(names(shapefile), "shapefile")),
                         selected = "none")
+      if(!is.null(shapefile$shapefile)){
+        mosaictmp$mosaic <- terra::crop(mosaic_data$mosaic, terra::ext(shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE)))
+      } else{
+        mosaictmp$mosaic <- mosaic_data$mosaic
+      }
     })
 
     observeEvent(input$mosaicinfoindex, {
-      req(mosaic_data$mosaic)
-      mosaic_info(mosaic_data$mosaic)
+      req(mosaictmp$mosaic)
+      mosaic_info(mosaictmp$mosaic)
     })
-
     # Creating a new option to select VIs
     observeEvent(input$imgbands, {
       # Check if imgbands is empty
@@ -193,7 +197,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
       finalindex
     })
     observeEvent(input$computeindex, {
-      if(is.null(mosaic_data$mosaic)){
+      req(mosaictmp$mosaic)
+      if(is.null(mosaictmp$mosaic)){
         show_alert("Ops, an error occured.",
                    text = "You cannot compute any index without a mosaic. First use the 'Mosaic' tab to import a mosaic.",
                    type = "error")
@@ -205,11 +210,11 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
       }
       if(length(finalindex()) != 0){
         updateSelectInput(session, "indextosync", choices = finalindex())
-        R <- try(mosaic_data$mosaic[[as.numeric(r$r)]], TRUE)
-        G <- try(mosaic_data$mosaic[[as.numeric(g$g)]], TRUE)
-        B <- try(mosaic_data$mosaic[[as.numeric(b$b)]], TRUE)
-        NIR <- try(mosaic_data$mosaic[[as.numeric(nir$nir)]], TRUE)
-        RE <- try(mosaic_data$mosaic[[as.numeric(re$re)]], TRUE)
+        R <- try(mosaictmp$mosaic[[as.numeric(r$r)]], TRUE)
+        G <- try(mosaictmp$mosaic[[as.numeric(g$g)]], TRUE)
+        B <- try(mosaictmp$mosaic[[as.numeric(b$b)]], TRUE)
+        NIR <- try(mosaictmp$mosaic[[as.numeric(nir$nir)]], TRUE)
+        RE <- try(mosaictmp$mosaic[[as.numeric(re$re)]], TRUE)
         me <- pliman_indexes_me()
         if(any(finalindex() %in% me) & inherits(NIR, "try-error") | any(finalindex() %in% me) & inherits(RE, "try-error")){
           show_alert("Ops, an error occured.",
@@ -218,7 +223,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
         } else{
 
           # compute the indexes
-          req(mosaic_data$mosaic)  # Ensure mosaic_data$mosaic is not NULL
+          req(mosaictmp$mosaic)  # Ensure mosaictmp$mosaic is not NULL
           waiter_show(
             html = tagList(
               spin_google(),
@@ -226,7 +231,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             ),
             color = "#228B227F"
           )
-          indextemp <- mosaic_index(mosaic_data$mosaic,
+          indextemp <- mosaic_index(mosaictmp$mosaic,
                                     r = as.numeric(r$r),
                                     g = as.numeric(g$g),
                                     b = as.numeric(b$b),
