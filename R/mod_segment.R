@@ -72,9 +72,11 @@ mod_segment_ui <- function(id){
           ),
           hl(),
           h3("Output"),
-          textInput(ns("new_segment"),
-                    label = "New object",
-                    value = NULL),
+          textInput(
+            ns("new_segment"),
+            label = "New object",
+            value = NULL
+          ),
 
           fluidRow(
             col_6(
@@ -106,11 +108,11 @@ mod_segment_ui <- function(id){
                            fluidRow(
                              col_6(
                                h3("Original mosaic"),
-                               leafletOutput(ns("orimosaic"), height = "640px") |> add_spinner()
+                               plotOutput(ns("orimosaic"), height = "640px") |> add_spinner()
                              ),
                              col_6(
                                h3("Segmented mosaic"),
-                               leafletOutput(ns("mosaicsegmentedind"), height = "640px") |> add_spinner()
+                               plotOutput(ns("mosaicsegmentedind"), height = "640px") |> add_spinner()
                              )
                            )
           ),
@@ -133,9 +135,11 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
     ns <- session$ns
     observe({
       req(mosaic_data)
-      updateSelectInput(session, "mosaic_to_segment", choices = setdiff(names(mosaic_data), "mosaic"), selected = NULL)
-      updateTextInput(session, "new_segment", value = paste0(input$mosaic_to_segment, "_segmented"))
+      updateSelectInput(session, "mosaic_to_segment", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = NULL)
       updatePickerInput(session, "segmentindex", choices = sort(pliman_indexes()))
+    })
+    observe({
+      updateTextInput(session, "new_segment", value = paste0(input$mosaic_to_segment, "_segmented"))
     })
 
 
@@ -143,40 +147,71 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
     observeEvent(input$startsegment, {
       # Reactive expression to store the cropped mosaic
       segmented_mosaic <- reactiveVal(NULL)
-      basemap <-
-        mosaic_view(
-          mosaic_data[[input$mosaic_to_segment]]$data,
-          r = as.numeric(r$r),
-          g = as.numeric(g$g),
-          b = as.numeric(b$b)
-        )
+      if(input$mosaic_to_segment == "Active mosaic"){
+        mtemp <- mosaic_data$mosaic
+      } else{
+        mtemp <- mosaic_data[[input$mosaic_to_segment]]$data
+      }
+      req(mtemp)
       if(input$usemaskorind){
-        req(basemap)
-        output$orimosaic <- renderLeaflet({
-          basemap@map
+        output$orimosaic <- renderPlot({
+          if(terra::nlyr(mtemp) > 2){
+            terra::plotRGB(
+              mtemp,
+              r = as.numeric(r$r),
+              g = as.numeric(g$g),
+              b = as.numeric(b$b),
+              stretch = "lin"
+            )
+          } else{
+            terra::plot(mtemp)
+          }
         })
-        seg <- mosaic_segment(mosaic_data[[input$mosaic_to_segment]]$data,
-                              index = input$segmentindex,
-                              r = as.numeric(r$r),
-                              g = as.numeric(g$g),
-                              b = as.numeric(b$b),
-                              re = as.numeric(re$re),
-                              nir = as.numeric(nir$nir),
-                              threshold = ifelse(input$threshold == "Otsu", "Otsu", input$threshvalue),
-                              invert = input$invertmask)
-        req(seg)
-        output$mosaicsegmentedind <- renderLeaflet({
+        observe({
+          if(input$threshold == "Otsu"){
+            thresh <- "Otsu"
+          } else{
+            req(input$threshvalue)
+            thresh <- input$threshvalue
+          }
+
+          typeseg <- ifelse(input$maskorseg == "Mask", "mask", "mosaic")
+          seg <- mosaic_segment(mtemp,
+                                index = input$segmentindex,
+                                r = as.numeric(r$r),
+                                g = as.numeric(g$g),
+                                b = as.numeric(b$b),
+                                re = as.numeric(re$re),
+                                nir = as.numeric(nir$nir),
+                                threshold = thresh,
+                                invert = input$invertmask,
+                                return = typeseg)
+          req(seg)
+          output$mosaicsegmentedind <- renderPlot({
+            if(terra::nlyr(seg) > 2){
+              terra::plotRGB(
+                seg,
+                r = as.numeric(r$r),
+                g = as.numeric(g$g),
+                b = as.numeric(b$b),
+                stretch = "lin"
+              )
+            } else{
+              terra::plot(seg)
+            }
+          })
+          segmented_mosaic(seg)
+        })
+
+      } else{
+        basemap <-
           mosaic_view(
-            seg,
+            mtemp,
             r = as.numeric(r$r),
             g = as.numeric(g$g),
-            b = as.numeric(b$b)
-          )@map
-
-        })
-        segmented_mosaic(seg)
-      } else{
-
+            b = as.numeric(b$b),
+            max_pixels = 2500000
+          )
         req(basemap)
         backpoints <- reactiveValues(back = NULL)
         forepoints <- reactiveValues(fore = NULL)
@@ -198,7 +233,7 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
             back <- callModule(editMod, "samplepoints", basemap@map, editor = "leafpm")
             observeEvent(input$donaback, {
               if (!is.null(back()$finished)) {
-                backpoints$back <- back()$finished |> sf::st_transform(sf::st_crs(mosaic_data[[input$mosaic_to_segment]]$data))
+                backpoints$back <- back()$finished |> sf::st_transform(sf::st_crs(mtemp))
               }
               doneback$done <- TRUE
             })
@@ -217,7 +252,7 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
             fore <- callModule(editMod, "samplepoints", basemap@map, editor = "leafpm")
             observeEvent(input$donefore, {
               if (!is.null(fore()$finished)) {
-                fore <- fore()$finished |> sf::st_transform(sf::st_crs(mosaic_data[[input$mosaic_to_segment]]$data))
+                fore <- fore()$finished |> sf::st_transform(sf::st_crs(mtemp))
                 fore <-  fore |>  sf::st_difference(backpoints$back) |> sf_to_polygon()
                 forepoints$fore <- fore
               }
@@ -225,32 +260,32 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
               req(backpoints$back)
               req(forepoints$fore)
               back_sample <-
-                exactextractr::exact_extract(mosaic_data[[input$mosaic_to_segment]]$data, backpoints$back, progress = FALSE) |>
+                exactextractr::exact_extract(mtemp, backpoints$back, progress = FALSE) |>
                 dplyr::bind_rows() |>
                 dplyr::select(-coverage_fraction) |>
                 dplyr::mutate(class = 0)
 
               fore_sample <-
-                exactextractr::exact_extract(mosaic_data[[input$mosaic_to_segment]]$data, forepoints$fore, progress = FALSE) |>
+                exactextractr::exact_extract(mtemp, forepoints$fore, progress = FALSE) |>
                 dplyr::bind_rows() |>
                 dplyr::select(-coverage_fraction) |>
                 dplyr::mutate(class = 1)
               df_train <- dplyr::bind_rows(fore_sample, back_sample)
               if(ncol(df_train) == 2){
-                names(df_train)[[1]] <- names(mosaic_data[[input$mosaic_to_segment]]$data)
+                names(df_train)[[1]] <- names(mtemp)
               }
               mod <- suppressWarnings(
                 glm(class ~.,
                     data = df_train,
                     family = binomial("logit"))
               )
-              mask <- terra::predict(mosaic_data[[input$mosaic_to_segment]]$data, mod, type = "response")
+              mask <- terra::predict(mtemp, mod, type = "response")
               mask[mask < 0.5] <- 0
               mask[mask > 0.5] <- 1
               if(input$maskorseg == 'Mask'){
                 segmented_mosaic(mask)
               } else{
-                segmented_mosaic(terra::mask(mosaic_data[[input$mosaic_to_segment]]$data, mask, maskvalue = TRUE, inverse = TRUE))
+                segmented_mosaic(terra::mask(mtemp, mask, maskvalue = TRUE, inverse = TRUE))
               }
 
               sendSweetAlert(

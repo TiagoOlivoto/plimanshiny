@@ -209,7 +209,7 @@ mosaic_info <- function(mo){
     icon("border-all"),tags$b("Number of columns: "), paste0(terra::ncol(mo)), tags$br(),
     icon("border-all"),tags$b("Number of rows: "), paste0(terra::nrow(mo)), tags$br(),
     icon("layer-group"),tags$b("Number of layers: "), paste0(terra::nlyr(mo), " (",paste0(names(mo), collapse = ", ") , ")"), tags$br(),
-    icon("ruler-combined"),tags$b("Resolution: "), paste0(paste(round(terra::res(mo), 5), collapse = ", "), " (x, y)"), tags$br(),
+    icon("ruler-combined"),tags$b("Resolution: "), paste0(paste(round(terra::res(mo), 8), collapse = ", "), " (x, y)"), tags$br(),
     icon("ruler-combined"),tags$b("Extend: "), paste0(sub("^ext\\((.*)\\)$", "\\1", paste0(round(terra::ext(mo), 2))), " (xmin, xmax, ymin, ymax)"), tags$br(),
     icon("earth-americas"),tags$b("CRS: "), paste0(crsname), tags$br(),
     icon("database"),tags$b("Data Type: "), paste0(dt), tags$br()

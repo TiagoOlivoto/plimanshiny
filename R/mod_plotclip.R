@@ -124,9 +124,11 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
       req(mosaic_data)
       updateSelectInput(session, "mosaic_to_clip", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = "Active mosaic")
       updateSelectInput(session, "shape_to_clip", choices = setdiff(names(shapefile), "shapefile"))
-      updateTextInput(session, "new_mask", value = paste0(input$mosaic_to_clip, "_masked"))
       availablecl <- parallel::detectCores()
       updateNumericInput(session, "numworkersclip", value = round(availablecl * 0.5), max = availablecl - 2)
+    })
+    observe({
+      updateTextInput(session, "new_mask", value = paste0(input$mosaic_to_clip, "_masked"))
     })
 
     volumes <- c("R Installation" = R.home(), getVolumes()())
