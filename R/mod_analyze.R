@@ -835,8 +835,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           } else{
 
             req(input$numworkers)
-            cl <- parallel::makeCluster(input$numworkers)
-            doParallel::registerDoParallel(cl)
+            nworkers <- input$numworkers
+            future::plan(future::multisession, workers = nworkers)
+            on.exit(future::plan(future::sequential))
+            `%dofut%` <- doFuture::`%dofuture%`
             waiter_show(
               html = tagList(
                 spin_google(),
@@ -845,8 +847,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               color = "#228B227F"
             )
 
-            ## declare alias for dopar command
-            `%dopar%` <- foreach::`%dopar%`
             tmpterra <- tempdir()
             if(!is.null(index$index)){
               mosaic_export(index$index, paste0(tmpterra, "/tmpindex.tif"), overwrite = TRUE)
@@ -878,8 +878,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             pathmosaic <- pathmosaic$path
 
             bind <-
-              foreach::foreach(i = 1:nrow(shp),
-                               .packages = c("pliman")) %dopar%{
+              foreach::foreach(i = 1:nrow(shp)) %dofut%{
                                  if(indexnull){
                                    indexes <- NULL
                                  } else{

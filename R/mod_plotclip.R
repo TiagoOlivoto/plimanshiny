@@ -149,11 +149,10 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
       )
       req(input$mosaic_to_clip)
       shptocrop <- shapefile[[input$shape_to_clip]]$data
-      mosaictocrop <- mosaic_data[[input$mosaic_to_clip]]$data
-      req(shptocrop)
-      req(mosaictocrop)
+
       updateSelectInput(session, "uniqueid", choices = names(shptocrop))
       if(input$mosaic_to_clip == "Active mosaic"){
+        mosaictocrop <- mosaic_data$mosaic
         bcrop <- basemap$map
       } else{
         bcrop <-
@@ -164,15 +163,13 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
             b = as.numeric(b$b),
             max_pixels = 500000
           )
+        mosaictocrop <- mosaic_data[[input$mosaic_to_clip]]$data
       }
-
-
 
       output$mosaicandshape <- renderLeaflet({
         req(bcrop)
         (bcrop + shapefile_view(shptocrop))@map
       })
-
 
 
       # Observe event for mosaic crop action
@@ -197,6 +194,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
               value = 0,
               total = nrow(shptocrop)
             )
+
             for(i in 1:nrow(shptocrop)){
               updateProgressBar(
                 session = session,
@@ -214,9 +212,10 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
             }
           } else{
             req(input$numworkersclip)
-            cl <- parallel::makeCluster(input$numworkersclip)
-            doParallel::registerDoParallel(cl)
-            on.exit(parallel::stopCluster(cl))
+            nworkers <- input$numworkersclip
+            future::plan(future::multisession, workers = nworkers)
+            on.exit(future::plan(future::sequential))
+            `%dofut%` <- doFuture::`%dofuture%`
 
             waiter_show(
               html = tagList(
@@ -225,9 +224,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
               ),
               color = "#228B227F"
             )
-
             ## declare alias for dopar command
-            `%dopar%` <- foreach::`%dopar%`
             uniqueid <- input$uniqueid
             shptocrop <- shapefile[[input$shape_to_clip]]$data
             req(shptocrop)
@@ -235,8 +232,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
             mosaic_export(mosaictocrop, paste0(tmpterra, "/tmpclip.tif"), overwrite = TRUE)
             format <- input$clipformat
 
-            foreach::foreach(i = 1:nrow(shptocrop),
-                             .packages = c("terra")) %dopar%{
+            foreach::foreach(i = 1:nrow(shptocrop)) %dofut%{
                                shptemp <- shptocrop[i, ]
                                ncolid <- which(colnames(shptemp) == uniqueid)
                                shpname <- shptemp |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()

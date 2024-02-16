@@ -12,8 +12,8 @@
 #' @importFrom stats binomial glm
 #' @importFrom utils data stack
 #' @importFrom exactextractr exact_extract
-#' @importFrom parallel makeCluster stopCluster
-#' @importFrom doParallel registerDoParallel
+#' @importFrom future plan multisession
+#' @importFrom doFuture `%dofuture%`
 #' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach
 #' @rawNamespace import(bs4Dash, except = c(progressBar, insertTab, actionButton, updateTabsetPanel, column, tabsetPanel, tabPanel, navbarMenu))
 #' @rawNamespace import(terra, except = c(panel, shift, distance))

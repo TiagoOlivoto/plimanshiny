@@ -148,7 +148,25 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                         choices = c("none", setdiff(names(shapefile), "shapefile")),
                         selected = "none")
       if(!is.null(shapefile$shapefile)){
-        mosaictmp$mosaic <- terra::crop(mosaic_data$mosaic, terra::ext(shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE)))
+
+        if((sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic))){
+          sendSweetAlert(
+            session = session,
+            title = "Invalid CRS",
+            text = "The Coordinate Reference System (CRS) of the shapefile does
+            not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
+            type = "warning"
+          )
+        } else if(!overlaps(mosaic_data$mosaic, shapefile$shapefile)){
+          sendSweetAlert(
+            session = session,
+            title = "Extend do not overlap",
+            text = "The mosaic and shapefile extends do not overlap.",
+            type = "warning"
+          )
+        } else{
+          mosaictmp$mosaic <- terra::crop(mosaic_data$mosaic, terra::ext(shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE)))
+        }
       } else{
         mosaictmp$mosaic <- mosaic_data$mosaic
       }
@@ -273,7 +291,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
               abline(v = ots,
                      col = "red",
                      lty = 2,
-                     )
+              )
             }
           })
           output$indexsync <- renderUI({
