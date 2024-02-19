@@ -36,6 +36,8 @@ golem::add_module(name = "interpolate")
 golem::add_module(name = "aggregate")
 golem::add_module(name = "resample")
 golem::add_module(name = "segment")
+golem::add_module(name = "imageimport")
+golem::add_module(name = "imageanal")
 
 ## Add packages
 usethis::use_package("shiny")

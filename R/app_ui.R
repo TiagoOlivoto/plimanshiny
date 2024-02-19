@@ -162,7 +162,17 @@ app_ui <- function(request) {
           bs4SidebarMenuItem(
             "Image analysis",
             icon = shiny::icon("images"),
-            startExpanded = F
+            startExpanded = F,
+            bs4SidebarMenuSubItem(
+              text = "Image",
+              tabName = "imageimport",
+              icon = shiny::icon("image", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Analyze",
+              tabName = "imageanal",
+              icon = shiny::icon("chart-line", verify_fa = FALSE)
+            )
 
           )
 ####
@@ -194,6 +204,14 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "mosaicanalyze",
             mod_analyze_ui("analyze_1")
+          ),
+          bs4TabItem(
+            tabName = "imageimport",
+            mod_imageimport_ui("imageimport_1")
+          ),
+          bs4TabItem(
+            tabName = "imageanal",
+            mod_imageanal_ui("imageanal_1")
           )
         )
       )
