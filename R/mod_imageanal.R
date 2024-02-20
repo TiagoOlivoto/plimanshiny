@@ -19,33 +19,48 @@ mod_imageanal_ui <- function(id){
           status  = "success",
           type = "tabs",
           tabPanel(
-            title = "Single image",
+            title = "Configure the Analysis",
             actionBttn(ns("analyzeimg"),
                        label = "Analyze!",
-                       status = "success"),
+                       status = "success",
+                       icon = icon("wand-magic")),
             pickerInput(
               inputId = ns("plotindexes"),
               label = "Index to segment",
               choices = "",
               multiple = TRUE
             ),
+            textInput(ns("myindex"),
+                      label = "My personalized index",
+                      value = ""),
             fluidRow(
               col_6(
-                prettyCheckbox(
-                  inputId = ns("invertindex"),
-                  label = "Invert",
-                  value = FALSE,
-                  icon = icon("check"),
-                  status = "success",
-                  animation = "rotate"
+                fluidRow(
+                  col_6(
+                    prettyCheckbox(
+                      inputId = ns("invertindex"),
+                      label = "Invert",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    )
+                  ),
+                  col_6(
+                    prettyCheckbox(
+                      inputId = ns("fillhull"),
+                      label = "Fill Holes",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    )
+                  )
                 ),
-                prettyCheckbox(
-                  inputId = ns("contour"),
-                  label = "Contour",
-                  value = FALSE,
-                  icon = icon("check"),
-                  status = "success",
-                  animation = "rotate"
+                numericInput(
+                  inputId = ns("filter"),
+                  label = "Median Filter",
+                  value = 0
                 )
               ),
               col_6(
@@ -93,20 +108,50 @@ mod_imageanal_ui <- function(id){
               ),
               conditionalPanel(
                 condition = "input.reftype == true", ns = ns,
-                pickerInput(
-                  inputId = ns("largesmall"),
-                  label = "Reference type",
-                  choices = c("Larger object", "Smaller object"),
-                  selected = "Larger object"
-                ),
-                numericInput(inputId = ns("refarea"),
-                             label = "Reference area",
-                             value = NA)
+                fluidRow(
+                  col_6(
+                    pickerInput(
+                      inputId = ns("largesmall"),
+                      label = "Reference type",
+                      choices = c("Larger object", "Smaller object"),
+                      selected = "Larger object"
+                    )
+                  ),
+                  col_6(
+                    numericInput(inputId = ns("refareasiz"),
+                                 label = "Reference area",
+                                 value = NA)
+                  )
+                )
+              ),
+              conditionalPanel(
+                condition = "input.reftype == false", ns = ns,
+                fluidRow(
+                  col_4(
+                    textInput(
+                      inputId = ns("back_fore_index"),
+                      label = "Back/Fore index",
+                      value = "R/(G/B)"
+                    )
+                  ),
+                  col_4(
+                    textInput(
+                      inputId = ns("fore_ref_index"),
+                      label = "Fore/Ref index",
+                      value = "B-R"
+                    )
+                  ),
+                  col_4(
+                    numericInput(inputId = ns("refareacol"),
+                                 label = "Reference area",
+                                 value = NA)
+                  )
+                )
               )
             )
           ),
           tabPanel(
-            title = "Batch processing",
+            title = "Configure Output",
             h3("Assign output to the R environment"),
             fluidRow(
               col_4(
@@ -202,26 +247,14 @@ mod_imageanal_server <- function(id, imgdata){
                           `actions-box` = TRUE,
                           `live-search` = TRUE
                         ))
-      print(input$tolerance)
     })
 
 
+    parms <- reactive({
+      # req(input$plotindexes)
+      mindex <- strsplit(input$myindex, split = ",")[[1]]
 
 
-    output$index <- renderPlot({
-      req(imgdata$img)
-      req(input$plotindexes)
-      image_index(imgdata$img, index = input$plotindexes)
-    })
-
-    output$segment <- renderPlot({
-      req(imgdata$img)
-      req(input$plotindexes)
-      image_segment(imgdata$img, index = input$plotindexes)
-    })
-
-
-    observeEvent(input$analyzeimg, {
       if(is.na(input$tolerance)){
         tol <- NULL
       } else{
@@ -243,6 +276,40 @@ mod_imageanal_server <- function(id, imgdata){
       } else{
         refsmaller <- FALSE
       }
+      list(index = c(mindex, input$plotindexes),
+           refsmaller = refsmaller,
+           reflarger = reflarger,
+           ext = ext,
+           tol = tol,
+           invert = input$invertindex,
+           filter = input$filter,
+           bfind = input$back_fore_index,
+           frind = input$fore_ref_index,
+           refarea =  na.omit(c(input$refareasiz, input$refareacol)),
+           fillhull = input$fillhull)
+
+
+    })
+
+    output$index <- renderPlot({
+      req(imgdata$img)
+      req(parms()$index)
+      image_index(imgdata$img, index = parms()$index)
+    })
+
+    output$segment <- renderPlot({
+      req(imgdata$img)
+      req(parms()$index)
+      image_segment(imgdata$img,
+                    index = parms()$index,
+                    invert = parms()$invert,
+                    filter = parms()$filter,
+                    fill_hull = parms()$fillhull)
+    })
+
+
+    observeEvent(input$analyzeimg, {
+
 
       waiter_show(
         html = tagList(
@@ -251,20 +318,22 @@ mod_imageanal_server <- function(id, imgdata){
         ),
         color = "#228B227F"
       )
-
       res <-
         analyze_objects(imgdata$img,
-                        index = input$plotindexes,
+                        index = parms()$index,
                         watershed = input$watershed,
-                        tolerance = tol,
-                        extension = ext,
+                        tolerance = parms()$tol,
+                        extension = parms()$ext,
                         reference = input$reference,
-                        reference_larger = reflarger,
-                        reference_smaller = refsmaller,
-                        reference_area = input$refarea,
+                        reference_larger = parms()$reflarger,
+                        reference_smaller = parms()$refsmaller,
+                        reference_area = parms()$refarea,
+                        fore_ref_index = parms()$frind,
+                        back_fore_index = parms()$bfind,
+                        invert = parms()$invert,
+                        fill_hull = parms()$fillhull,
                         plot = FALSE)
       req(res)
-
 
       output$resultsleafl <- renderLeaflet({
         image_view(imgdata$img, object = res)@map
