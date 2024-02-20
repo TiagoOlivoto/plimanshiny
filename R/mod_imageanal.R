@@ -44,12 +44,28 @@ mod_imageanal_ui <- function(id){
                       icon = icon("check"),
                       status = "success",
                       animation = "rotate"
+                    ),
+                    prettyCheckbox(
+                      inputId = ns("width_at"),
+                      label = "Width at",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
                     )
                   ),
                   col_6(
                     prettyCheckbox(
                       inputId = ns("fillhull"),
                       label = "Fill Holes",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    prettyCheckbox(
+                      inputId = ns("haralick"),
+                      label = "Haralick",
                       value = FALSE,
                       icon = icon("check"),
                       status = "success",
@@ -332,11 +348,27 @@ mod_imageanal_server <- function(id, imgdata){
                         back_fore_index = parms()$bfind,
                         invert = parms()$invert,
                         fill_hull = parms()$fillhull,
+                        haralick = input$haralick,
+                        width_at = input$width_at,
                         plot = FALSE)
       req(res)
 
+
       output$resultsleafl <- renderLeaflet({
-        image_view(imgdata$img, object = res)@map
+        sf_df <- sf::st_sf(
+          geometry = lapply(res$contours, function(x) {
+            tmp <- x
+            tmp[, 2] <- ncol(imgdata$img) - tmp[, 2]
+            sf::st_polygon(list(as.matrix(tmp |> poly_close())))
+          }),
+          data = data.frame(get_measures(res)),
+          crs = sf::st_crs("EPSG:3857")
+        )
+        colnames(sf_df) <- gsub("data.", "", colnames(sf_df))
+        (image_view(imgdata$img) + mapview::mapview(sf_df,
+                                           zcol = "area",
+                                           col.regions = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3)))@map
+
       })
 
       # summary
@@ -410,8 +442,7 @@ mod_imageanal_server <- function(id, imgdata){
 
 
       output$resultsindivtab <- DT::renderDataTable(
-        res$results |>
-          roundcols(),
+        get_measures(res) |> as.data.frame(),
         extensions = 'Buttons',
         rownames = FALSE,
         options = list(
