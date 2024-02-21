@@ -148,8 +148,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                         choices = c("none", setdiff(names(shapefile), "shapefile")),
                         selected = "none")
       if(!is.null(shapefile$shapefile)){
-
-        if((sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic))){
+        if((sf::st_crs(shapefile_input(shapefile$shapefile, info = FALSE)) != sf::st_crs(mosaic_data$mosaic))){
           sendSweetAlert(
             session = session,
             title = "Invalid CRS",
@@ -157,7 +156,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
             type = "warning"
           )
-        } else if(!overlaps(mosaic_data$mosaic, shapefile$shapefile)){
+        } else if(!overlaps(mosaic_data$mosaic, shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE))){
           sendSweetAlert(
             session = session,
             title = "Extend do not overlap",

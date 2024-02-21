@@ -62,6 +62,11 @@ mod_shapefile_prepare_ui <- function(id){
                                        min = 0,
                                        max = 1,
                                        value = 0.3),
+                           sliderInput(ns("lwdt"),
+                                       label = "Line width",
+                                       min = 0,
+                                       max = 5,
+                                       value = 2),
                            style = "unite",
                            icon = icon("gear"),
                            status = "success",
@@ -394,6 +399,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                  color = input$colorstroke,
                                  col.regions = input$colorfill,
                                  alpha.regions = input$alphacolorfill,
+                                 legend = FALSE,
+                                 lwd = input$lwdt,
                                  layer.name = "shapes")
             } else{
               nelem <- length(createdshape$shp)
@@ -403,6 +410,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                  color = input$colorstroke,
                                  col.regions = input$colorfill,
                                  alpha.regions = input$alphacolorfill,
+                                 legend = FALSE,
+                                 lwd = input$lwdt,
                                  layer.name = "shapes")
             }
 
@@ -447,7 +456,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   mapview::mapview(shapefile[[input$shapenamebuild]]$data,
                                    color = input$colorstroke,
                                    col.regions = input$colorfill,
-                                   # z.col = "plot_id",
+                                   lwd = input$lwdt,
                                    legend = FALSE,
                                    alpha.regions = input$alphacolorfill,
                                    layer.name = "shapes")
@@ -500,9 +509,9 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                         basemap$map +
                         mapview::mapview(shapefile[[input$shapenamebuild]]$data,
                                          color = input$colorstroke,
-                                         # col.regions = input$colorfill,
                                          z.col = "plot_id",
                                          alpha.regions = input$alphacolorfill,
+                                         lwd = input$lwdt,
                                          legend = FALSE,
                                          layer.name = "shapes")
                       mapp@map
@@ -629,7 +638,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   mapp <- mapview::mapview(shapefile$shapefile,
                                            zcol = input$colorshapeimport,
                                            color = input$colorstroke,
-                                           # col.regions = input$colorfill,
+                                           lwd = input$lwdt,
                                            alpha.regions = input$alphacolorfill,
                                            layer.name = "shapes")
                 }
@@ -641,6 +650,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                      color = input$colorstroke,
                                      col.regions = input$colorfill,
                                      alpha.regions = input$alphacolorfill,
+                                     lwd = input$lwdt,
                                      layer.name = "shapes")
 
                 } else{
@@ -712,6 +722,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                              color = input$colorstroke,
                                              col.regions = input$colorfill,
                                              alpha.regions = input$alphacolorfill,
+                                             lwd = input$lwdt,
                                              layer.name = "shapes")
                         } else{
                           mapp <-
@@ -719,6 +730,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                              color = input$colorstroke,
                                              col.regions = input$colorfill,
                                              alpha.regions = input$alphacolorfill,
+                                             lwd = input$lwdt,
                                              layer.name = "shapes")
                         }
                         mapp@map

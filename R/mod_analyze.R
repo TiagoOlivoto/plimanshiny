@@ -695,10 +695,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
       } else{
         indcomp <- NULL
       }
-      if(input$summarizefun == "none"){
+      if(input$summarizefun[[1]] == "none"){
         summf <- NULL
       } else{
-        summf <- input$summarizefun
+        summf <- input$summarizefun[[1]]
       }
 
       if(is.na(input$lower_size)){
@@ -1080,7 +1080,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
           output$boxresults <- renderPlotly({
 
-            if(input$summarizefunoutput == "none"){
+            if(input$summarizefunoutput[[1]] == "none"){
               plot_ind <-
                 result_plot_summ |>
                 as.data.frame() |>
@@ -1091,7 +1091,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               b <-
                 result_plot_summ |>
                 as.data.frame() |>
-                dplyr::select(dplyr::contains(input$summarizefunoutput)) |>
+                dplyr::select(dplyr::contains(input$summarizefunoutput[[1]])) |>
                 stack()
               b$ind <- as.character(b$ind)
               plot_ind <- pliman::separate_col(b, ind, into = c("statistic", "index"))
@@ -1209,7 +1209,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
           })
           output$boxresults <- renderPlotly({
-            if(input$summarizefunoutput == "none"){
+            if(input$summarizefunoutput[[1]] == "none"){
               plot_ind <-
                 result_plot |>
                 as.data.frame() |>
@@ -1220,7 +1220,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               b <-
                 result_plot |>
                 as.data.frame() |>
-                dplyr::select(dplyr::contains(input$summarizefunoutput)) |>
+                dplyr::select(dplyr::contains(input$summarizefunoutput[[1]])) |>
                 stack()
               b$ind <- as.character(b$ind)
               plot_ind <- pliman::separate_col(b, ind, into = c("statistic", "index"))
@@ -1262,7 +1262,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         } else {
           updateSelectInput(session, "plotattribute", choices = names(result_plot), selected = names(result_plot)[[3]])
           output$boxresults <- renderPlotly({
-            if(input$summarizefunoutput == "none"){
+            if(input$summarizefunoutput[[1]] == "none"){
               plot_ind <-
                 result_plot |>
                 as.data.frame() |>
@@ -1273,7 +1273,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               b <-
                 result_plot |>
                 as.data.frame() |>
-                dplyr::select(dplyr::contains(input$summarizefunoutput)) |>
+                dplyr::select(dplyr::contains(input$summarizefunoutput[[1]])) |>
                 stack()
               b$ind <- as.character(b$ind)
               plot_ind <- pliman::separate_col(b, ind, into = c("statistic", "index"))
