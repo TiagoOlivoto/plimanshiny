@@ -14,7 +14,7 @@ mod_imageanal_ui <- function(id){
       col_4(
         bs4TabCard(
           width = 12,
-          height = "720px",
+          # height = "790px",
           icon = icon("gears"),
           status  = "success",
           type = "tabs",
@@ -24,6 +24,38 @@ mod_imageanal_ui <- function(id){
                        label = "Analyze!",
                        status = "success",
                        icon = icon("wand-magic")),
+            awesomeRadio(
+              inputId = ns("singleorbatch"),
+              label = "Method of analysis",
+              choices = c("Single image", "Batch processing"),
+              selected = "Single image",
+              inline = TRUE,
+              status = "success"
+            ),
+            conditionalPanel(
+              condition = "input.singleorbatch == 'Batch processing'", ns = ns,
+              fluidRow(
+                col_4(
+                  br(),
+                  shinyDirButton(id=ns("sourcebatch"),
+                                 label="Input folder",
+                                 title="Input folder",
+                                 buttonType = "default",
+                                 class = NULL,
+                                 icon = NULL,
+                                 style = NULL),
+                ),
+                col_8(
+                  textInput(ns("indir"),
+                            label = "Input folder",
+                            value = "")
+                )
+              ),
+              textInput(ns("pattern"),
+                        label = "Name pattern",
+                        value = ""),
+              hl()
+            ),
             pickerInput(
               inputId = ns("plotindexes"),
               label = "Index to segment",
@@ -33,6 +65,23 @@ mod_imageanal_ui <- function(id){
             textInput(ns("myindex"),
                       label = "My personalized index",
                       value = ""),
+            fluidRow(
+              col_6(
+                pickerInput(
+                  inputId = ns("thresh"),
+                  label = "Threshold",
+                  choices = c("Otsu", "Numeric")
+                )
+              ),
+              col_6(
+                conditionalPanel(
+                  condition = "input.thresh == 'Numeric'", ns = ns,
+                  numericInput(ns("threshnum"),
+                               label = "Threshold",
+                               value = NULL)
+                )
+              )
+            ),
             fluidRow(
               col_6(
                 fluidRow(
@@ -164,6 +213,80 @@ mod_imageanal_ui <- function(id){
                   )
                 )
               )
+            ),
+            materialSwitch(
+              inputId = ns("saveimg"),
+              label = "Save the processed image(s)?",
+              value = FALSE,
+              status = "success"
+            ),
+            conditionalPanel(
+              condition = "input.saveimg == true", ns = ns,
+              fluidRow(
+                col_4(
+                  br(),
+                  shinyDirButton(id=ns("outfolder"),
+                                 label="Output folder",
+                                 title="Output folder",
+                                 buttonType = "default",
+                                 class = NULL,
+                                 icon = NULL,
+                                 style = NULL),
+                ),
+                col_8(
+                  textInput(ns("outdir"),
+                            label = "Output folder",
+                            value = "")
+                )
+              ),
+              hl(),
+              fluidRow(
+                col_4(
+                  pickerInput(
+                    inputId = ns("marker"),
+                    label = "Marker",
+                    choices = c("none", "point", "area", "length", "width")
+                  ),
+                ),
+                col_4(
+                  prettyCheckbox(
+                    inputId = ns("showcontour"),
+                    label = "Contour",
+                    value = TRUE,
+                    icon = icon("check"),
+                    status = "success",
+                    animation = "rotate"
+                  ),
+                  prettyCheckbox(
+                    inputId = ns("showlw"),
+                    label = "Length/Width",
+                    value = FALSE,
+                    icon = icon("check"),
+                    status = "success",
+                    animation = "rotate"
+                  )
+                ),
+                col_4(
+                  prettyCheckbox(
+                    inputId = ns("showchull"),
+                    label = "Convex Hull",
+                    value = FALSE,
+                    icon = icon("check"),
+                    status = "success",
+                    animation = "rotate"
+                  ),
+                  prettyCheckbox(
+                    inputId = ns("showsegment"),
+                    label = "Segmentation",
+                    value = FALSE,
+                    icon = icon("check"),
+                    status = "success",
+                    animation = "rotate"
+                  )
+                )
+              ),
+              hl()
+
             )
           ),
           tabPanel(
@@ -203,6 +326,10 @@ mod_imageanal_ui <- function(id){
           tabPanel(
             title = "Index",
             plotOutput(ns("index"), height = "720px") |> add_spinner()
+          ),
+          tabPanel(
+            title = "Density",
+            plotOutput(ns("indexhist"), height = "720px") |> add_spinner()
           ),
           tabPanel(
             title = "Segmentation",
@@ -266,6 +393,33 @@ mod_imageanal_server <- function(id, imgdata){
     })
 
 
+
+    observe({
+      volumes <- c("R Installation" = R.home(), getVolumes()())
+      shinyDirChoose(input, "sourcebatch",
+                     roots = volumes,
+                     session = session,
+                     restrictions = system.file(package = "base"))
+      # in folder
+      dirinput <- parseDirPath(volumes, input$sourcebatch)
+      req(dirinput)
+      updateTextInput(session, "indir", value = dirinput)
+      # out folder
+
+    })
+
+    observe({
+      volumes <- c("R Installation" = R.home(), getVolumes()())
+      shinyDirChoose(input, "outfolder",
+                     roots = volumes,
+                     session = session,
+                     restrictions = system.file(package = "base"))
+      diroutput <- parseDirPath(volumes, input$outfolder)
+      req(diroutput)
+      updateTextInput(session, "outdir", value = diroutput)
+    })
+
+
     parms <- reactive({
       # req(input$plotindexes)
       mindex <- strsplit(input$myindex, split = ",")[[1]]
@@ -281,7 +435,6 @@ mod_imageanal_server <- function(id, imgdata){
       } else{
         ext <- input$extension
       }
-
       if(input$reference & input$reftype & input$largesmall == "Larger object"){
         reflarger <- TRUE
       } else{
@@ -292,6 +445,13 @@ mod_imageanal_server <- function(id, imgdata){
       } else{
         refsmaller <- FALSE
       }
+      if(input$thresh == "Otsu"){
+        thresval <- "Otsu"
+      } else{
+        req(input$threshnum)
+        thresval <- input$threshnum
+      }
+
       list(index = c(mindex, input$plotindexes),
            refsmaller = refsmaller,
            reflarger = reflarger,
@@ -302,7 +462,8 @@ mod_imageanal_server <- function(id, imgdata){
            bfind = input$back_fore_index,
            frind = input$fore_ref_index,
            refarea =  na.omit(c(input$refareasiz, input$refareacol)),
-           fillhull = input$fillhull)
+           fillhull = input$fillhull,
+           thresval = thresval)
 
 
     })
@@ -310,7 +471,15 @@ mod_imageanal_server <- function(id, imgdata){
     output$index <- renderPlot({
       req(imgdata$img)
       req(parms()$index)
-      image_index(imgdata$img, index = parms()$index)
+      ind <- image_index(imgdata$img, index = parms()$index, plot = FALSE)
+
+      output$indexhist <- renderPlot({
+        ots <- otsu(ind[[1]]@.Data[!is.infinite(ind[[1]]@.Data) & !is.na(ind[[1]]@.Data)])
+        plot(ind, type = "density")
+        abline(v = ots)
+        title(sub = paste0("Otsu's threshold: ", round(ots, 4)))
+      })
+      plot(ind)
     })
 
     output$segment <- renderPlot({
@@ -320,38 +489,54 @@ mod_imageanal_server <- function(id, imgdata){
                     index = parms()$index,
                     invert = parms()$invert,
                     filter = parms()$filter,
-                    fill_hull = parms()$fillhull)
+                    fill_hull = parms()$fillhull,
+                    threshold = parms()$thresval)
     })
 
 
     observeEvent(input$analyzeimg, {
 
+      if(input$singleorbatch == "Single image"){
+        req(imgdata$img)
+        waiter_show(
+          html = tagList(
+            spin_google(),
+            h2("Analyzing the image Please, wait.")
+          ),
+          color = "#228B227F"
+        )
+        if(input$marker == "none"){
+          marker <- FALSE
+        } else{
+          marker <- input$marker
+        }
 
-      waiter_show(
-        html = tagList(
-          spin_google(),
-          h2("Analyzing the image Please, wait.")
-        ),
-        color = "#228B227F"
-      )
-      res <-
-        analyze_objects(imgdata$img,
-                        index = parms()$index,
-                        watershed = input$watershed,
-                        tolerance = parms()$tol,
-                        extension = parms()$ext,
-                        reference = input$reference,
-                        reference_larger = parms()$reflarger,
-                        reference_smaller = parms()$refsmaller,
-                        reference_area = parms()$refarea,
-                        fore_ref_index = parms()$frind,
-                        back_fore_index = parms()$bfind,
-                        invert = parms()$invert,
-                        fill_hull = parms()$fillhull,
-                        haralick = input$haralick,
-                        width_at = input$width_at,
-                        plot = FALSE)
-      req(res)
+        res <-
+          analyze_objects(imgdata$img,
+                          index = parms()$index,
+                          watershed = input$watershed,
+                          tolerance = parms()$tol,
+                          extension = parms()$ext,
+                          reference = input$reference,
+                          reference_larger = parms()$reflarger,
+                          reference_smaller = parms()$refsmaller,
+                          reference_area = parms()$refarea,
+                          fore_ref_index = parms()$frind,
+                          back_fore_index = parms()$bfind,
+                          invert = parms()$invert,
+                          fill_hull = parms()$fillhull,
+                          haralick = input$haralick,
+                          width_at = input$width_at,
+                          save_image = input$saveimg,
+                          dir_processed = input$outdir,
+                          marker = marker,
+                          show_contour = input$showcontour,
+                          show_chull = input$showchull,
+                          show_segmentation = input$showsegment,
+                          show_lw = input$showlw,
+                          threshold = parms()$thresval,
+                          plot = FALSE)
+      }
 
 
       output$resultsleafl <- renderLeaflet({
