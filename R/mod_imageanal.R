@@ -101,6 +101,30 @@ mod_imageanal_ui <- function(id){
                       icon = icon("check"),
                       status = "success",
                       animation = "rotate"
+                    ),
+                    prettyCheckbox(
+                      inputId = ns("abangles"),
+                      label = "A/B angles",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    prettyCheckbox(
+                      inputId = ns("efourier"),
+                      label = "Fourier",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    conditionalPanel(
+                      condition = "input.efourier == true", ns = ns,
+                      numericInput(
+                        inputId = ns("nharm"),
+                        label = "Harmonics",
+                        value = 10
+                      )
                     )
                   ),
                   col_6(
@@ -119,6 +143,35 @@ mod_imageanal_ui <- function(id){
                       icon = icon("check"),
                       status = "success",
                       animation = "rotate"
+                    ),
+                    prettyCheckbox(
+                      inputId = ns("pcv"),
+                      label = "PCV",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    prettyCheckbox(
+                      inputId = ns("objectindex"),
+                      label = "Object index",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    conditionalPanel(
+                      condition = "input.objectindex == true", ns = ns,
+                      pickerInput(
+                        inputId = ns("myobjectindex"),
+                        label = "Object index",
+                        choices = pliman_indexes(),
+                        multiple = TRUE,
+                        options = list(
+                          `actions-box` = TRUE,
+                          `live-search` = TRUE
+                        )
+                      )
                     )
                   )
                 ),
@@ -366,8 +419,12 @@ mod_imageanal_ui <- function(id){
                          style = "pill")
           ),
           tabPanel(
-            title = "Results (data)",
+            title = "Results (raw)",
             DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
+          ),
+          tabPanel(
+            title = "Results (summary)",
+            DT::dataTableOutput(ns("resultssummary"), height = "720px", width = 980)  |> add_spinner()
           )
         )
       )
@@ -510,7 +567,11 @@ mod_imageanal_server <- function(id, imgdata){
         } else{
           marker <- input$marker
         }
-
+        if(input$objectindex){
+          myobjectind <- input$myobjectindex
+        } else{
+          myobjectind <- NULL
+        }
         res <-
           analyze_objects(imgdata$img,
                           index = parms()$index,
@@ -535,121 +596,496 @@ mod_imageanal_server <- function(id, imgdata){
                           show_segmentation = input$showsegment,
                           show_lw = input$showlw,
                           threshold = parms()$thresval,
+                          efourier = input$efourier,
+                          nharm = input$nharm,
+                          ab_angles = input$abangles,
+                          object_index = myobjectind,
+                          pcv = input$pcv,
                           plot = FALSE)
+
+        waiter_hide()
+        sendSweetAlert(
+          session = session,
+          title = "Image successfully analyzed!!",
+          text = "The image has been analyzed and the results can now be seen in the tabs",
+          type = "success"
+        )
+
+
+        output$resultsleafl <- renderLeaflet({
+          sf_df <- sf::st_sf(
+            geometry = lapply(res$contours, function(x) {
+              tmp <- x
+              tmp[, 2] <- ncol(imgdata$img) - tmp[, 2]
+              sf::st_polygon(list(as.matrix(tmp |> poly_close())))
+            }),
+            data = data.frame(get_measures(res)),
+            crs = sf::st_crs("EPSG:3857")
+          )
+          colnames(sf_df) <- gsub("data.", "", colnames(sf_df))
+          (image_view(imgdata$img) + mapview::mapview(sf_df,
+                                                      zcol = "area",
+                                                      col.regions = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3)))@map
+
+        })
+
+        # summary
+        output$vbnindiv <- renderValueBox({
+          valueBox(
+            value = res$statistics$value[[1]],
+            subtitle = "Number objects",
+            color = "success",
+            icon = icon("table-cells")
+          )
+        })
+        output$vbnaveragearea <- renderValueBox({
+          valueBox(
+            value = round(res$statistics$value[[3]], 3),
+            subtitle = "Average area",
+            color = "success",
+            icon = icon("seedling")
+          )
+        })
+        output$largerindiv <- renderValueBox({
+          valueBox(
+            value = round(res$statistics$value[[4]], 3),
+            subtitle = "Larger individual (area)",
+            color = "success",
+            icon = icon("up-right-and-down-left-from-center")
+          )
+        })
+        output$smallerindiv <- renderValueBox({
+          valueBox(
+            value = round(res$statistics$value[[2]], 3),
+            subtitle = "Smaller individual (area)",
+            color = "success",
+            icon = icon("up-right-and-down-left-from-center")
+          )
+        })
+
+        output$boxarea <- renderPlotly({
+
+          p <-
+            ggplot(res$results, aes(y = area)) +
+            geom_boxplot(fill = "#28a745") +
+            theme_bw() +
+            theme(axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank())
+
+          plotly::ggplotly(p, dynamicTicks = TRUE)
+        })
+
+        output$boxlength <- renderPlotly({
+          p <-
+            ggplot(res$results, aes(y = length)) +
+            geom_boxplot(fill = "#28a745") +
+            theme_bw() +
+            theme(axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank())
+
+          plotly::ggplotly(p, dynamicTicks = TRUE)
+        })
+
+        output$boxwidth <- renderPlotly({
+          p <-
+            ggplot(res$results, aes(y = width)) +
+            geom_boxplot(fill = "#28a745") +
+            theme_bw() +
+            theme(axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank())
+
+          plotly::ggplotly(p, dynamicTicks = TRUE)
+        })
+
+
+
+        output$resultsindivtab <- DT::renderDataTable(
+          get_measures(res) |> as.data.frame(),
+          extensions = 'Buttons',
+          rownames = FALSE,
+          options = list(
+            dom = 'Blrtip',
+            buttons = c('copy', 'excel'),
+            paging = FALSE,
+            scrollX = TRUE,
+            scrollY = "620px",
+            pageLength = 15
+          )
+        )
+
+
+      } else{
+        if(input$marker == "none"){
+          marker <- FALSE
+        } else{
+          marker <- input$marker
+        }
+        imglist <- list.files(path = input$indir, pattern = input$pattern)
+        # imglist <- list.files(path = "D:/Downloads/batch", pattern = "INDIV")
+        results <- list()
+        progressSweetAlert(
+          session = session,
+          id = "myprogress",
+          title = "Start",
+          display_pct = TRUE,
+          value = 0,
+          total = length(imglist)
+        )
+        if(input$objectindex){
+          myobjectind <- input$myobjectindex
+        } else{
+          myobjectind <- NULL
+        }
+        for (i in seq_along(imglist)) {
+          updateProgressBar(
+            session = session,
+            id = "myprogress",
+            value = i,
+            title = paste0("Analyzing image ", imglist[[i]],". Please, wait."),
+            total = length(imglist)
+          )
+
+          results[[imglist[[i]]]] <-
+            analyze_objects(img = file_name(imglist[[i]]),
+                            index = parms()$index,
+                            watershed = input$watershed,
+                            tolerance = parms()$tol,
+                            extension = parms()$ext,
+                            reference = input$reference,
+                            reference_larger = parms()$reflarger,
+                            reference_smaller = parms()$refsmaller,
+                            reference_area = parms()$refarea,
+                            fore_ref_index = parms()$frind,
+                            back_fore_index = parms()$bfind,
+                            invert = parms()$invert,
+                            fill_hull = parms()$fillhull,
+                            haralick = input$haralick,
+                            width_at = input$width_at,
+                            save_image = input$saveimg,
+                            dir_processed = input$outdir,
+                            dir_original = input$indir,
+                            marker = marker,
+                            show_contour = input$showcontour,
+                            show_chull = input$showchull,
+                            show_segmentation = input$showsegment,
+                            show_lw = input$showlw,
+                            threshold = parms()$thresval,
+                            efourier = input$efourier,
+                            nharm = input$nharm,
+                            ab_angles = input$abangles,
+                            object_index = myobjectind,
+                            pcv = input$pcv,
+                            plot = FALSE)
+        }
+        req(results)
+        waiter_hide()
+        sendSweetAlert(
+          session = session,
+          title = "Images successfully analyzed!!",
+          text = "The batch processing has been finished and the results can now be seen in the tabs",
+          type = "success"
+        )
+
+
+
+
+        # bind the results
+        stats <-
+          do.call(rbind,
+                  lapply(seq_along(results), function(i){
+                    transform(results[[i]][["statistics"]],
+                              id =  names(results[i]))[,c(3, 1, 2)]
+                  })
+          )
+
+        if(input$objectindex){
+          if(!is.null(results[[1]][["object_rgb"]])){
+            obj_rgb <-
+              do.call(rbind,
+                      lapply(seq_along(results), function(i){
+                        transform(results[[i]][["object_rgb"]],
+                                  img =  names(results[i]))
+                      })
+              )
+            obj_rgb <- obj_rgb[, c(ncol(obj_rgb), 1:ncol(obj_rgb) - 1)]
+          } else{
+            obj_rgb <- NULL
+          }
+          object_index <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["object_index"]],
+                                img =  names(results[i]))
+                    })
+            )
+          object_index <- object_index[, c(ncol(object_index), 1:ncol(object_index) - 1)]
+        } else{
+          obj_rgb <- NULL
+          object_index <- NULL
+        }
+
+
+
+        if(input$efourier){
+          efourier <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["efourier"]],
+                                img =  names(results[i]))
+                    })
+            )
+          efourier <- efourier[, c(ncol(efourier), 1:ncol(efourier)-1)]
+          names(efourier)[2] <- "id"
+
+          efourier_norm <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["efourier_norm"]],
+                                img =  names(results[i]))
+                    })
+            )
+          efourier_norm <- efourier_norm[, c(ncol(efourier_norm), 1:ncol(efourier_norm)-1)]
+          names(efourier_norm)[2] <- "id"
+
+
+          efourier_error <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["efourier_error"]],
+                                img =  names(results[i]))
+                    })
+            )
+          efourier_error <- efourier_error[, c(ncol(efourier_error), 1:ncol(efourier_error)-1)]
+          names(efourier_error)[2] <- "id"
+
+          efourier_power <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["efourier_power"]],
+                                img =  names(results[i]))
+                    })
+            )
+          efourier_power <- efourier_power[, c(ncol(efourier_power), 1:ncol(efourier_power)-1)]
+          names(efourier_power)[2] <- "id"
+
+          efourier_minharm <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["efourier_minharm"]],
+                                img =  names(results[i]))
+                    })
+            )
+          efourier_minharm <- efourier_minharm[, c(ncol(efourier_minharm), 1:ncol(efourier_minharm)-1)]
+          names(efourier_minharm)[2] <- "id"
+
+        } else{
+          efourier <- NULL
+          efourier_norm <- NULL
+          efourier_error <- NULL
+          efourier_power <- NULL
+          efourier_minharm <- NULL
+        }
+
+        if(input$abangles){
+          angles <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["angles"]],
+                                img =  names(results[i]))
+                    })
+            )
+
+          angles <- angles[, c(ncol(angles), 1:ncol(angles)-1)]
+        } else{
+          angles <- NULL
+        }
+
+        if(input$width_at){
+          width_at <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["width_at"]],
+                                img =  names(results[i]))
+                    })
+            )
+
+          width_at <- width_at[, c(ncol(width_at), 1:ncol(width_at)-1)]
+        } else{
+          width_at <- NULL
+        }
+
+        if(input$pcv){
+          pcv <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      data.frame(pcv = results[[i]][["pcv"]]) |>
+                        transform(img =  names(results[i]))
+                    })
+            )
+
+          pcv <- pcv[, c("img", "pcv")]
+        } else{
+          pcv <- NULL
+        }
+
+        results <-
+          do.call(rbind,
+                  lapply(seq_along(results), function(i){
+                    transform(results[[i]][["results"]],
+                              img =  names(results[i]))
+                  })
+          )
+
+        if("img" %in% colnames(results)){
+          results <- results[, c(ncol(results), 1:ncol(results) - 1)]
+        }
+        summ <- stats[stats$stat == "n", c(1, 3)]
+
+        res <-
+          structure(
+            list(statistics = stats,
+                 count = summ,
+                 results = results,
+                 obj_rgb = obj_rgb,
+                 object_index = object_index,
+                 efourier = efourier,
+                 efourier_norm = efourier_norm,
+                 efourier_error = efourier_error,
+                 efourier_minharm = efourier_minharm,
+                 veins = NULL,
+                 angles = angles,
+                 width_at = width_at,
+                 pcv = pcv),
+            class = "anal_obj_ls"
+          )
+
+        # get the measures
+        rescor <- get_measures(res)
+
+        # summary
+        output$vbnindiv <- renderValueBox({
+          valueBox(
+            value = nrow(rescor$results),
+            subtitle = "Number objects",
+            color = "success",
+            icon = icon("table-cells")
+          )
+        })
+        output$vbnaveragearea <- renderValueBox({
+          valueBox(
+            value = round(mean(rescor$results$area), 3),
+            subtitle = "Average area",
+            color = "success",
+            icon = icon("seedling")
+          )
+        })
+        output$largerindiv <- renderValueBox({
+          valueBox(
+            value = round(max(rescor$results$area), 3),
+            subtitle = "Larger individual (area)",
+            color = "success",
+            icon = icon("up-right-and-down-left-from-center")
+          )
+        })
+        output$smallerindiv <- renderValueBox({
+          valueBox(
+            value = round(min(rescor$results$area), 3),
+            subtitle = "Smaller individual (area)",
+            color = "success",
+            icon = icon("up-right-and-down-left-from-center")
+          )
+        })
+
+        output$boxarea <- renderPlotly({
+
+          p <-
+            ggplot(res$results, aes(y = area)) +
+            geom_boxplot(fill = "#28a745") +
+            theme_bw() +
+            theme(axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank())
+
+          plotly::ggplotly(p, dynamicTicks = TRUE)
+        })
+
+        output$boxlength <- renderPlotly({
+          p <-
+            ggplot(res$results, aes(y = length)) +
+            geom_boxplot(fill = "#28a745") +
+            theme_bw() +
+            theme(axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank())
+
+          plotly::ggplotly(p, dynamicTicks = TRUE)
+        })
+
+        output$boxwidth <- renderPlotly({
+          p <-
+            ggplot(res$results, aes(y = width)) +
+            geom_boxplot(fill = "#28a745") +
+            theme_bw() +
+            theme(axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank())
+
+          plotly::ggplotly(p, dynamicTicks = TRUE)
+        })
+
+
+        output$resultsindivtab <- DT::renderDataTable(
+          rescor$results,
+          extensions = 'Buttons',
+          rownames = FALSE,
+          options = list(
+            dom = 'Blrtip',
+            buttons = c('copy', 'excel'),
+            paging = FALSE,
+            scrollX = TRUE,
+            scrollY = "620px",
+            pageLength = 15
+          )
+        )
+        ressumm <- rescor$summary
+        ressumm$img <- gsub("img", "", ressumm$img)
+        output$resultssummary <- DT::renderDataTable(
+          ressumm,
+          extensions = 'Buttons',
+          rownames = FALSE,
+          options = list(
+            dom = 'Blrtip',
+            buttons = c('copy', 'excel'),
+            paging = FALSE,
+            scrollX = TRUE,
+            scrollY = "620px",
+            pageLength = 15
+          )
+        )
+
       }
 
 
-      output$resultsleafl <- renderLeaflet({
-        sf_df <- sf::st_sf(
-          geometry = lapply(res$contours, function(x) {
-            tmp <- x
-            tmp[, 2] <- ncol(imgdata$img) - tmp[, 2]
-            sf::st_polygon(list(as.matrix(tmp |> poly_close())))
-          }),
-          data = data.frame(get_measures(res)),
-          crs = sf::st_crs("EPSG:3857")
+    })
+
+
+    # send the results to the global environment
+    observeEvent(input$savetoglobalenv, {
+      if (exists(input$globalvarname, envir = globalenv())) {
+        sendSweetAlert(
+          session = session,
+          title = "Error",
+          text = paste0("The object'", input$globalvarname, "' already exists in the global environment. Please, change the name."),
+          type = "success"
         )
-        colnames(sf_df) <- gsub("data.", "", colnames(sf_df))
-        (image_view(imgdata$img) + mapview::mapview(sf_df,
-                                           zcol = "area",
-                                           col.regions = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3)))@map
-
-      })
-
-      # summary
-      output$vbnindiv <- renderValueBox({
-        valueBox(
-          value = res$statistics$value[[1]],
-          subtitle = "Number objects",
-          color = "success",
-          icon = icon("table-cells")
+      } else {
+        assign(input$globalvarname, res, envir = globalenv())
+        ask_confirmation(
+          inputId = "myconfirmation",
+          type = "warning",
+          title = "Close the App?",
+          text = paste0("The object'", input$globalvarname, "' has been created in the Global environment. To access the created object, you need first to stop the App. Do you really want to close the app now?"),
+          btn_labels = c("Nope", "Yep"),
+          btn_colors = c("#FE642E", "#04B404")
         )
-      })
-      output$vbnaveragearea <- renderValueBox({
-        valueBox(
-          value = round(res$statistics$value[[3]], 3),
-          subtitle = "Average area",
-          color = "success",
-          icon = icon("seedling")
-        )
-      })
-      output$largerindiv <- renderValueBox({
-        valueBox(
-          value = round(res$statistics$value[[4]], 3),
-          subtitle = "Larger individual (area)",
-          color = "success",
-          icon = icon("up-right-and-down-left-from-center")
-        )
-      })
-      output$smallerindiv <- renderValueBox({
-        valueBox(
-          value = round(res$statistics$value[[2]], 3),
-          subtitle = "Smaller individual (area)",
-          color = "success",
-          icon = icon("up-right-and-down-left-from-center")
-        )
-      })
-
-      output$boxarea <- renderPlotly({
-
-        p <-
-          ggplot(res$results, aes(y = area)) +
-          geom_boxplot(fill = "#28a745") +
-          theme_bw() +
-          theme(axis.text.x = element_blank(),
-                axis.ticks.x = element_blank())
-
-        plotly::ggplotly(p, dynamicTicks = TRUE)
-      })
-
-      output$boxlength <- renderPlotly({
-        p <-
-          ggplot(res$results, aes(y = length)) +
-          geom_boxplot(fill = "#28a745") +
-          theme_bw() +
-          theme(axis.text.x = element_blank(),
-                axis.ticks.x = element_blank())
-
-        plotly::ggplotly(p, dynamicTicks = TRUE)
-      })
-
-      output$boxwidth <- renderPlotly({
-        p <-
-          ggplot(res$results, aes(y = width)) +
-          geom_boxplot(fill = "#28a745") +
-          theme_bw() +
-          theme(axis.text.x = element_blank(),
-                axis.ticks.x = element_blank())
-
-        plotly::ggplotly(p, dynamicTicks = TRUE)
-      })
-
-
-
-      output$resultsindivtab <- DT::renderDataTable(
-        get_measures(res) |> as.data.frame(),
-        extensions = 'Buttons',
-        rownames = FALSE,
-        options = list(
-          dom = 'Blrtip',
-          buttons = c('copy', 'excel'),
-          paging = FALSE,
-          scrollX = TRUE,
-          scrollY = "620px",
-          pageLength = 15
-        )
-      )
-      waiter_hide()
-      sendSweetAlert(
-        session = session,
-        title = "Image successfully analyzed!!",
-        text = "The image has been analyzed and the results can now be seen in the tabs",
-        type = "success"
-      )
-
-
-
-
+      }
     })
 
 
