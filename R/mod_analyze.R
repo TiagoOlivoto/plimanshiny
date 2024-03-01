@@ -772,6 +772,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                            upper_size = upper_size,
                            topn_lower = topn_lower,
                            topn_upper = topn_upper,
+                           map_individuals = input$mapindividuals,
+                           map_direction = input$mapdirection,
                            verbose = FALSE)
         } else{
           if(!input$parallelanalysis){
@@ -830,6 +832,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                                upper_size = upper_size,
                                topn_lower = topn_lower,
                                topn_upper = topn_upper,
+                               map_individuals = input$mapindividuals,
+                               map_direction = input$mapdirection,
                                verbose = FALSE)
             }
           } else{
@@ -876,6 +880,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             lower_noise <- input$lower_noise
             simplify <- input$simplify
             pathmosaic <- pathmosaic$path
+            mapindividuals = input$mapindividual
+            mapdirection = input$mapdirection
 
             bind <-
               foreach::foreach(i = 1:nrow(shp)) %dofut%{
@@ -907,6 +913,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                                                 upper_size = upper_size,
                                                 topn_lower = topn_lower,
                                                 topn_upper = topn_upper,
+                                                map_individuals = mapindividuals,
+                                                map_direction = mapdirection,
                                                 verbose = FALSE)
                                }
 
@@ -1420,6 +1428,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             list(result_plot = res$result_plot,
                  result_plot_summ = res$result_plot_summ,
                  result_individ = res$result_indiv,
+                 result_individ_map = res$result_individ_map,
                  map_plot = (basemap$map + mapshape$mapshape),
                  map_individual = (basemap$map + mapindiv$mapindiv),
                  shapefile = shptemp$shapefile)
