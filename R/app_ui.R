@@ -169,9 +169,19 @@ app_ui <- function(request) {
               icon = shiny::icon("image", verify_fa = FALSE)
             ),
             bs4SidebarMenuSubItem(
+              text = "Index/Mask/Segment",
+              tabName = "imagebinary",
+              icon = shiny::icon("images", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Color Palette",
+              tabName = "imagepalette",
+              icon = shiny::icon("palette", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
               text = "Analyze",
               tabName = "imageanal",
-              icon = shiny::icon("chart-line", verify_fa = FALSE)
+              icon = shiny::icon("magnifying-glass-chart", verify_fa = FALSE)
             )
 
           )
@@ -212,6 +222,14 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "imageanal",
             mod_imageanal_ui("imageanal_1")
+          ),
+          bs4TabItem(
+            tabName = "imagebinary",
+            mod_imagesegment_ui("imagesegment_1")
+          ),
+          bs4TabItem(
+            tabName = "imagepalette",
+            mod_imagepalette_ui("imagepalette_1")
           )
         )
       )

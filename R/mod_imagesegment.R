@@ -1,0 +1,322 @@
+#' imagesegment UI Function
+#'
+#' @description A shiny Module.
+#'
+#' @param id,input,output,session Internal parameters for {shiny}.
+#'
+#' @noRd
+#'
+#' @importFrom shiny NS tagList
+mod_imagesegment_ui <- function(id){
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      col_3(
+        bs4Card(
+          title = "Segment Settings",
+          collapsible = FALSE,
+          width = 12,
+          height = "720px",
+          hl(),
+          h3("Input"),
+          selectInput(ns("img_to_segment"),
+                      label = "Source image",
+                      choices = NULL),
+          awesomeRadio(
+            inputId = ns("segmentmethod"),
+            label = "Segmentation method",
+            choices = c("Index", "k-means", "Manual"),
+            selected = "Index",
+            status = "success"
+          ),
+          conditionalPanel(
+            condition = "input.segmentmethod == 'Index'", ns = ns,
+            pickerInput(
+              inputId = ns("imageindex"),
+              label = "Image index",
+              choices = "",
+              multiple = TRUE
+            ),
+            textInput(ns("myindex"),
+                      label = "My personalized index",
+                      value = ""),
+            fluidRow(
+              col_6(
+                pickerInput(
+                  inputId = ns("thresh"),
+                  label = "Threshold",
+                  choices = c("Otsu", "Numeric")
+                )
+              ),
+              col_6(
+                conditionalPanel(
+                  condition = "input.thresh == 'Numeric'", ns = ns,
+                  numericInput(ns("threshnum"),
+                               label = "Threshold",
+                               value = NULL)
+                )
+              )
+            ),
+            fluidRow(
+              col_3(
+                prettyCheckbox(
+                  inputId = ns("invertindex"),
+                  label = "Invert",
+                  value = FALSE,
+                  icon = icon("check"),
+                  status = "success",
+                  animation = "rotate"
+                )
+              ),
+              col_4(
+                prettyCheckbox(
+                  inputId = ns("fillhull"),
+                  label = "Fill Holes",
+                  value = FALSE,
+                  icon = icon("check"),
+                  status = "success",
+                  animation = "rotate"
+                )
+              ),
+              col_5(
+                prettyCheckbox(
+                  inputId = ns("naback"),
+                  label = "Background NA",
+                  value = FALSE,
+                  icon = icon("check"),
+                  status = "success",
+                  animation = "rotate"
+                )
+              )
+            ),
+            numericInput(
+              inputId = ns("filter"),
+              label = "Median Filter",
+              value = 0
+            )
+          ),
+          conditionalPanel(
+            condition = "input.segmentmethod == 'k-means'", ns = ns,
+            numericInput(
+              inputId = ns("nclasses"),
+              label = "Number of classes",
+              value = 2
+            )
+
+          )
+        )
+
+      ),
+      col_9(
+        bs4TabCard(
+          id = "tabs",
+          status = "success",
+          width = 12,
+          height = "790px",
+          title = "Results",
+          selected = "Index (raster)",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            title = "Index (raster)",
+            fluidRow(
+              col_6(
+                actionBttn(ns("createindex"),
+                           label = "Create!",
+                           style = "pill",
+                           no_outline = FALSE,
+                           icon = icon("plus"),
+                           color = "success")
+              ),
+              col_6(
+                textInput(
+                  ns("new_index"),
+                  label = "New image index",
+                  value = NULL
+                )
+              )
+            ),
+            plotOutput(ns("index"), height = "680px") |> add_spinner()
+          ),
+          tabPanel(
+            title = "Index (density)",
+            plotOutput(ns("indexhist"), height = "720px") |> add_spinner()
+          ),
+          tabPanel(
+            title = "Mask",
+            fluidRow(
+              col_6(
+                actionBttn(ns("createbinary"),
+                           label = "Create!",
+                           style = "pill",
+                           no_outline = FALSE,
+                           icon = icon("plus"),
+                           color = "success")
+              ),
+              col_6(
+                textInput(
+                  ns("new_binary"),
+                  label = "New binary image",
+                  value = NULL
+                )
+              )
+            ),
+            plotOutput(ns("binary"), height = "680px") |> add_spinner()
+          ),
+          tabPanel(
+            title = "Segment",
+            fluidRow(
+              col_6(
+                actionBttn(ns("createsegment"),
+                           label = "Create!",
+                           style = "pill",
+                           no_outline = FALSE,
+                           icon = icon("plus"),
+                           color = "success")
+              ),
+              col_6(
+                textInput(
+                  ns("new_segment"),
+                  label = "New segmented image",
+                  value = NULL
+                )
+              )
+            ),
+            plotOutput(ns("segmentation"), height = "680px") |> add_spinner()
+          )
+        )
+      )
+    )
+  )
+}
+
+#' imagesegment Server Functions
+#'
+#' @noRd
+mod_imagesegment_server <- function(id, imgdata){
+  moduleServer( id, function(input, output, session){
+    ns <- session$ns
+    observe({
+      req(imgdata$img)
+      updateSelectInput(session, "img_to_segment", choices = c("Active image", setdiff(names(imgdata), "img")), selected = "Active image")
+    })
+
+    observe({
+      updatePickerInput(session, "imageindex",
+                        choices = pliman_indexes_rgb(),
+                        options = list(
+                          `actions-box` = TRUE,
+                          `live-search` = TRUE
+                        ))
+    })
+
+    parms <- reactive({
+      mindex <- strsplit(input$myindex, split = ",")[[1]]
+      if(input$thresh == "Otsu"){
+        thresval <- "Otsu"
+      } else{
+        req(input$threshnum)
+        thresval <- input$threshnum
+      }
+      if(input$img_to_segment == "Active image"){
+        img <- imgdata$img
+      } else{
+        img <- imgdata[[input$img_to_segment]]$data
+
+      }
+
+      list(index = c(mindex, input$imageindex),
+           thresval = thresval,
+           img = img,
+           segmethod = input$segmentmethod)
+    })
+    output$index <- renderPlot({
+      if(parms()$segmethod == "Index"){
+        req(parms()$index)
+        req(parms()$img)
+        ind <- image_index(parms()$img, index = parms()$index, plot = FALSE)
+        output$indexhist <- renderPlot({
+          ots <- otsu(ind[[1]]@.Data[!is.infinite(ind[[1]]@.Data) & !is.na(ind[[1]]@.Data)])
+          plot(ind, type = "density")
+          abline(v = ots)
+          title(sub = paste0("Otsu's threshold: ", round(ots, 4)))
+        })
+      } else if(parms()$segmethod == "k-means"){
+        req(parms()$img)
+        ind <- image_index(parms()$img, index = "R+G+B", plot = FALSE)
+      }
+
+      observeEvent(input$createindex ,{
+        imgdata[[input$new_index]] <- create_reactval(name = input$new_index, data = ind)
+        sendSweetAlert(
+          session = session,
+          title = "Image index created",
+          text = paste0("The image index (", input$new_index, ") has been created and is now available for further processing."),
+          type = "success"
+        )
+      })
+      plot(ind)
+    })
+
+    output$binary <- renderPlot({
+      if(parms()$segmethod == "Index"){
+        req(parms()$img)
+        req(parms()$index)
+        bin <-
+          image_binary(parms()$img,
+                       index = parms()$index,
+                       invert = input$invertindex,
+                       filter = input$filter,
+                       fill_hull = input$fillhull,
+                       threshold = parms()$thresval)[[1]]
+      } else if(parms()$segmethod == "k-means"){
+        req(parms()$img)
+        bin <-
+          image_segment_kmeans(parms()$img,
+                               nclasses = input$nclasses,
+                               invert = input$invertindex,
+                               filter = input$filter,
+                               fill_hull = input$fillhull)[["clusters"]]
+      }
+      observeEvent(input$createbinary ,{
+        imgdata[[input$new_binary]] <- create_reactval(name = input$new_binary, data = bin)
+        sendSweetAlert(
+          session = session,
+          title = "Mask created",
+          text = paste0("The binary image (", input$new_binary, ") has been created and is now available for further processing."),
+          type = "success"
+        )
+      })
+
+    })
+    output$segmentation <- renderPlot({
+      req(parms()$img)
+      req(parms()$index)
+      seg <-
+        image_segment(parms()$img,
+                      index = parms()$index,
+                      invert = input$invertindex,
+                      filter = input$filter,
+                      fill_hull = input$fillhull,
+                      threshold = parms()$thresval,
+                      na_background = input$naback)
+      observeEvent(input$createsegment ,{
+        imgdata[[input$new_segment]] <- create_reactval(name = input$new_segment, data = seg)
+        sendSweetAlert(
+          session = session,
+          title = "Segmented image created",
+          text = paste0("The segmented image (", input$new_segment, ") has been created and is now available for further processing."),
+          type = "success"
+        )
+
+      })
+    })
+
+  })
+}
+
+## To be copied in the UI
+# mod_imagesegment_ui("imagesegment_1")
+
+## To be copied in the server
+# mod_imagesegment_server("imagesegment_1")

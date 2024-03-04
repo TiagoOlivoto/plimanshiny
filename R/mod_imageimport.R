@@ -40,6 +40,47 @@ mod_imageimport_ui <- function(id){
                           label = "Active image",
                           choices = NULL)
           ),
+          prettyCheckbox(
+            inputId = ns("resizeimg"),
+            label = "Resize",
+            value = FALSE,
+            icon = icon("check"),
+            status = "success",
+            animation = "rotate"
+          ),
+          conditionalPanel(
+            condition = "input.resizeimg == true", ns = ns,
+            fluidRow(
+              col_4(
+                numericInput(
+                  inputId = ns("relsize"),
+                  label = "Relative size",
+                  value = 100
+                )
+              ),
+              col_4(
+                numericInput(
+                  inputId = ns("width"),
+                  label = "Width (px)",
+                  value = 0
+                )
+              ),
+              col_4(
+                numericInput(
+                  inputId = ns("height"),
+                  label = "Height (px)",
+                  value = 0
+                )
+              )
+            ),
+            actionBttn(ns("resize"),
+                       label = "Resize!",
+                       style = "pill",
+                       no_outline = FALSE,
+                       icon = icon("expand"),
+                       color = "success")
+          ),
+
           hl(),
           div(class = "prep7",
               mod_download_mosaic_ui(ns("downloadimg"))
@@ -119,9 +160,44 @@ mod_imageimport_server <- function(id, imgdata){
         }
       })
 
+      observeEvent(input$resize, {
+        if(input$resizeimg){
+          if((input$width == 0 | is.na(input$width)) & (input$height == 0 | is.na(input$height))){
+            resized <- image_resize(imgdata$img,
+                                    rel_size = input$relsize)
+          }
+          if((input$width == 0 | is.na(input$width)) & (input$height != 0 & !is.na(input$height))){
+            resized <- image_resize(imgdata$img,
+                                    height = input$height)
+          }
+          if((input$width != 0 & !is.na(input$width)) & (input$height == 0 | is.na(input$height))){
+            resized <- image_resize(imgdata$img,
+                                    width = input$width)
+          }
+          if((input$width != 0 & !is.na(input$width)) & (input$height != 0 & !is.na(input$height))){
+            resized <- image_resize(imgdata$img,
+                                    width = input$width,
+                                    height = input$height)
+          }
+          imgdata[[paste0(input$activeimg, "_resized")]] <- create_reactval(paste0(input$activeimg, "_resized"), data = resized)
+
+          sendSweetAlert(
+            session = session,
+            title = "Resize process finished",
+            text = paste0("The image has been resized to ", nrow(resized), " x ", ncol(resized)),
+            type = "success"
+          )
+
+        }
+      })
+
       output$imgplot <- renderPlot({
         req(imgdata$img)  # Ensure mosaic_data$mosaic is not NULL
-        plot(imgdata$img)
+        if(inherits(imgdata$img, "integer")){
+          image(imgdata$img)
+        } else{
+          plot(imgdata$img)
+        }
       })
 
     })

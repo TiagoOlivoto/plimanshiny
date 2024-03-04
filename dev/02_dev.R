@@ -38,6 +38,9 @@ golem::add_module(name = "resample")
 golem::add_module(name = "segment")
 golem::add_module(name = "imageimport")
 golem::add_module(name = "imageanal")
+golem::add_module(name = "imageindex")
+golem::add_module(name = "imagesegment")
+golem::add_module(name = "imagepalette")
 
 ## Add packages
 usethis::use_package("shiny")
