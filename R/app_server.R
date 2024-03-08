@@ -35,5 +35,10 @@ app_server <- function(input, output, session) {
   mod_imageanal_server("imageanal_1", imgdata)
   mod_imagesegment_server("imagesegment_1", imgdata)
   mod_imagepalette_server("imagepalette_1", imgdata)
+
+  # Phytopathometry
+  mod_measurediseaseind_server("measurediseaseind_1", imgdata)
+  mod_imageimport_server("imageimport_2", imgdata)
 }
+
 

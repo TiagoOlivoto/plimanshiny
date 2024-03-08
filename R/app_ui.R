@@ -156,7 +156,17 @@ app_ui <- function(request) {
           bs4SidebarMenuItem(
             "Phytopathometry",
             icon = shiny::icon("leaf"),
-            startExpanded = F
+            startExpanded = F,
+            bs4SidebarMenuSubItem(
+              text = "Image",
+              tabName = "imageimportphyt",
+              icon = shiny::icon("image", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Measure disease (index)",
+              tabName = "measurediseaseind",
+              icon = shiny::icon("ruler-combined", verify_fa = FALSE)
+            )
 
           ),
           bs4SidebarMenuItem(
@@ -215,6 +225,17 @@ app_ui <- function(request) {
             tabName = "mosaicanalyze",
             mod_analyze_ui("analyze_1")
           ),
+          # Phytopathometry
+          bs4TabItem(
+            tabName = "imageimportphyt",
+            mod_imageimport_ui("imageimport_2")
+          ),
+          bs4TabItem(
+            tabName = "measurediseaseind",
+            mod_measurediseaseind_ui("measurediseaseind_1")
+          ),
+
+          # Image analysis
           bs4TabItem(
             tabName = "imageimport",
             mod_imageimport_ui("imageimport_1")
