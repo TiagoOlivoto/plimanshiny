@@ -54,6 +54,14 @@ mod_measurediseaseind_ui <- function(id){
               textInput(ns("pattern"),
                         label = "Name pattern",
                         value = ""),
+              prettyCheckbox(
+                inputId = ns("parallel"),
+                label = "Parallel processing",
+                value = FALSE,
+                icon = icon("check"),
+                status = "success",
+                animation = "rotate"
+              ),
               hl()
             ),
             fluidRow(
@@ -87,7 +95,8 @@ mod_measurediseaseind_ui <- function(id){
                               label = "Threshold",
                               min = 0,
                               max = 0,
-                              value = 0)
+                              value = 0,
+                              step = 0.05)
                 )
               ),
               col_6(
@@ -102,7 +111,8 @@ mod_measurediseaseind_ui <- function(id){
                               label = "Threshold",
                               min = 0,
                               max = 0,
-                              value = 0)
+                              value = 0,
+                              step = 0.05)
                 )
               )
             ),
@@ -176,13 +186,27 @@ mod_measurediseaseind_ui <- function(id){
                 ),
                 conditionalPanel(
                   condition = "input.showcontour == true", ns = ns,
-                  colorPickr(
-                    inputId = ns("colorcont"),
-                    label = "Contour color",
-                    swatches = scales::viridis_pal()(10),
-                    theme = "monolith",
-                    useAsButton = TRUE,
-                    selected = "red",
+                  fluidRow(
+                    col_5(
+                      colorPickr(
+                        inputId = ns("colorcont"),
+                        label = "Color",
+                        swatches = scales::viridis_pal()(10),
+                        theme = "monolith",
+                        useAsButton = TRUE,
+                        selected = "red",
+                      )
+                    ),
+                    col_7(
+                      sliderInput(
+                        inputId = ns("sizecont"),
+                        label = "Size",
+                        min = 1,
+                        max = 6,
+                        value = 3,
+                        step = 0.1
+                      )
+                    )
                   )
                 )
               )
@@ -220,6 +244,26 @@ mod_measurediseaseind_ui <- function(id){
                     label = "Marker",
                     choices = c("none", "point", "area", "length", "width")
                   )
+                ),
+                col_4(
+                  prettyCheckbox(
+                    inputId = ns("sad"),
+                    label = "SAD",
+                    value = FALSE,
+                    icon = icon("check"),
+                    status = "success",
+                    animation = "rotate"
+                  )
+                ),
+                col_4(
+                  conditionalPanel(
+                    condition = "input.sad == true", ns = ns,
+                    numericInput(
+                      inputId = ns("sadnumber"),
+                      label = "Number of classes",
+                      value = 6
+                    )
+                  )
                 )
               ),
               hl()
@@ -250,6 +294,21 @@ mod_measurediseaseind_ui <- function(id){
         )
       ),
       col_8(
+        uiOutput(ns("uiresults"))
+      )
+    )
+
+  )
+}
+
+#' measurediseaseind Server Functions
+#'
+#' @noRd
+mod_measurediseaseind_server <- function(id, imgdata){
+  moduleServer( id, function(input, output, session){
+    ns <- session$ns
+    output$uiresults <- renderUI({
+      if(input$singleorbatch == "Single image"){
         bs4TabCard(
           id = "tabs",
           status = "success",
@@ -267,25 +326,77 @@ mod_measurediseaseind_ui <- function(id){
             title = "Results",
             plotOutput(ns("resultplot"), height = "570px")  |> add_spinner(),
             plotlyOutput(ns("resultbar"), height = "150px") |> add_spinner()
+          )
+        )
+      } else if(input$singleorbatch == "Batch processing" & !input$sad){
+        bs4TabCard(
+          id = "tabs",
+          status = "success",
+          width = 12,
+          height = "790px",
+          title = "Results",
+          selected = "Segmentation",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            title = "Segmentation",
+            plotOutput(ns("analyzed"), height = "720px")
+          ),
+          tabPanel(
+            title = "Results (plot)",
+            fluidRow(
+              col_8(
+                plotlyOutput(ns("barplot"), height = "720px") |> add_spinner()
+              ),
+              col_4(
+                plotlyOutput(ns("histplot"), height = "720px") |> add_spinner()
+              )
+            )
           ),
           tabPanel(
             title = "Results (raw)",
             DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
           )
         )
-      )
-    )
+      } else{
+        bs4TabCard(
+          id = "tabs",
+          status = "success",
+          width = 12,
+          height = "790px",
+          title = "Results",
+          selected = "Segmentation",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            title = "Segmentation",
+            plotOutput(ns("analyzed"), height = "720px")
+          ),
+          tabPanel(
+            title = "Results (plot)",
+            fluidRow(
+              col_8(
+                plotlyOutput(ns("barplot"), height = "720px") |> add_spinner()
+              ),
+              col_4(
+                plotlyOutput(ns("histplot"), height = "720px") |> add_spinner()
+              )
+            )
+          ),
+          tabPanel(
+            title = "Standard Area Diagram",
+            plotOutput(ns("sadplot"), height = "720px")
+          ),
+          tabPanel(
+            title = "Results (raw)",
+            DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
+          )
+        )
+      }
 
-  )
-}
 
-#' measurediseaseind Server Functions
-#'
-#' @noRd
-mod_measurediseaseind_server <- function(id, imgdata){
-  moduleServer( id, function(input, output, session){
-    ns <- session$ns
 
+    })
     observe({
       updatePickerInput(session, "indexlb",
                         choices = pliman_indexes_rgb(),
@@ -369,14 +480,16 @@ mod_measurediseaseind_server <- function(id, imgdata){
         updateSliderInput(session, "threshnumlb",
                           min = segmentations$minlb,
                           max = segmentations$maxlb,
-                          value = segmentations$otsulb
+                          value = segmentations$otsulb,
+                          step = 0.0005
         )
       }
       if(!is.null(input$indexdh)){
         updateSliderInput(session, "threshnumdh",
                           min = segmentations$mindh,
                           max = segmentations$maxdh,
-                          value = segmentations$otsudh
+                          value = segmentations$otsudh,
+                          step = 0.0005
         )
       }
     })
@@ -495,6 +608,7 @@ mod_measurediseaseind_server <- function(id, imgdata){
             threshold = c(thresh1, thresh2),
             invert = c(input$invertindexlb, input$invertindexdh),
             contour_col = input$colorcont,
+            contour_size = input$sizecont,
             save_image = TRUE,
             plot = FALSE,
             dir_processed = tmpf,
@@ -505,6 +619,12 @@ mod_measurediseaseind_server <- function(id, imgdata){
         output$resultplot <- renderPlot({
           fil <- image_import(list.files(path = tmpf, pattern = "proc_shiny_disease"),
                               path = tmpf)
+          if(input$saveimg){
+            dir_processed = input$outdir
+            jpeg(paste0(dir_processed, "/proc_img.jpg"), width = nrow(fil), height = ncol(fil))
+            plot(fil)
+            dev.off()
+          }
           plot(fil)
         })
 
@@ -530,99 +650,164 @@ mod_measurediseaseind_server <- function(id, imgdata){
           type = "success"
         )
 
-
-
-        # output$resultsindivtab <- DT::renderDataTable(
-        #   get_measures(res) |> as.data.frame(),
-        #   extensions = 'Buttons',
-        #   rownames = FALSE,
-        #   options = list(
-        #     dom = 'Blrtip',
-        #     buttons = c('copy', 'excel'),
-        #     paging = FALSE,
-        #     scrollX = TRUE,
-        #     scrollY = "620px",
-        #     pageLength = 15
-        #   )
-        # )
-
-
+        # Multiple images
       } else{
         if(input$marker == "none"){
           marker <- FALSE
         } else{
           marker <- input$marker
         }
-        imglist <- list.files(path = input$indir, pattern = input$pattern)
-        results <- list()
-        progressSweetAlert(
-          session = session,
-          id = "myprogress",
-          title = "Start",
-          display_pct = TRUE,
-          value = 0,
-          total = length(imglist)
-        )
-        for (i in seq_along(imglist)) {
-          updateProgressBar(
+
+        if(input$threshlb == "Otsu"){
+          thresh1 <- "Otsu"
+        } else{
+          thresh1 <- input$threshnumlb
+        }
+        if(input$threshdh == "Otsu"){
+          thresh2 <- "Otsu"
+        } else{
+          thresh2 <- input$threshnumdh
+        }
+        if(!input$parallel){
+          imglist <- list.files(path = input$indir, pattern = input$pattern)
+          results <- list()
+          progressSweetAlert(
             session = session,
             id = "myprogress",
-            value = i,
-            title = paste0("Analyzing image ", imglist[[i]],". Please, wait."),
+            title = "Start",
+            display_pct = TRUE,
+            value = 0,
             total = length(imglist)
           )
+          for (i in seq_along(imglist)) {
+            updateProgressBar(
+              session = session,
+              id = "myprogress",
+              value = i,
+              title = paste0("Analyzing image ", imglist[[i]],". Please, wait."),
+              total = length(imglist)
+            )
+            sev <-
+              measure_disease(
+                img = file_name(imglist[[i]]),
+                index_lb = input$indexlb,
+                index_dh = input$indexdh,
+                col_leaf = input$colorleaf,
+                col_lesions = input$diseasecolor,
+                show_original = !input$showmask,
+                threshold = c(thresh1, thresh2),
+                invert = c(input$invertindexlb, input$invertindexdh),
+                contour_col = input$colorcont,
+                contour_size = input$sizecont,
+                save_image = input$saveimg,
+                dir_processed = input$outdir,
+                dir_original = input$indir,
+                plot = FALSE
+              )
+            results[[imglist[[i]]]] <- sev
+          }
+          req(results)
+          waiter_hide()
+          sendSweetAlert(
+            session = session,
+            title = "Images successfully analyzed!!",
+            text = "The batch processing has been finished and the results can now be seen in the tabs",
+            type = "success"
+          )
+        } else{
+          waiter_show(
+            html = tagList(
+              spin_google(),
+              h2(paste0("Analyzing the images in multiple sessions. Please, wait."))
+            ),
+            color = "#228B227F"
+          )
+          sev <-
+            measure_disease(
+              pattern = input$pattern,
+              dir_original = input$indir,
+              index_lb = input$indexlb,
+              index_dh = input$indexdh,
+              col_leaf = input$colorleaf,
+              col_lesions = input$diseasecolor,
+              show_original = !input$showmask,
+              threshold = c(thresh1, thresh2),
+              invert = c(input$invertindexlb, input$invertindexdh),
+              contour_col = input$colorcont,
+              contour_size = input$sizecont,
+              save_image = input$saveimg,
+              dir_processed = input$outdir,
+              parallel = TRUE,
+              plot = FALSE
+            )
 
-          # results[[imglist[[i]]]]
-
+          waiter_hide()
+          sendSweetAlert(
+            session = session,
+            title = "Images successfully analyzed!!",
+            text = "The batch processing has been finished and the results can now be seen in the tabs",
+            type = "success"
+          )
         }
-        req(results)
-        waiter_hide()
-        sendSweetAlert(
-          session = session,
-          title = "Images successfully analyzed!!",
-          text = "The batch processing has been finished and the results can now be seen in the tabs",
-          type = "success"
+
+        p1 <-
+          ggplot(sev$severity, aes(y = symptomatic)) +
+          geom_boxplot(fill = "forestgreen") +
+          theme_minimal() +
+          theme(axis.text.x = element_blank()) +
+          labs(y = "Symptomatic (%)",
+               y = "")
+        p2 <-
+          ggplot(sev$severity, aes(y = reorder(img, -symptomatic), x = symptomatic)) +
+          geom_col(fill = "forestgreen") +
+          theme_minimal()+
+          labs(x = "Symptomatic (%)",
+               y = "Image")
+        output$barplot <- renderPlotly({
+          plotly::ggplotly(p2)
+        })
+        output$histplot <- renderPlotly({
+          plotly::ggplotly(p1)
+        })
+
+        output$resultsindivtab <- DT::renderDataTable(
+          sev$severity,
+          extensions = 'Buttons',
+          rownames = FALSE,
+          options = list(
+            dom = 'Blrtip',
+            buttons = c('copy', 'excel'),
+            paging = FALSE,
+            scrollX = TRUE,
+            scrollY = "620px",
+            pageLength = 15
+          )
         )
 
-        #
-        #         severity <-
-        #           do.call(rbind,
-        #                   lapply(seq_along(results), function(i){
-        #                     transform(results[[i]][["severity"]],
-        #                               img =  names(results[i]))[, c(3, 1:2)]
-        #                   })
-        #           )
-        #
-        #
-        #         res <-
-        #           structure(
-        #             list(severity = severity,
-        #                  shape = shape,
-        #                  stats = stats,
-        #                  parms = list(
-        #                    pattern = pattern,
-        #                    img_healthy = img_healthy,
-        #                    img_symptoms = img_symptoms,
-        #                    img_background = img_background,
-        #                    dir_original = diretorio_original,
-        #                    dir_processed = diretorio_processada,
-        #                    save_image = save_image)),
-        #             class = "plm_disease"
-        #           )
-        #
-        #         output$resultssummary <- DT::renderDataTable(
-        #           ressumm,
-        #           extensions = 'Buttons',
-        #           rownames = FALSE,
-        #           options = list(
-        #             dom = 'Blrtip',
-        #             buttons = c('copy', 'excel'),
-        #             paging = FALSE,
-        #             scrollX = TRUE,
-        #             scrollY = "620px",
-        #             pageLength = 15
-        #           )
-        #         )
+      }
+
+    })
+
+    observe({
+      if(input$saveimg & input$sad & input$singleorbatch == "Batch processing"){
+        measures <-
+          sev$severity |>
+          transform(rank = rank(symptomatic))
+        nsamples <- input$sadnumber
+        n <- nrow(measures)
+        seq <- trunc(seq(1, n, length.out = nsamples))
+        seq[c(1, length(seq))] <- c(1, n)
+        leaves <- measures[which(measures$rank %in% seq),]
+        leaves <- leaves[order(leaves$rank),]
+        leaves_name <- paste0("proc_", leaves$img, ".jpg")
+        sads <- image_import(leaves_name, path = input$outdir)
+
+        output$sadplot <- renderPlot({
+          image_combine(sads,
+                        labels = paste0(round(leaves$symptomatic, 1), "%"),
+                        ncol = 4,
+                        nrow = 2)
+        })
 
       }
 
