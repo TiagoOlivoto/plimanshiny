@@ -49,10 +49,6 @@ mod_imagepalette_ui <- function(id){
           solidHeader = FALSE,
           type = "tabs",
           tabPanel(
-            title = "Mask",
-            plotOutput(ns("maskpalette"), height = "720px") |> add_spinner()
-          ),
-          tabPanel(
             title = "Color Palette",
             plotOutput(ns("colorpalette"), height = "720px") |> add_spinner()
           ),
@@ -90,10 +86,6 @@ mod_imagepalette_server <- function(id, imgdata){
                     proportional = input$proportional)
     })
 
-    output$maskpalette <- renderPlot({
-      req(parms())
-      image(parms()$mask)
-    })
     output$colorpalette <- renderPlot({
       req(parms())
       plot(parms()$joint)

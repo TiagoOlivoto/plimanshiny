@@ -70,15 +70,27 @@ mod_imageanal_ui <- function(id){
                 pickerInput(
                   inputId = ns("thresh"),
                   label = "Threshold",
-                  choices = c("Otsu", "Numeric")
+                  choices = c("Otsu", "Adaptive", "Numeric")
                 )
               ),
               col_6(
                 conditionalPanel(
                   condition = "input.thresh == 'Numeric'", ns = ns,
-                  numericInput(ns("threshnum"),
-                               label = "Threshold",
-                               value = NULL)
+                  sliderInput(ns("threshnum"),
+                              label = "Threshold",
+                              min = 0,
+                              max = 0,
+                              value = 0,
+                              step = 0.005)
+                ),
+                conditionalPanel(
+                  condition = "input.thresh == 'Adaptive'", ns = ns,
+                  sliderInput(ns("windowsize"),
+                              label = "Window size",
+                              min = 0,
+                              max = 0,
+                              value = 0,
+                              step = 1)
                 )
               )
             ),
@@ -504,7 +516,9 @@ mod_imageanal_server <- function(id, imgdata){
       }
       if(input$thresh == "Otsu"){
         thresval <- "Otsu"
-      } else{
+      } else if(input$thresh == "Adaptive"){
+        thresval <- "adaptive"
+      } else {
         req(input$threshnum)
         thresval <- input$threshnum
       }
@@ -530,6 +544,23 @@ mod_imageanal_server <- function(id, imgdata){
       req(parms()$index)
       ind <- image_index(imgdata$img, index = parms()$index, plot = FALSE)
 
+      # ind <- image_index(parms()$img, index = parms()$index, plot = FALSE)
+      ots <- otsu(ind[[1]]@.Data[!is.infinite(ind[[1]]@.Data) & !is.na(ind[[1]]@.Data)])
+      updateSliderInput(session, "threshnum",
+                        min = min(ind[[1]]),
+                        max = max(ind[[1]]),
+                        value = ots,
+                        step = 0.0005)
+      nc <- ncol(ind[[1]])
+      nr <- nrow(ind[[1]])
+      ws <- min(dim(ind[[1]])) / 10
+      updateSliderInput(session, "windowsize",
+                        min = 3,
+                        max = max(nc, nr) / 2,
+                        value = ws,
+                        step = 1)
+
+
       output$indexhist <- renderPlot({
         ots <- otsu(ind[[1]]@.Data[!is.infinite(ind[[1]]@.Data) & !is.na(ind[[1]]@.Data)])
         plot(ind, type = "density")
@@ -547,7 +578,8 @@ mod_imageanal_server <- function(id, imgdata){
                     invert = parms()$invert,
                     filter = parms()$filter,
                     fill_hull = parms()$fillhull,
-                    threshold = parms()$thresval)
+                    threshold = parms()$thresval,
+                    windowsize = input$windowsize)
     })
 
 
@@ -596,6 +628,7 @@ mod_imageanal_server <- function(id, imgdata){
                           show_segmentation = input$showsegment,
                           show_lw = input$showlw,
                           threshold = parms()$thresval,
+                          windowsize = input$windowsize,
                           efourier = input$efourier,
                           nharm = input$nharm,
                           ab_angles = input$abangles,
@@ -770,6 +803,7 @@ mod_imageanal_server <- function(id, imgdata){
                             show_segmentation = input$showsegment,
                             show_lw = input$showlw,
                             threshold = parms()$thresval,
+                            windowsize = input$windowsize,
                             efourier = input$efourier,
                             nharm = input$nharm,
                             ab_angles = input$abangles,
