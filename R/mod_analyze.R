@@ -567,11 +567,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
     maskval <- reactiveValues(mask = NULL)
     observe({
       req(shapefile$shapefile)
-      if(!inherits(shapefile$shapefile, "list")){
-        shptemp$shapefile <- list(shapefile$shapefile)
-      } else{
-        shptemp$shapefile <- shapefile$shapefile
-      }
+      shptemp$shapefile <- shapefile$shapefile
       req(input$availablemasks)
       if(input$availablemasks == "none"){
         maskval$mask <- NULL
@@ -698,7 +694,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
       if(input$summarizefun[[1]] == "none"){
         summf <- NULL
       } else{
-        summf <- input$summarizefun[[1]]
+        summf <- input$summarizefun
       }
 
       if(is.na(input$lower_size)){
@@ -739,6 +735,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           req(mosaic_data$mosaic)
           req(basemap$map)
           req(shptemp$shapefile)
+
           waiter_show(
             html = tagList(
               spin_google(),
@@ -746,7 +743,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             ),
             color = "#228B227F"
           )
-
           res <-
             mosaic_analyze(mosaic = mosaic_data$mosaic,
                            basemap = basemap$map,
@@ -885,38 +881,38 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
             bind <-
               foreach::foreach(i = 1:nrow(shp)) %dofut%{
-                                 if(indexnull){
-                                   indexes <- NULL
-                                 } else{
-                                   indexes <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext())
-                                 }
-                                 mosaic_analyze(terra::crop(mosaic_input(pathmosaic), terra::vect(shp$geometry[[i]]) |> terra::ext()),
-                                                indexes = indexes,
-                                                mask = maskval$mask,
-                                                plot = FALSE,
-                                                shapefile = shp[i, ],
-                                                segment_plot = segment_plot,
-                                                segment_individuals = segment_individuals,
-                                                simplify = simplify,
-                                                segment_index = indcomp,
-                                                watershed = watershed,
-                                                tolerance = tolerance,
-                                                extension = extension,
-                                                invert = invert,
-                                                summarize_fun = summf,
-                                                summarize_quantiles = summarize_quantiles,
-                                                include_if = include_if,
-                                                threshold = threshold,
-                                                filter = filter,
-                                                lower_noise = lower_noise,
-                                                lower_size = lower_size,
-                                                upper_size = upper_size,
-                                                topn_lower = topn_lower,
-                                                topn_upper = topn_upper,
-                                                map_individuals = mapindividuals,
-                                                map_direction = mapdirection,
-                                                verbose = FALSE)
-                               }
+                if(indexnull){
+                  indexes <- NULL
+                } else{
+                  indexes <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext())
+                }
+                mosaic_analyze(terra::crop(mosaic_input(pathmosaic), terra::vect(shp$geometry[[i]]) |> terra::ext()),
+                               indexes = indexes,
+                               mask = maskval$mask,
+                               plot = FALSE,
+                               shapefile = shp[i, ],
+                               segment_plot = segment_plot,
+                               segment_individuals = segment_individuals,
+                               simplify = simplify,
+                               segment_index = indcomp,
+                               watershed = watershed,
+                               tolerance = tolerance,
+                               extension = extension,
+                               invert = invert,
+                               summarize_fun = summf,
+                               summarize_quantiles = summarize_quantiles,
+                               include_if = include_if,
+                               threshold = threshold,
+                               filter = filter,
+                               lower_noise = lower_noise,
+                               lower_size = lower_size,
+                               upper_size = upper_size,
+                               topn_lower = topn_lower,
+                               topn_upper = topn_upper,
+                               map_individuals = mapindividuals,
+                               map_direction = mapdirection,
+                               verbose = FALSE)
+              }
 
             req(bind)
             names(bind) <- paste0("P", leading_zeros(1:length(bind), 4))
@@ -1032,6 +1028,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           result_plot_summ <- res$result_plot_summ
           result_plot <- res$result_plot
         }
+
 
         # if(!is.null(indcomp)){
         if(input$segmentindividuals){

@@ -1122,6 +1122,17 @@ mod_imageanal_server <- function(id, imgdata){
       }
     })
 
+    observe({
+      if (!is.null(input$myconfirmation)) {
+        if (input$myconfirmation) {
+          stopApp()
+        } else {
+          # Do something else or simply return if the confirmation is false
+          return()
+        }
+      }
+    })
+
 
 
   })

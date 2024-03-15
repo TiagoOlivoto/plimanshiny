@@ -238,14 +238,14 @@ mod_measurediseaseind_ui <- function(id){
               ),
               hl(),
               fluidRow(
-                col_4(
+                col_2(
                   pickerInput(
                     inputId = ns("marker"),
                     label = "Marker",
                     choices = c("none", "point", "area", "length", "width")
                   )
                 ),
-                col_4(
+                col_2(
                   prettyCheckbox(
                     inputId = ns("sad"),
                     label = "SAD",
@@ -255,13 +255,31 @@ mod_measurediseaseind_ui <- function(id){
                     animation = "rotate"
                   )
                 ),
-                col_4(
+                col_8(
                   conditionalPanel(
                     condition = "input.sad == true", ns = ns,
-                    numericInput(
-                      inputId = ns("sadnumber"),
-                      label = "Number of classes",
-                      value = 6
+                    fluidRow(
+                      col_4(
+                        numericInput(
+                          inputId = ns("sadnumber"),
+                          label = "Classes",
+                          value = 6
+                        )
+                      ),
+                      col_4(
+                        numericInput(
+                          inputId = ns("nrows"),
+                          label = "Rows",
+                          value = 2
+                        )
+                      ),
+                      col_4(
+                        numericInput(
+                          inputId = ns("ncols"),
+                          label = "Columns",
+                          value = 4
+                        )
+                      )
                     )
                   )
                 )
@@ -567,7 +585,7 @@ mod_measurediseaseind_server <- function(id, imgdata){
     })
 
 
-
+    sevsad <- reactiveValues(sev = NULL)
 
     observeEvent(input$analyzeimg, {
 
@@ -615,7 +633,8 @@ mod_measurediseaseind_server <- function(id, imgdata){
             prefix = "proc_shiny_disease"
           )
 
-        req(res)
+        req(sev)
+        sevsad$sev <- sev
         output$resultplot <- renderPlot({
           fil <- image_import(list.files(path = tmpf, pattern = "proc_shiny_disease"),
                               path = tmpf)
@@ -706,7 +725,15 @@ mod_measurediseaseind_server <- function(id, imgdata){
               )
             results[[imglist[[i]]]] <- sev
           }
-          req(results)
+          severity <-
+            do.call(rbind,
+                    lapply(seq_along(results), function(i){
+                      transform(results[[i]][["severity"]],
+                                img =  names(results[i]))[, c(3, 1:2)]
+                    })
+            )
+
+          sevsad$sev <- list(severity = severity)
           waiter_hide()
           sendSweetAlert(
             session = session,
@@ -715,10 +742,11 @@ mod_measurediseaseind_server <- function(id, imgdata){
             type = "success"
           )
         } else{
+          nimgs <- length(list.files(input$indir, pattern = input$pattern))
           waiter_show(
             html = tagList(
               spin_google(),
-              h2(paste0("Analyzing the images in multiple sessions. Please, wait."))
+              h2(paste0("Analyzing ", nimgs, " images in multiple sessions. Please, wait."))
             ),
             color = "#228B227F"
           )
@@ -740,7 +768,7 @@ mod_measurediseaseind_server <- function(id, imgdata){
               parallel = TRUE,
               plot = FALSE
             )
-
+          sevsad$sev <- sev
           waiter_hide()
           sendSweetAlert(
             session = session,
@@ -749,18 +777,20 @@ mod_measurediseaseind_server <- function(id, imgdata){
             type = "success"
           )
         }
-
         p1 <-
-          ggplot(sev$severity, aes(y = symptomatic)) +
+          ggplot(sevsad$sev$severity, aes(y = symptomatic)) +
           geom_boxplot(fill = "forestgreen") +
           theme_minimal() +
-          theme(axis.text.x = element_blank()) +
+          theme(axis.text.x = element_blank(),
+                panel.grid.major.x = element_blank()) +
           labs(y = "Symptomatic (%)",
                y = "")
         p2 <-
-          ggplot(sev$severity, aes(y = reorder(img, -symptomatic), x = symptomatic)) +
+          ggplot(sevsad$sev$severity, aes(y = reorder(img, -symptomatic), x = symptomatic)) +
           geom_col(fill = "forestgreen") +
           theme_minimal()+
+          theme(panel.grid.major.x = element_blank()
+                ) +
           labs(x = "Symptomatic (%)",
                y = "Image")
         output$barplot <- renderPlotly({
@@ -785,13 +815,13 @@ mod_measurediseaseind_server <- function(id, imgdata){
         )
 
       }
-
     })
 
     observe({
       if(input$saveimg & input$sad & input$singleorbatch == "Batch processing"){
+        req(sevsad$sev)
         measures <-
-          sev$severity |>
+          sevsad$sev$severity |>
           transform(rank = rank(symptomatic))
         nsamples <- input$sadnumber
         n <- nrow(measures)
@@ -805,8 +835,8 @@ mod_measurediseaseind_server <- function(id, imgdata){
         output$sadplot <- renderPlot({
           image_combine(sads,
                         labels = paste0(round(leaves$symptomatic, 1), "%"),
-                        ncol = 4,
-                        nrow = 2)
+                        ncol = input$ncols,
+                        nrow = input$nrows)
         })
 
       }
@@ -817,6 +847,7 @@ mod_measurediseaseind_server <- function(id, imgdata){
 
     # send the results to the global environment
     observeEvent(input$savetoglobalenv, {
+      print(sevsad$sev)
       if (exists(input$globalvarname, envir = globalenv())) {
         sendSweetAlert(
           session = session,
@@ -825,7 +856,7 @@ mod_measurediseaseind_server <- function(id, imgdata){
           type = "success"
         )
       } else {
-        assign(input$globalvarname, res, envir = globalenv())
+        assign(input$globalvarname, sevsad$sev, envir = globalenv())
         ask_confirmation(
           inputId = "myconfirmation",
           type = "warning",
@@ -834,6 +865,17 @@ mod_measurediseaseind_server <- function(id, imgdata){
           btn_labels = c("Nope", "Yep"),
           btn_colors = c("#FE642E", "#04B404")
         )
+      }
+    })
+
+    observe({
+      if (!is.null(input$myconfirmation)) {
+        if (input$myconfirmation) {
+          stopApp()
+        } else {
+          # Do something else or simply return if the confirmation is false
+          return()
+        }
       }
     })
 

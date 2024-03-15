@@ -35,7 +35,7 @@ app_ui <- function(request) {
         ),
         status = "white",
         fixed = TRUE,
-        "A Shiny app for {pliman} package",
+        "A Shiny app for the {pliman} package",
         rightUi = bs4DropdownMenu(
           type = "messages",
           badgeStatus = "danger",

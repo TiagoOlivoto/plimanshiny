@@ -45,7 +45,7 @@ mod_imagepalette_ui <- function(id){
           width = 12,
           height = "790px",
           title = "Results",
-          selected = "Mask",
+          selected = "Color Palette",
           solidHeader = FALSE,
           type = "tabs",
           tabPanel(

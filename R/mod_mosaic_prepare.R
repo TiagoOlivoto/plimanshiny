@@ -250,8 +250,9 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       if (input$showmosaic == "rgb") {
         if(nlyr(mosaic_data$mosaic) < 3){
           show_alert("Ops, too few bands",
-                     text = "The selected mosaics has too few bands and an RGB image cannot be rendered",
+                     text = "The current mosaic has too few bands and an RGB image cannot be rendered. Plotting a raster image",
                      type = "warning")
+          terra::plot(mosaic_data$mosaic)
         } else{
           terra::plotRGB(
             mosaic_data$mosaic,

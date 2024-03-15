@@ -480,8 +480,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                               feature_type = "polygon") |>
                 dplyr::relocate(geometry, .after = 2) |>
                 sf::st_transform(crs = 4326)
-              print(shapes)
-
 
               mapp <-
                 basemap$map@map |>

@@ -104,7 +104,8 @@ mod_imagesegment_ui <- function(id){
             numericInput(
               inputId = ns("filter"),
               label = "Median Filter",
-              value = 0
+              value = 0,
+              min = 2
             )
           ),
           conditionalPanel(
@@ -173,7 +174,7 @@ mod_imagesegment_ui <- function(id){
                 )
               )
             ),
-            plotOutput(ns("binary"), height = "680px") |> add_spinner()
+            plotOutput(ns("binary"), height = "680px")
           ),
           tabPanel(
             title = "Segment",
@@ -223,6 +224,7 @@ mod_imagesegment_server <- function(id, imgdata){
     })
 
     parms <- reactive({
+      req(imgdata$img)
       mindex <- strsplit(input$myindex, split = ",")[[1]]
       if(input$thresh == "Otsu"){
         thresval <- "Otsu"
@@ -253,7 +255,6 @@ mod_imagesegment_server <- function(id, imgdata){
         req(parms()$img)
         ind <- image_index(parms()$img, index = parms()$index, plot = FALSE)
 
-        # ind <- image_index(parms()$img, index = parms()$index, plot = FALSE)
         ots <- otsu(ind[[1]]@.Data[!is.infinite(ind[[1]]@.Data) & !is.na(ind[[1]]@.Data)])
         updateSliderInput(session, "threshnum",
                           min = min(ind[[1]]),
