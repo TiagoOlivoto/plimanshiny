@@ -240,5 +240,4 @@ overlaps <- function(mosaic, shape){
   mosaic_coords <- c(mosaic_extent[1], mosaic_extent[2], mosaic_extent[3], mosaic_extent[4])
   shape_coords <- c(shape_coord[1], shape_coord[2], shape_coord[3], shape_coord[4])
   any(mosaic_coords[1:2] < shape_coords[3:4] & mosaic_coords[3:4] > shape_coords[1:2])
-
 }

@@ -6,6 +6,7 @@ import(bs4Dash, except = c(progressBar, insertTab, actionButton, updateTabsetPan
 import(esquisse)
 import(foreach)
 import(ggplot2)
+import(histoslider)
 import(leaflet)
 import(leaflet.extras2, except = c(menuItem, addSpinner))
 import(leafsync)

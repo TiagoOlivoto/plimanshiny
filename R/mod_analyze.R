@@ -456,7 +456,13 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map plot",
-            leafletOutput(ns("resultsplotmap"), height = "720px")  |> add_spinner(),
+            materialSwitch(
+              inputId = ns("compareslidermap"),
+              label = "Comparison slider?",
+              value = FALSE,
+              status = "success"
+            ),
+            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner(),
             downloadBttn(ns("downloadplotmap"),
                          label = "Take a shot",
                          style = "pill")
@@ -515,6 +521,12 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map plot",
+            materialSwitch(
+              inputId = ns("compareslidermap"),
+              label = "Comparison slider?",
+              value = FALSE,
+              status = "success"
+            ),
             leafletOutput(ns("resultsplotmap"), height = "720px") |> add_spinner(),
             downloadBttn(ns("downloadplotmap"),
                          label = "Take a shot",
@@ -546,6 +558,12 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map plot",
+            materialSwitch(
+              inputId = ns("compareslidermap"),
+              label = "Comparison slider?",
+              value = FALSE,
+              status = "success"
+            ),
             leafletOutput(ns("resultsplotmap"), height = "720px") |> add_spinner(),
             downloadBttn(ns("downloadplotmap"),
                          label = "Take a shot",
@@ -1389,7 +1407,13 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         })
         # plot summary
         output$resultsplotmap <- renderLeaflet({
-          ((basemap$map +  bmshape$bmshape)  | mapshape$mapshape)@map
+          compsl <-
+          if(input$compareslidermap){
+            ((basemap$map +  bmshape$bmshape)  | mapshape$mapshape)@map
+          } else{
+            (basemap$map +  mapshape$mapshape)@map
+          }
+
         })
         output$resultsindivmap <- renderLeaflet({
           if(input$segmentindividuals){

@@ -19,6 +19,7 @@ Imports:
     golem (>= 0.4.1),
     graphics,
     grDevices,
+    histoslider,
     leaflet,
     leaflet.extras2,
     leafsync,

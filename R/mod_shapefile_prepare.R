@@ -246,59 +246,7 @@ mod_shapefile_prepare_ui <- function(id){
       )
     ),
     col_9(
-      bs4Card(
-        width = 12,
-        height = "780px",
-        title = "Building the shapefile",
-        color = "success",
-        status = "success",
-        maximizable = TRUE,
-        conditionalPanel(
-          condition = "input.shapetype == 'Build' & input.shapedone == false", ns = ns,
-          fluidRow(
-            col_8(
-              h4("Control points"),
-              editModUI(ns("shapefile_build"), height = "720px") |> add_spinner()
-            ),
-            col_4(
-              h4("Built shapefile"),
-              leafletOutput(ns("createdshapes"), height = "720px") |> add_spinner()
-            )
-          )
-        ),
-        conditionalPanel(
-          condition = "input.shapetype == 'Build' & input.shapedone == true", ns = ns,
-          fluidRow(
-            col_6(
-              h3("Built shapefile"),
-              leafletOutput(ns("plotshapedone"), height = "720px") |> add_spinner()
-            ),
-            col_6(
-              conditionalPanel(
-                condition = "input.editplots == true & input.editdone == false", ns = ns,
-                h3("Plot edition"),
-                editModUI(ns("plotedit"), height = "720px") |> add_spinner()
-              )
-            )
-          )
-        ),
-        conditionalPanel(
-          condition = "input.shapetype == 'Import'", ns = ns,
-          fluidRow(
-            col_6(
-              h3("Built shapefile"),
-              leafletOutput(ns("shapefile_mapview"), height = "720px") |> add_spinner()
-            ),
-            col_6(
-              conditionalPanel(
-                condition = "input.editplotsimpo == true & input.editdoneimpo == false", ns = ns,
-                h3("Plot edition"),
-                editModUI(ns("ploteditimpo"), height = "720px") |> add_spinner()
-              )
-            )
-          )
-        )
-      )
+      uiOutput(ns("uishape"))
     )
 
   )
@@ -328,6 +276,98 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                                                "skipLabel"="Skip",
                                                                steps = shapeimp),
                                                 events = list("oncomplete"=I('alert("Hope it helped!")'))))
+
+    output$uishape <- renderUI({
+      if(input$shapetype == "Build" & !input$editplots & !input$shapedone){
+        bs4TabCard(
+          id = "tabs",
+          status = "success",
+          width = 12,
+          height = "790px",
+          title = "Results",
+          selected = "Control points",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            "Control points",
+            editModUI(ns("shapefile_build"), height = "700px") |> add_spinner()
+          ),
+          tabPanel(
+            "Built shapefile",
+            leafletOutput(ns("createdshapes"), height = "700px") |> add_spinner()
+          )
+        )
+      } else if(input$shapetype == "Build" & input$shapedone & !input$editplots){
+        bs4TabCard(
+          id = "tabs",
+          status = "success",
+          width = 12,
+          height = "790px",
+          title = "Results",
+          selected = "Built shapefile",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            "Built shapefile",
+            leafletOutput(ns("plotshapedone"), height = "700px") |> add_spinner()
+          )
+        )
+      } else if(input$shapetype == "Build" & input$editplots & !input$editdone){
+        bs4TabCard(
+          id = "tabs",
+          status = "success",
+          width = 12,
+          height = "790px",
+          title = "Results",
+          selected = "Built shapefile",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            "Built shapefile",
+            leafletOutput(ns("plotshapedone"), height = "700px") |> add_spinner()
+          ),
+          tabPanel(
+            "Plot edition",
+            editModUI(ns("plotedit"), height = "700px") |> add_spinner()
+          )
+        )
+
+      } else if(input$shapetype == "Import" & !input$editplotsimpo){
+        bs4Card(
+          width = 12,
+          height = "780px",
+          title = "Building the shapefile",
+          color = "success",
+          status = "success",
+          maximizable = TRUE,
+          h3("Built shapefile"),
+          leafletOutput(ns("shapefile_mapview"), height = "700px") |> add_spinner()
+        )
+      } else if(input$shapetype == "Import" & input$editplotsimpo){
+        bs4Card(
+          width = 12,
+          height = "780px",
+          title = "Building the shapefile",
+          color = "success",
+          status = "success",
+          maximizable = TRUE,
+          fluidRow(
+            col_6(
+              h3("Built shapefile"),
+              leafletOutput(ns("shapefile_mapview"), height = "700px") |> add_spinner()
+            ),
+            col_6(
+              conditionalPanel(
+                condition = "input.editplotsimpo == true & input.editdoneimpo == false", ns = ns,
+                h3("Plot edition"),
+                editModUI(ns("ploteditimpo"), height = "700px") |> add_spinner()
+              )
+            )
+          )
+        )
+      }
+
+    })
 
     observeEvent(input$buildshapefile, {
       if(!input$buildshapefile){
@@ -501,7 +541,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 if(input$editdone == TRUE){
                   if(!is.null(editedpoints()$all)){
                     centplot <- sf::st_centroid(shapes)
-                    shapefile[[input$shapenamebuild]]$data <- editedpoints()$all
+                    shapefile[[input$shapenamebuild]]$data <- editedpoints()$all |> sf::st_transform(sf::st_crs(mosaic_data$mosaic))
                     output$plotshapedone <- renderLeaflet({
                       mapp <-
                         basemap$map +

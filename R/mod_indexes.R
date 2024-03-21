@@ -98,7 +98,7 @@ mod_indexes_ui <- function(id){
         bs4TabCard(
           id = "tabsindex",
           width = 12,
-          height = "760px",
+          height = "790px",
           status = "success",
           title = "Vegetation Indexes",
           selected = "Plot Index (raster)",
@@ -106,7 +106,39 @@ mod_indexes_ui <- function(id){
           type = "tabs",
           tabPanel(
             title = "Plot Index (raster)",
-            plotOutput(ns("plotindex"), height = "720px") |> add_spinner()
+            materialSwitch(
+              inputId = ns("truncateindex"),
+              label = "Truncate index?",
+              value = FALSE,
+              status = "success"
+            ),
+            conditionalPanel(
+              condition = "input.truncateindex == true", ns = ns,
+              fluidRow(
+                col_5(
+                  input_histoslider(
+                    id = ns("truncslider"),
+                    label = "Truncate to...",
+                    values = runif(50),
+                    height = 350,
+                  ),
+                  actionBttn(
+                    inputId = ns("truncindex"),
+                    label = "Truncate!",
+                    style = "pill",
+                    color = "success",
+                    icon = icon("down-left-and-up-right-to-center")
+                  )
+                ),
+                col_7(
+                  plotOutput(ns("plotindextrunc"), height = "600px")
+                )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.truncateindex == false", ns = ns,
+              plotOutput(ns("plotindex"), height = "720px") |> add_spinner()
+            )
           ),
           tabPanel(
             title = "Plot Index (density)",
@@ -271,22 +303,80 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           )
           index$index <- indextemp
           aggr <- find_aggrfact(indextemp)
+          magg <- reactiveValues(agg = NULL)
           if(aggr > 0){
-            magg <- mosaic_aggregate(indextemp, round(100 / aggr))
+            magg$agg <- mosaic_aggregate(indextemp, round(100 / aggr))
           } else{
-            magg <- indextemp
+            magg$agg <- indextemp
           }
           req(magg)
-          output$plotindex <- renderPlot({
+          # update histslider
+          observe({
             if (input$indextosync != "") {
-              terra::plot(magg[[input$indextosync]])
+              addPopover(
+                id = "truncslider",
+                options = list(
+                  content = "Use the slider to truncate the raster layer to a given range. After pressing 'Truncate!', the mosaic will be updated and will be available for further analysis.",
+                  title = "Truncating an index",
+                  placement = "bottom",
+                  trigger = "hover"
+                )
+              )
+
+              tt <- magg$agg[[input$indextosync]]
+              statsind <- terra::minmax(tt)
+              update_histoslider(
+                id = "truncslider",
+                values = terra::values(tt),
+                breaks = 100
+              )
             }
           })
+          truncated <- reactiveValues(trunc = NULL)
+          wastrunc <- reactiveValues(was = 0)
+          observe({
+            if (input$indextosync != "") {
+              if(input$truncateindex){
+                tt <- magg$agg[[input$indextosync]]
+                maskk <- tt > input$truncslider[[1]] & tt < input$truncslider[[2]]
+                trunctemp <- terra::mask(tt,maskk, maskvalues = FALSE)
+                truncated$trunc <- trunctemp
+                inrange <- terra::minmax(tt)
+                output$plotindextrunc <- renderPlot({
+                  terra::plot(trunctemp, maxcell=100000, smooth=TRUE, range = inrange)
+                })
+              } else{
+                  output$plotindex <- renderPlot({
+                    terra::plot(magg$agg[[input$indextosync]])
+                  })
+
+              }
+            }
+          })
+
+          observeEvent(input$truncindex, {
+            indori <- index$index
+            waiter_show(
+              html = tagList(
+                spin_google(),
+                h2("Truncating the original mosaic. This may take a while for high-resolution mosaics. Please, wait.")
+              ),
+              color = "#228B227F"
+            )
+            maskori <- (indori[[input$indextosync]] > input$truncslider[[1]]) & (indori[[input$indextosync]] < input$truncslider[[2]])
+            index$index <- terra::mask(indori, maskori, maskvalues = FALSE)
+            updateMaterialSwitch(session,
+                                 "truncateindex",
+                                 value = FALSE)
+            magg$agg <- truncated$trunc
+            waiter_hide()
+          })
+
           output$plotindexhist <- renderPlot({
             if (input$indextosync != "") {
-              ots <- otsu(na.omit(terra::values(magg[[input$indextosync]])))
-              terra::density(magg[[input$indextosync]],
-                             main = paste0(names(magg[[input$indextosync]]), " - Otsu: ", round(ots, 4)))
+              ots <- otsu(na.omit(terra::values(magg$agg[[input$indextosync]])))
+              terra::density(magg$agg[[input$indextosync]],
+                             main = paste0(names(magg$agg[[input$indextosync]]), " - Otsu: ", round(ots, 4)))
               abline(v = ots,
                      col = "red",
                      lty = 2,
@@ -296,14 +386,14 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
           output$indexsync <- renderUI({
             req(basemap$map)
             if (input$indextosync != "") {
-              leafsync::sync(basemap$map@map, mosaic_view(magg[[input$indextosync]],
+              leafsync::sync(basemap$map@map, mosaic_view(magg$agg[[input$indextosync]],
                                                           index = input$indextosync))
             }
           })
           output$indexshp <- renderLeaflet({
             if (input$indextosync != "") {
               if(input$shapefiletoplot != "none"){
-                indp <-  terra::mask(magg[[input$indextosync]],
+                indp <-  terra::mask(magg$agg[[input$indextosync]],
                                      shapefile[[input$shapefiletoplot]]$data |> shapefile_input(as_sf = FALSE, info = FALSE))
                 # mosaic_view(indp)@map
                 (basemap$map + mosaic_view(indp,

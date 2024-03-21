@@ -186,11 +186,6 @@ mod_imageanal_ui <- function(id){
                       )
                     )
                   )
-                ),
-                numericInput(
-                  inputId = ns("filter"),
-                  label = "Median Filter",
-                  value = 0
                 )
               ),
               col_6(
@@ -217,6 +212,36 @@ mod_imageanal_ui <- function(id){
 
                     )
                   )
+                )
+              )
+            ),
+            fluidRow(
+              col_3(
+                numericInput(
+                  inputId = ns("filter"),
+                  label = "Median Filter",
+                  value = 0
+                )
+              ),
+              col_3(
+                numericInput(
+                  inputId = ns("lowernoise"),
+                  label = "Lower noise",
+                  value = 0.15
+                )
+              ),
+              col_3(
+                numericInput(
+                  inputId = ns("lower_size"),
+                  label = "Lower size",
+                  value = NA
+                )
+              ),
+              col_3(
+                numericInput(
+                  inputId =ns("upper_size"),
+                  label = "Upper size",
+                  value = NA
                 )
               )
             ),
@@ -357,6 +382,10 @@ mod_imageanal_ui <- function(id){
           tabPanel(
             title = "Configure Output",
             h3("Assign output to the R environment"),
+            hl(),
+            numericInput(ns("maxpixel"),
+                         label = "Maximum pixels",
+                         value = 1e6),
             fluidRow(
               col_4(
                 actionButton(
@@ -523,6 +552,17 @@ mod_imageanal_server <- function(id, imgdata){
         thresval <- input$threshnum
       }
 
+      if (is.na(input$upper_size)) {
+        upper_size <- NULL
+      } else {
+        upper_size <- input$upper_size
+      }
+      if (is.na(input$lower_size)) {
+        lower_size <- NULL
+      } else {
+        lower_size <- input$lower_size
+      }
+
       list(index = c(mindex, input$plotindexes),
            refsmaller = refsmaller,
            reflarger = reflarger,
@@ -534,7 +574,10 @@ mod_imageanal_server <- function(id, imgdata){
            frind = input$fore_ref_index,
            refarea =  na.omit(c(input$refareasiz, input$refareacol)),
            fillhull = input$fillhull,
-           thresval = thresval)
+           thresval = thresval,
+           upper_size = upper_size,
+           lower_size = lower_size,
+           lower_noise = input$lowernoise)
 
 
     })
@@ -634,6 +677,9 @@ mod_imageanal_server <- function(id, imgdata){
                           ab_angles = input$abangles,
                           object_index = myobjectind,
                           pcv = input$pcv,
+                          lower_noise = parms()$lower_noise,
+                          lower_size = parms()$lower_size,
+                          upper_size = parms()$upper_size,
                           plot = FALSE)
 
         waiter_hide()
@@ -656,9 +702,9 @@ mod_imageanal_server <- function(id, imgdata){
             crs = sf::st_crs("EPSG:3857")
           )
           colnames(sf_df) <- gsub("data.", "", colnames(sf_df))
-          (image_view(imgdata$img) + mapview::mapview(sf_df,
-                                                      zcol = "area",
-                                                      col.regions = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3)))@map
+          (image_view(imgdata$img, max_pixels = input$maxpixel) + mapview::mapview(sf_df,
+                                                                                   zcol = "area",
+                                                                                   col.regions = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3)))@map
 
         })
 
@@ -809,6 +855,9 @@ mod_imageanal_server <- function(id, imgdata){
                             ab_angles = input$abangles,
                             object_index = myobjectind,
                             pcv = input$pcv,
+                            lower_noise = parms()$lower_noise,
+                            lower_size = parms()$lower_size,
+                            upper_size = parms()$upper_size,
                             plot = FALSE)
         }
         req(results)

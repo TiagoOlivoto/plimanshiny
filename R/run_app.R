@@ -14,7 +14,7 @@
 #' @importFrom exactextractr exact_extract
 #' @importFrom future plan multisession
 #' @importFrom doFuture `%dofuture%`
-#' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach
+#' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach histoslider
 #' @rawNamespace import(bs4Dash, except = c(progressBar, insertTab, actionButton, updateTabsetPanel, column, tabsetPanel, tabPanel, navbarMenu))
 #' @rawNamespace import(terra, except = c(panel, shift, distance))
 #' @rawNamespace import(leaflet.extras2, except = c(menuItem, addSpinner))

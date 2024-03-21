@@ -45,6 +45,7 @@ golem::add_module(name = "imagepalette")
 ## Add packages
 usethis::use_package("shiny")
 usethis::use_package("DT")
+usethis::use_package("histoslider")
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*
