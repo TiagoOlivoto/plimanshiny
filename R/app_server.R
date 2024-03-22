@@ -6,11 +6,11 @@
 #' @noRd
 app_server <- function(input, output, session) {
   mosaic_data <- reactiveValues()
-  r <- reactiveValues(r = NULL)
-  g <- reactiveValues(g = NULL)
-  b <- reactiveValues(b = NULL)
-  re <- reactiveValues(re = NULL)
-  nir <- reactiveValues(nir = NULL)
+  r <- reactiveValues(r = 1)
+  g <- reactiveValues(g = 2)
+  b <- reactiveValues(b = 3)
+  re <- reactiveValues(re = 4)
+  nir <- reactiveValues(nir = 5)
   basemap <- reactiveValues(map = NULL)
   bmap <- reactiveValues(map = NULL)
   index <- reactiveValues(index = NULL)

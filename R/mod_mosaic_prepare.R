@@ -75,10 +75,17 @@ mod_mosaic_prepare_ui <- function(id){
                     choices = 1:5,
                     selected = 5,
                   ),
+                  actionBttn(
+                    ns("donebands"),
+                    label = "Done",
+                    no_outline = FALSE,
+                    icon = icon("check"),
+                    color = "success"
+                  ),
                   circle = FALSE,
                   status = "success",
                   style = "unite",
-                  width = "150px",
+                  width = "170px",
                   icon = icon("layer-group"),
                   animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
                   tooltip = tooltipOptions(title = "Configure the bands")
@@ -175,7 +182,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
                                             events = list("oncomplete"=I('alert("Hope it helped!")'))))
     # GUIA
 
-    observe({
+    observeEvent(input$donebands, {
       # Update reactiveValues for color bands
       r$r <- input$r_band
       g$g <- input$g_band
