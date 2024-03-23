@@ -56,15 +56,21 @@ mod_imageanal_ui <- function(id){
                         value = ""),
               hl()
             ),
-            pickerInput(
-              inputId = ns("plotindexes"),
-              label = "Index to segment",
-              choices = "",
-              multiple = TRUE
+            fluidRow(
+              col_6(
+                pickerInput(
+                  inputId = ns("plotindexes"),
+                  label = "Image index",
+                  choices = "",
+                  multiple = TRUE
+                )
+              ),
+              col_6(
+                textInput(ns("myindex"),
+                          label = "My index",
+                          value = ""),
+              )
             ),
-            textInput(ns("myindex"),
-                      label = "My personalized index",
-                      value = ""),
             fluidRow(
               col_6(
                 pickerInput(
@@ -216,28 +222,44 @@ mod_imageanal_ui <- function(id){
               )
             ),
             fluidRow(
-              col_3(
+              col_4(
                 numericInput(
-                  inputId = ns("filter"),
-                  label = "Median Filter",
+                  inputId = ns("opening"),
+                  label = "Opening",
                   value = 0
                 )
               ),
-              col_3(
+              col_4(
+                numericInput(
+                  inputId = ns("closing"),
+                  label = "Closing",
+                  value = 0
+                )
+              ),
+              col_4(
+                numericInput(
+                  inputId = ns("filter"),
+                  label = "Median filter",
+                  value = 0
+                )
+              )
+            ),
+            fluidRow(
+              col_4(
                 numericInput(
                   inputId = ns("lowernoise"),
                   label = "Lower noise",
                   value = 0.15
                 )
               ),
-              col_3(
+              col_4(
                 numericInput(
                   inputId = ns("lower_size"),
                   label = "Lower size",
                   value = NA
                 )
               ),
-              col_3(
+              col_4(
                 numericInput(
                   inputId =ns("upper_size"),
                   label = "Upper size",
@@ -569,6 +591,8 @@ mod_imageanal_server <- function(id, imgdata){
            ext = ext,
            tol = tol,
            invert = input$invertindex,
+           opening = input$opening,
+           closing = input$closing,
            filter = input$filter,
            bfind = input$back_fore_index,
            frind = input$fore_ref_index,
@@ -620,6 +644,8 @@ mod_imageanal_server <- function(id, imgdata){
                     index = parms()$index,
                     invert = parms()$invert,
                     filter = parms()$filter,
+                    opening = parms()$opening,
+                    closing = parms()$closing,
                     fill_hull = parms()$fillhull,
                     threshold = parms()$thresval,
                     windowsize = input$windowsize)
@@ -677,6 +703,9 @@ mod_imageanal_server <- function(id, imgdata){
                           ab_angles = input$abangles,
                           object_index = myobjectind,
                           pcv = input$pcv,
+                          filter = parms()$filter,
+                          opening = parms()$opening,
+                          closing = parms()$closing,
                           lower_noise = parms()$lower_noise,
                           lower_size = parms()$lower_size,
                           upper_size = parms()$upper_size,
@@ -855,6 +884,9 @@ mod_imageanal_server <- function(id, imgdata){
                             ab_angles = input$abangles,
                             object_index = myobjectind,
                             pcv = input$pcv,
+                            filter = parms()$filter,
+                            opening = parms()$opening,
+                            closing = parms()$closing,
                             lower_noise = parms()$lower_noise,
                             lower_size = parms()$lower_size,
                             upper_size = parms()$upper_size,

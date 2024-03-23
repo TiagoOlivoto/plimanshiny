@@ -16,8 +16,6 @@ mod_imagesegment_ui <- function(id){
           title = "Segment Settings",
           collapsible = FALSE,
           width = 12,
-          height = "720px",
-          hl(),
           h3("Input"),
           selectInput(ns("img_to_segment"),
                       label = "Source image",
@@ -31,15 +29,21 @@ mod_imagesegment_ui <- function(id){
           ),
           conditionalPanel(
             condition = "input.segmentmethod == 'Index'", ns = ns,
-            pickerInput(
-              inputId = ns("imageindex"),
-              label = "Image index",
-              choices = "",
-              multiple = TRUE
+            fluidRow(
+              col_6(
+                pickerInput(
+                  inputId = ns("imageindex"),
+                  label = "Image index",
+                  choices = "",
+                  multiple = TRUE
+                )
+              ),
+              col_6(
+                textInput(ns("myindex"),
+                          label = "My index",
+                          value = ""),
+              )
             ),
-            textInput(ns("myindex"),
-                      label = "My personalized index",
-                      value = ""),
             fluidRow(
               col_6(
                 pickerInput(
@@ -101,11 +105,26 @@ mod_imagesegment_ui <- function(id){
                 )
               )
             ),
-            numericInput(
-              inputId = ns("filter"),
-              label = "Median Filter",
+            sliderInput(
+              inputId = ns("opening"),
+              label = "Opening",
               value = 0,
-              min = 2
+              min = 0,
+              max = 50
+            ),
+            sliderInput(
+              inputId = ns("closing"),
+              label = "Closing",
+              value = 0,
+              min = 0,
+              max = 50
+            ),
+            sliderInput(
+              inputId = ns("filter"),
+              label = "Median filter",
+              value = 0,
+              min = 0,
+              max = 50
             )
           ),
           conditionalPanel(
@@ -230,22 +249,22 @@ mod_imagesegment_server <- function(id, imgdata){
         thresval <- "Otsu"
       } else if(input$thresh == "Adaptive"){
         thresval <- "adaptive"
-        } else {
-          req(input$threshnum)
-          thresval <- input$threshnum
-        }
-        if(input$img_to_segment == "Active image"){
-          img <- imgdata$img
-        } else{
-          img <- imgdata[[input$img_to_segment]]$data
+      } else {
+        req(input$threshnum)
+        thresval <- input$threshnum
+      }
+      if(input$img_to_segment == "Active image"){
+        img <- imgdata$img
+      } else{
+        img <- imgdata[[input$img_to_segment]]$data
 
-        }
+      }
 
-        list(index = c(mindex, input$imageindex),
-             thresval = thresval,
-             img = img,
-             segmethod = input$segmentmethod)
-      })
+      list(index = c(mindex, input$imageindex),
+           thresval = thresval,
+           img = img,
+           segmethod = input$segmentmethod)
+    })
 
 
 
@@ -302,6 +321,8 @@ mod_imagesegment_server <- function(id, imgdata){
           image_binary(parms()$img,
                        index = parms()$index,
                        invert = input$invertindex,
+                       opening = input$opening,
+                       closing = input$closing,
                        filter = input$filter,
                        fill_hull = input$fillhull,
                        windowsize = input$windowsize,
@@ -312,6 +333,8 @@ mod_imagesegment_server <- function(id, imgdata){
           image_segment_kmeans(parms()$img,
                                nclasses = input$nclasses,
                                invert = input$invertindex,
+                               opening = input$opening,
+                               closing = input$closing,
                                filter = input$filter,
                                fill_hull = input$fillhull)[["clusters"]]
       }
@@ -335,6 +358,8 @@ mod_imagesegment_server <- function(id, imgdata){
         image_segment(parms()$img,
                       index = parms()$index,
                       invert = input$invertindex,
+                      opening = input$opening,
+                      closing = input$closing,
                       filter = input$filter,
                       fill_hull = input$fillhull,
                       threshold = parms()$thresval,
@@ -352,11 +377,13 @@ mod_imagesegment_server <- function(id, imgdata){
       })
     })
 
-    })
-  }
 
-  ## To be copied in the UI
-  # mod_imagesegment_ui("imagesegment_1")
 
-  ## To be copied in the server
-  # mod_imagesegment_server("imagesegment_1")
+  })
+}
+
+## To be copied in the UI
+# mod_imagesegment_ui("imagesegment_1")
+
+## To be copied in the server
+# mod_imagesegment_server("imagesegment_1")

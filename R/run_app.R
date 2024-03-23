@@ -8,10 +8,10 @@
 #' @importFrom plotly ggplotly renderPlotly plotlyOutput
 #' @importFrom shiny shinyApp
 #' @importFrom tidyr unnest
-#' @importFrom graphics abline
-#' @importFrom stats binomial glm
+#' @importFrom graphics abline par title
+#' @importFrom stats binomial glm reorder runif
+#' @importFrom grDevices dev.off jpeg
 #' @importFrom utils data stack
-#' @importFrom exactextractr exact_extract
 #' @importFrom future plan multisession
 #' @importFrom doFuture `%dofuture%`
 #' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach histoslider
