@@ -41,6 +41,7 @@ golem::add_module(name = "imageanal")
 golem::add_module(name = "imageindex")
 golem::add_module(name = "imagesegment")
 golem::add_module(name = "imagepalette")
+golem::add_module(name = "slider")
 
 ## Add packages
 usethis::use_package("shiny")
@@ -58,6 +59,7 @@ golem::add_js_file("script")
 golem::add_js_handler("handlers")
 golem::add_css_file("custom")
 golem::add_sass_file("custom")
+
 
 ## Add internal datasets ----
 ## If you have data in your package

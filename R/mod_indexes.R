@@ -146,7 +146,21 @@ mod_indexes_ui <- function(id){
           ),
           tabPanel(
             title = "Plot Index (shapefile)",
-            pickerpalette(id, "palplotindex", selected = "RdYlGn"),
+            fluidRow(
+              col_10(
+                pickerpalette(id, "palplotindex", selected = "RdYlGn"),
+              ),
+              col_2(
+                prettyCheckbox(
+                  inputId = ns("palplotindexrev"),
+                  label = "Reverse",
+                  value = FALSE,
+                  icon = icon("check"),
+                  status = "success",
+                  animation = "rotate"
+                )
+              )
+            ),
             leafletOutput(ns("indexshp"), height = "680px")|> add_spinner()
           ),
           tabPanel(
@@ -400,7 +414,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                                            max_pixels = 3000000,
                                            downsample_fun = "average",
                                            show = "index",
-                                           color_regions = return_colors(input$palplotindex)))@map
+                                           color_regions = return_colors(input$palplotindex, reverse = input$palplotindexrev)))@map
               }
             }
           })

@@ -267,22 +267,22 @@ mod_imagesegment_server <- function(id, imgdata){
     })
 
 
-
+    ind <- reactiveValues(ind = NULL)
     output$index <- renderPlot({
       if(parms()$segmethod == "Index"){
         req(parms()$index)
         req(parms()$img)
-        ind <- image_index(parms()$img, index = parms()$index, plot = FALSE)
+        indtmp <- image_index(parms()$img, index = parms()$index, plot = FALSE)
 
-        ots <- otsu(ind[[1]]@.Data[!is.infinite(ind[[1]]@.Data) & !is.na(ind[[1]]@.Data)])
+        ots <- otsu(indtmp[[1]]@.Data[!is.infinite(indtmp[[1]]@.Data) & !is.na(indtmp[[1]]@.Data)])
         updateSliderInput(session, "threshnum",
-                          min = min(ind[[1]]),
-                          max = max(ind[[1]]),
+                          min = min(indtmp[[1]]),
+                          max = max(indtmp[[1]]),
                           value = ots,
                           step = 0.0005)
-        nc <- ncol(ind[[1]])
-        nr <- nrow(ind[[1]])
-        ws <- min(dim(ind[[1]])) / 10
+        nc <- ncol(indtmp[[1]])
+        nr <- nrow(indtmp[[1]])
+        ws <- min(dim(indtmp[[1]])) / 10
         updateSliderInput(session, "windowsize",
                           min = 3,
                           max = max(nc, nr) / 2,
@@ -291,33 +291,33 @@ mod_imagesegment_server <- function(id, imgdata){
 
 
         output$indexhist <- renderPlot({
-          plot(ind, type = "density")
+          plot(indtmp, type = "density")
           abline(v = ots)
           title(sub = paste0("Otsu's threshold: ", round(ots, 4)))
         })
       } else if(parms()$segmethod == "k-means"){
         req(parms()$img)
-        ind <- image_index(parms()$img, index = "R+G+B", plot = FALSE)
+        indtmp <- image_index(parms()$img, index = "R+G+B", plot = FALSE)
       }
-
-      observeEvent(input$createindex ,{
-        imgdata[[input$new_index]] <- create_reactval(name = input$new_index, data = ind)
-        sendSweetAlert(
-          session = session,
-          title = "Image index created",
-          text = paste0("The image index (", input$new_index, ") has been created and is now available for further processing."),
-          type = "success"
-        )
-      })
-      plot(ind)
+      ind$ind <- indtmp
+      plot(indtmp)
+    })
+    observeEvent(input$createindex ,{
+      imgdata[[input$new_index]] <- create_reactval(name = input$new_index, data = ind$ind)
+      sendSweetAlert(
+        session = session,
+        title = "Image index created",
+        text = paste0("The image index (", input$new_index, ") has been created and is now available for further processing."),
+        type = "success"
+      )
     })
 
-
+    bin <- reactiveValues(bin = NULL)
     output$binary <- renderPlot({
       if(parms()$segmethod == "Index"){
         req(parms()$img)
         req(parms()$index)
-        bin <-
+        bintmp <-
           image_binary(parms()$img,
                        index = parms()$index,
                        invert = input$invertindex,
@@ -329,7 +329,7 @@ mod_imagesegment_server <- function(id, imgdata){
                        threshold = parms()$thresval)[[1]]
       } else if(parms()$segmethod == "k-means"){
         req(parms()$img)
-        bin <-
+        bintmp <-
           image_segment_kmeans(parms()$img,
                                nclasses = input$nclasses,
                                invert = input$invertindex,
@@ -338,23 +338,24 @@ mod_imagesegment_server <- function(id, imgdata){
                                filter = input$filter,
                                fill_hull = input$fillhull)[["clusters"]]
       }
-      observeEvent(input$createbinary ,{
-        imgdata[[input$new_binary]] <- create_reactval(name = input$new_binary, data = bin)
-        sendSweetAlert(
-          session = session,
-          title = "Mask created",
-          text = paste0("The binary image (", input$new_binary, ") has been created and is now available for further processing."),
-          type = "success"
-        )
-      })
+      bin$bin <- bintmp
 
     })
+    observeEvent(input$createbinary ,{
+      imgdata[[input$new_binary]] <- create_reactval(name = input$new_binary, data = bin$bin)
+      sendSweetAlert(
+        session = session,
+        title = "Mask created",
+        text = paste0("The binary image (", input$new_binary, ") has been created and is now available for further processing."),
+        type = "success"
+      )
+    })
 
-
+    seg <- reactiveValues(seg = NULL)
     output$segmentation <- renderPlot({
       req(parms()$img)
       req(parms()$index)
-      seg <-
+      segtmp <-
         image_segment(parms()$img,
                       index = parms()$index,
                       invert = input$invertindex,
@@ -365,17 +366,21 @@ mod_imagesegment_server <- function(id, imgdata){
                       threshold = parms()$thresval,
                       windowsize = input$windowsize,
                       na_background = input$naback)
-      observeEvent(input$createsegment ,{
-        imgdata[[input$new_segment]] <- create_reactval(name = input$new_segment, data = seg)
-        sendSweetAlert(
-          session = session,
-          title = "Segmented image created",
-          text = paste0("The segmented image (", input$new_segment, ") has been created and is now available for further processing."),
-          type = "success"
-        )
+      seg$seg <- segtmp
 
-      })
+
     })
+    observeEvent(input$createsegment ,{
+      imgdata[[input$new_segment]] <- create_reactval(name = input$new_segment, data = seg$seg)
+      sendSweetAlert(
+        session = session,
+        title = "Segmented image created",
+        text = paste0("The segmented image (", input$new_segment, ") has been created and is now available for further processing."),
+        type = "success"
+      )
+
+    })
+
 
 
 

@@ -312,6 +312,14 @@ mod_analyze_ui <- function(id){
                                      label = "Plot attribute",
                                      choices = NULL),
                          pickerpalette(id, "palplot", selected = "RdYlGn"),
+                         prettyCheckbox(
+                           inputId = ns("palplotinv"),
+                           label = "Reverse",
+                           value = FALSE,
+                           icon = icon("check"),
+                           status = "success",
+                           animation = "rotate"
+                         ),
                          sliderInput(ns("alpharesplot"),
                                      label = "Fill opacity",
                                      min = 0,
@@ -327,6 +335,14 @@ mod_analyze_ui <- function(id){
                                        label = "Individual attribute",
                                        choices = c("area")),
                            pickerpalette(id, "palind", selected = "set2"),
+                           prettyCheckbox(
+                             inputId = ns("palindrev"),
+                             label = "Reverse",
+                             value = FALSE,
+                             icon = icon("check"),
+                             status = "success",
+                             animation = "rotate"
+                           ),
                            sliderInput(ns("alpharesindiv"),
                                        label = "Fill opacity",
                                        min = 0,
@@ -1365,13 +1381,13 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
             mshp <- shapefile_view(result_plot_summ,
                                    attribute = input$plotattribute,
-                                   color_regions = return_colors(input$palplot),
+                                   color_regions = return_colors(input$palplotm, reverse = input$palplotrev),
                                    alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <-
               shapefile_view(result_indiv,
                              attribute = input$indivattribute,
-                             color_regions = return_colors(input$palind),
+                             color_regions = return_colors(input$palind, reverse = input$palindrev),
                              alpha.regions = input$alpharesindiv)
           } else if(input$segmentplot){
 
@@ -1382,7 +1398,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             }
             mshp <- shapefile_view(result_plot,
                                    attribute = attrib,
-                                   color_regions = return_colors(input$palplot),
+                                   color_regions = return_colors(input$palplot, reverse = input$palplotrev),
                                    alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <- NULL

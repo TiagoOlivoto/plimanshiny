@@ -361,8 +361,9 @@ pickerpalette <- function(id, inputid, ...){
   )
 }
 
-return_colors <- function(pal){
-  switch(pal,
+return_colors <- function(pal, reverse = FALSE){
+  pals <-
+    switch(pal,
          "viridis" = scales::viridis_pal(option = "viridis")(10),
          "magma" = scales::viridis_pal(option = "magma")(10),
          "inferno" = scales::viridis_pal(option = "inferno")(10),
@@ -388,6 +389,11 @@ return_colors <- function(pal){
          "RdYlGn" = scales::brewer_pal(palette = "RdYlGn")(8),
          "Spectral" = scales::brewer_pal(palette = "Spectral")(8)
   )
+  if(reverse){
+    return(rev(pals))
+  } else{
+    return(pals)
+  }
 }
 add_spinner <- function(x, type = 4, color = "#28a745"){
   shinycssloaders::withSpinner(x, type = type, color = color)

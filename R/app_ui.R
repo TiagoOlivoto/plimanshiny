@@ -184,6 +184,11 @@ app_ui <- function(request) {
               icon = shiny::icon("images", verify_fa = FALSE)
             ),
             bs4SidebarMenuSubItem(
+              text = "Comparison slider",
+              tabName = "slider",
+              icon = shiny::icon("sliders", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
               text = "Color Palette",
               tabName = "imagepalette",
               icon = shiny::icon("palette", verify_fa = FALSE)
@@ -251,6 +256,10 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "imagepalette",
             mod_imagepalette_ui("imagepalette_1")
+          ),
+          bs4TabItem(
+            tabName = "slider",
+            mod_slider_ui("slider_1")
           )
         )
       )
