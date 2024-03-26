@@ -118,13 +118,43 @@ mod_measurediseaseind_ui <- function(id){
             ),
             fluidRow(
               col_6(
-                prettyCheckbox(
-                  inputId = ns("invertindexlb"),
-                  label = "Invert",
-                  value = FALSE,
-                  icon = icon("check"),
-                  status = "success",
-                  animation = "rotate"
+                fluidRow(
+                  col_6(
+                    prettyCheckbox(
+                      inputId = ns("invertindexlb"),
+                      label = "Invert",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    )
+                  ),
+                  col_6(
+                    prettyCheckbox(
+                      inputId = ns("fillhull"),
+                      label = "Fill holes",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    )
+                  )
+
+                ),
+                numericInput(
+                  inputId = ns("openinglb"),
+                  label = "Opening",
+                  value = 10
+                ),
+                numericInput(
+                  inputId = ns("closinglb"),
+                  label = "Closing",
+                  value = 0
+                ),
+                numericInput(
+                  inputId = ns("filterlb"),
+                  label = "Filter",
+                  value = 0
                 )
               ),
               col_6(
@@ -135,6 +165,21 @@ mod_measurediseaseind_ui <- function(id){
                   icon = icon("check"),
                   status = "success",
                   animation = "rotate"
+                ),
+                numericInput(
+                  inputId = ns("openingdh"),
+                  label = "Opening",
+                  value = 0
+                ),
+                numericInput(
+                  inputId = ns("closingdh"),
+                  label = "Closing",
+                  value = 0
+                ),
+                numericInput(
+                  inputId = ns("filterdh"),
+                  label = "Filter",
+                  value = 0
                 )
               )
             ),
@@ -528,6 +573,10 @@ mod_measurediseaseind_server <- function(id, imgdata){
                         index = input$indexlb,
                         threshold = thresh1,
                         invert = input$invertindexlb,
+                        opening = input$openinglb,
+                        closing = input$closinglb,
+                        filter = input$filterlb,
+                        fill_hull = input$fillhull,
                         plot =FALSE)
         plot(imgdata$img)
         plot(seg)
@@ -545,6 +594,9 @@ mod_measurediseaseind_server <- function(id, imgdata){
           image_segment(imgdata$img,
                         index = input$indexdh,
                         invert = input$invertindexdh,
+                        opening = input$openingdh,
+                        closing = input$closingdh,
+                        filter = input$filterdh,
                         plot = FALSE)
         plot(imgdata$img)
         plot(seg)
@@ -567,10 +619,17 @@ mod_measurediseaseind_server <- function(id, imgdata){
                               index = input$indexlb,
                               threshold = thresh1,
                               invert = input$invertindexlb,
+                              opening = input$openinglb,
+                              closing = input$closinglb,
+                              filter = input$filterlb,
+                              fill_hull = input$fillhull,
                               plot = FALSE)
         seg2 <- image_segment(img = seg1,
                               index = input$indexdh,
                               threshold = thresh2,
+                              opening = input$openingdh,
+                              closing = input$closingdh,
+                              filter = input$filterdh,
                               invert = input$invertindexdh,
                               plot = FALSE)
         plot(imgdata$img)
@@ -617,9 +676,13 @@ mod_measurediseaseind_server <- function(id, imgdata){
         }
         sev <-
           measure_disease(
+            fill_hull = input$fillhull,
             img = imgdata$img,
             index_lb = input$indexlb,
             index_dh = input$indexdh,
+            closing = c(input$closinglb, input$closingdh),
+            opening = c(input$openinglb, input$openingdh),
+            filter = c(input$filterlb, input$filterdh),
             col_leaf = input$colorleaf,
             col_lesions = input$diseasecolor,
             show_original = !input$showmask,
@@ -711,6 +774,10 @@ mod_measurediseaseind_server <- function(id, imgdata){
                 img = file_name(imglist[[i]]),
                 index_lb = input$indexlb,
                 index_dh = input$indexdh,
+                closing = c(input$closinglb, input$closingdh),
+                opening = c(input$openinglb, input$openingdh),
+                filter = c(input$filterlb, input$filterdh),
+                fill_hull = input$fillhull,
                 col_leaf = input$colorleaf,
                 col_lesions = input$diseasecolor,
                 show_original = !input$showmask,
@@ -756,6 +823,10 @@ mod_measurediseaseind_server <- function(id, imgdata){
               dir_original = input$indir,
               index_lb = input$indexlb,
               index_dh = input$indexdh,
+              closing = c(input$closinglb, input$closingdh),
+              opening = c(input$openinglb, input$openingdh),
+              filter = c(input$filterlb, input$filterdh),
+              fill_hull = input$fillhull,
               col_leaf = input$colorleaf,
               col_lesions = input$diseasecolor,
               show_original = !input$showmask,
