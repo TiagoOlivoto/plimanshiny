@@ -313,7 +313,7 @@ mod_analyze_ui <- function(id){
                                      choices = NULL),
                          pickerpalette(id, "palplot", selected = "RdYlGn"),
                          prettyCheckbox(
-                           inputId = ns("palplotinv"),
+                           inputId = ns("palplotrev"),
                            label = "Reverse",
                            value = FALSE,
                            icon = icon("check"),
@@ -1381,7 +1381,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
             mshp <- shapefile_view(result_plot_summ,
                                    attribute = input$plotattribute,
-                                   color_regions = return_colors(input$palplotm, reverse = input$palplotrev),
+                                   color_regions = return_colors(input$palplot, reverse = input$palplotrev),
                                    alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <-
