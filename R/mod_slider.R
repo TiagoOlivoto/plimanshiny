@@ -79,8 +79,8 @@ mod_slider_server <- function(id, imgdata){
         div#comparison {
             width: 50vw; /* Increased width */
             height: 50vw; /* Increased height */
-            max-width: 750px; /* Increased maximum width */
-            max-height: 750px; /* Increased maximum height */
+            max-width: 800px; /* Increased maximum width */
+            max-height: 800px; /* Increased maximum height */
             overflow: hidden;
         }
 
