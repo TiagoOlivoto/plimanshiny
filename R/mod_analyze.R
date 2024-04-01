@@ -472,16 +472,22 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map plot",
-            materialSwitch(
-              inputId = ns("compareslidermap"),
-              label = "Comparison slider?",
-              value = FALSE,
-              status = "success"
+            fluidRow(
+              col_4(
+                materialSwitch(
+                  inputId = ns("compareslidermap"),
+                  label = "Comparison slider?",
+                  value = FALSE,
+                  status = "success"
+                )
+              ),
+              col_8(
+                downloadBttn(ns("downloadplotmap"),
+                             label = "Take a shot",
+                             style = "pill")
+              )
             ),
-            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner(),
-            downloadBttn(ns("downloadplotmap"),
-                         label = "Take a shot",
-                         style = "pill")
+            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
           ),
           tabPanel(
             title = "Results plot",
@@ -489,10 +495,22 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map individuals",
-            leafletOutput(ns("resultsindivmap"), height = "720px")  |> add_spinner(),
-            downloadBttn(ns("downloadindividmap"),
-                         label = "Take a shot",
-                         style = "pill")
+            fluidRow(
+              col_4(
+                materialSwitch(
+                  inputId = ns("compareslidermapind"),
+                  label = "Comparison slider?",
+                  value = FALSE,
+                  status = "success"
+                )
+              ),
+              col_8(
+                downloadBttn(ns("downloadindividmap"),
+                             label = "Take a shot",
+                             style = "pill")
+              )
+            ),
+            leafletOutput(ns("resultsindivmap"), height = "720px")  |> add_spinner()
           ),
           tabPanel(
             title = "Results individuals",
@@ -537,16 +555,22 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map plot",
-            materialSwitch(
-              inputId = ns("compareslidermap"),
-              label = "Comparison slider?",
-              value = FALSE,
-              status = "success"
+            fluidRow(
+              col_4(
+                materialSwitch(
+                  inputId = ns("compareslidermap"),
+                  label = "Comparison slider?",
+                  value = FALSE,
+                  status = "success"
+                )
+              ),
+              col_8(
+                downloadBttn(ns("downloadplotmap"),
+                             label = "Take a shot",
+                             style = "pill")
+              )
             ),
-            leafletOutput(ns("resultsplotmap"), height = "720px") |> add_spinner(),
-            downloadBttn(ns("downloadplotmap"),
-                         label = "Take a shot",
-                         style = "pill")
+            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
           ),
           tabPanel(
             title = "Results plot",
@@ -574,16 +598,22 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Map plot",
-            materialSwitch(
-              inputId = ns("compareslidermap"),
-              label = "Comparison slider?",
-              value = FALSE,
-              status = "success"
+            fluidRow(
+              col_4(
+                materialSwitch(
+                  inputId = ns("compareslidermap"),
+                  label = "Comparison slider?",
+                  value = FALSE,
+                  status = "success"
+                )
+              ),
+              col_8(
+                downloadBttn(ns("downloadplotmap"),
+                             label = "Take a shot",
+                             style = "pill")
+              )
             ),
-            leafletOutput(ns("resultsplotmap"), height = "720px") |> add_spinner(),
-            downloadBttn(ns("downloadplotmap"),
-                         label = "Take a shot",
-                         style = "pill")
+            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
           ),
           tabPanel(
             title = "Results plot",
@@ -1378,7 +1408,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           req(input$indivattribute)
 
           if(input$segmentindividuals){
-
             mshp <- shapefile_view(result_plot_summ,
                                    attribute = input$plotattribute,
                                    color_regions = return_colors(input$palplot, reverse = input$palplotrev),
@@ -1423,7 +1452,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         })
         # plot summary
         output$resultsplotmap <- renderLeaflet({
-          compsl <-
           if(input$compareslidermap){
             ((basemap$map +  bmshape$bmshape)  | mapshape$mapshape)@map
           } else{
@@ -1431,9 +1459,16 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           }
 
         })
+
+
+
         output$resultsindivmap <- renderLeaflet({
           if(input$segmentindividuals){
-            ((basemap$map +  bmshape$bmshape)  | (mapshape$mapshape + mapindiv$mapindiv))@map
+            if(input$compareslidermapind){
+              ((basemap$map +  bmshape$bmshape)  | (mapshape$mapshape + mapindiv$mapindiv))@map
+            } else{
+              (basemap$map +  mapshape$mapshape)@map
+            }
           }
         })
 

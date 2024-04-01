@@ -57,11 +57,23 @@ mod_shapefile_prepare_ui <- function(id){
                                )
                              )
                            ),
+                           selectInput(
+                             ns("plotlayout"),
+                             label = "Plot layout",
+                             choices = c("lrtb", "lrbt", "tblr", "tbrl", "rltb", "rlbt"),
+                             selected = "lrtb",
+                           ),
+                           selectInput(
+                             ns("fillid"),
+                             label = "Fill color",
+                             choices = c("none", "block", "plot_id"),
+                             selected = "none",
+                           ),
                            sliderInput(ns("alphacolorfill"),
                                        label = "Fill opacity",
                                        min = 0,
                                        max = 1,
-                                       value = 0.3),
+                                       value = 0.7),
                            sliderInput(ns("lwdt"),
                                        label = "Line width",
                                        min = 0,
@@ -383,10 +395,11 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
       if(!is.null(mosaic_data$mosaic)){
         req(basemap$map)
         if (input$shapetype == "Build") {
+          nclayout <- reactiveValues(nc = NULL)
+          nrlayout <- reactiveValues(nr = NULL)
           createdshape <- reactiveValues(shp = NULL)
           cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
-
-          observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow, input$buildshapefile), {
+          observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow, input$buildshapefile, input$plotlayout), {
             if(input$buildshapefile){
               if(!is.null(cpoints()$edited)){
                 cpo <- cpoints()$edited
@@ -405,6 +418,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                          controlpoints = cpo,
                                          nrow = nr,
                                          ncol = nc,
+                                         layout = input$plotlayout,
                                          buffer_col = bc,
                                          buffer_row = bf,
                                          verbose = FALSE)
@@ -417,10 +431,13 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               req(input$ncols)
               req(input$buffercol)
               req(input$bufferrow)
+              # nclayout$nc <- input$nrows
+              # nrlayout$nr <- input$ncols
               shp <- shapefile_build(mosaic_data$mosaic,
                                      basemap,
                                      nrow = input$nrows,
                                      ncol = input$ncols,
+                                     layout = input$plotlayout,
                                      buffer_col = input$buffercol,
                                      buffer_row = input$bufferrow,
                                      build_shapefile = FALSE,
@@ -433,26 +450,49 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           output$createdshapes <- renderLeaflet({
             req(createdshape$shp)
             if(input$buildblocks){
-              mapp <-
-                basemap$map +
-                mapview::mapview(createdshape$shp,
-                                 color = input$colorstroke,
-                                 col.regions = input$colorfill,
-                                 alpha.regions = input$alphacolorfill,
-                                 legend = FALSE,
-                                 lwd = input$lwdt,
-                                 layer.name = "shapes")
+              if(input$fillid == "none"){
+                mapp <-
+                  basemap$map +
+                  mapview::mapview(createdshape$shp,
+                                   color = input$colorstroke,
+                                   col.regions = input$colorfill,
+                                   alpha.regions = input$alphacolorfill,
+                                   legend = FALSE,
+                                   lwd = input$lwdt,
+                                   layer.name = "shapes")
+              } else{
+                mapp <-
+                  basemap$map +
+                  mapview::mapview(createdshape$shp |> extract_number(block, plot_id),
+                                   zcol = input$fillid,
+                                   alpha.regions = input$alphacolorfill,
+                                   lwd = input$lwdt,
+                                   layer.name = "shapes")
+              }
+
             } else{
               nelem <- length(createdshape$shp)
-              mapp <-
-                basemap$map +
-                mapview::mapview(createdshape$shp[[nelem]],
-                                 color = input$colorstroke,
-                                 col.regions = input$colorfill,
-                                 alpha.regions = input$alphacolorfill,
-                                 legend = FALSE,
-                                 lwd = input$lwdt,
-                                 layer.name = "shapes")
+
+              if(input$fillid == "none"){
+                mapp <-
+                  basemap$map +
+                  mapview::mapview(createdshape$shp[[nelem]] |> extract_number(block, plot_id),
+                                   color = input$colorstroke,
+                                   col.regions = input$colorfill,
+                                   alpha.regions = input$alphacolorfill,
+                                   legend = FALSE,
+                                   lwd = input$lwdt,
+                                   layer.name = "shapes")
+              } else{
+                mapp <-
+                  basemap$map +
+                  mapview::mapview(createdshape$shp[[nelem]] |> extract_number(block, plot_id),
+                                   zcol = input$fillid,
+                                   alpha.regions = input$alphacolorfill,
+                                   lwd = input$lwdt,
+                                   layer.name = "shapes")
+              }
+
             }
 
             mapp@map
@@ -464,24 +504,10 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             observe({
               if(input$buildblocks){
                 req(createdshape$shp)
-                createdshape$shp <-
-                  lapply(seq_along(createdshape$shp), function(i){
-                    createdshape$shp[[i]] |>
-                      dplyr::mutate(block = paste0("B", leading_zeros(i, 2)),
-                                    plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[i]]), 4)),
-                                    .before = 1)
-                  })
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
               } else{
                 req(createdshape$shp)
-                nelem <- length(createdshape$shp)
-                createdshape$shp <-
-                  createdshape$shp[[nelem]] |>
-                  dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(createdshape$shp[[nelem]]), 4)),
-                                .before = 1) |>
-                  list()
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
-
               }
               observe({
                 shapefilenames <-  setdiff(names(shapefile), "shapefile")
@@ -493,7 +519,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               output$plotshapedone <- renderLeaflet({
                 mapp <-
                   basemap$map +
-                  mapview::mapview(shapefile[[input$shapenamebuild]]$data,
+                  mapview::mapview(shapefile[[input$shapenamebuild]]$data |> extract_number(block, plot_id),
                                    color = input$colorstroke,
                                    col.regions = input$colorfill,
                                    lwd = input$lwdt,

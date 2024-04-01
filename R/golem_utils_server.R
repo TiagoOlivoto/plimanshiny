@@ -241,3 +241,25 @@ overlaps <- function(mosaic, shape){
   shape_coords <- c(shape_coord[1], shape_coord[2], shape_coord[3], shape_coord[4])
   any(mosaic_coords[1:2] < shape_coords[3:4] & mosaic_coords[3:4] > shape_coords[1:2])
 }
+
+extract_number <- function(.data,
+                           ...,
+                           pattern = NULL){
+  if(missing(pattern)){
+    pattern <- "[^0-9.-]+"
+  }
+  if (inherits(.data, c("data.frame","tbl_df", "data.table"))){
+    if(missing(...)){
+      results <-
+        dplyr::mutate(.data, dplyr::across(dplyr::where(~!is.numeric(.)), gsub, pattern = pattern, replacement = "")) |>
+        dplyr::mutate(dplyr::across(dplyr::everything(), as.numeric))
+    } else{
+      results <-
+        dplyr::mutate(.data, dplyr::across(c(...), gsub, pattern = pattern, replacement = ""))  |>
+        dplyr::mutate(dplyr::across(c(...), as.numeric))
+    }
+    return(results)
+  } else{
+    return(as.numeric(gsub("[^0-9.-]+", "", .data)))
+  }
+}
