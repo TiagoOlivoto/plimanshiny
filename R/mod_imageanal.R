@@ -267,11 +267,23 @@ mod_imageanal_ui <- function(id){
                 )
               )
             ),
-            materialSwitch(
-              inputId = ns("reference"),
-              label = "Reference object?",
-              value = FALSE,
-              status = "success"
+            fluidRow(
+              col_6(
+                materialSwitch(
+                  inputId = ns("reference"),
+                  label = "Reference object?",
+                  value = FALSE,
+                  status = "success"
+                )
+              ),
+              col_6(
+                materialSwitch(
+                  inputId = ns("dpi"),
+                  label = "Known resolution?",
+                  value = FALSE,
+                  status = "success"
+                )
+              )
             ),
             conditionalPanel(
               condition = "input.reference == true", ns = ns,
@@ -324,6 +336,15 @@ mod_imageanal_ui <- function(id){
                                  value = NA)
                   )
                 )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.dpi", ns = ns,
+              numericInput(
+                inputId = ns("dpival"),
+                label = "Image resolution (Dots Per Inch)",
+                min = 1,
+                value = NA
               )
             ),
             materialSwitch(
@@ -510,6 +531,15 @@ mod_imageanal_server <- function(id, imgdata){
                           `actions-box` = TRUE,
                           `live-search` = TRUE
                         ))
+      if(input$dpi & input$reference){
+        updateMaterialSwitch(session, "reference", value = FALSE)
+        sendSweetAlert(
+          session = session,
+          title = "Ops, invalid options",
+          text = "Only `reference` OR `dpi` can be selected.",
+          type = "error"
+        )
+      }
     })
 
 
@@ -584,10 +614,16 @@ mod_imageanal_server <- function(id, imgdata){
       } else {
         lower_size <- input$lower_size
       }
+      if (is.na(input$dpival) | input$dpi == FALSE) {
+        dpi <- NULL
+      } else {
+        dpi <- input$dpival
+      }
 
       list(index = c(mindex, input$plotindexes),
            refsmaller = refsmaller,
            reflarger = reflarger,
+           dpi = dpi,
            ext = ext,
            tol = tol,
            invert = input$invertindex,
@@ -727,7 +763,7 @@ mod_imageanal_server <- function(id, imgdata){
               tmp[, 2] <- ncol(imgdata$img) - tmp[, 2]
               sf::st_polygon(list(as.matrix(tmp |> poly_close())))
             }),
-            data = data.frame(get_measures(res)),
+            data = data.frame(get_measures(res, dpi = parms()$dpi)),
             crs = sf::st_crs("EPSG:3857")
           )
           colnames(sf_df) <- gsub("data.", "", colnames(sf_df))
@@ -808,7 +844,7 @@ mod_imageanal_server <- function(id, imgdata){
 
 
         output$resultsindivtab <- DT::renderDataTable(
-          get_measures(res) |> as.data.frame(),
+          get_measures(res, dpi = parms()$dpi) |> as.data.frame(),
           extensions = 'Buttons',
           rownames = FALSE,
           options = list(
@@ -1075,7 +1111,7 @@ mod_imageanal_server <- function(id, imgdata){
           )
 
         # get the measures
-        rescor <- get_measures(res)
+        rescor <- get_measures(res, dpi = parms()$dpi)
 
         # summary
         output$vbnindiv <- renderValueBox({
