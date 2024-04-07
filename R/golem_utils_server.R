@@ -263,3 +263,7 @@ extract_number <- function(.data,
     return(as.numeric(gsub("[^0-9.-]+", "", .data)))
   }
 }
+
+str_split <- function(string){
+  gsub("[[:space:]]", "", strsplit(string, split = ',')[[1]])
+}

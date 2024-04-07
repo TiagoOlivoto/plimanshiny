@@ -54,6 +54,11 @@ mod_manipula_ui <- function(id){
         title = "Interpolate",
         icon = icon("chart-line"),
         mod_interpolate_ui("interpolate_1")
+      ),
+      tabPanel(
+        title = "Sentinel 2",
+        icon = icon("satellite"),
+        mod_sentinel_ui("sentinel_1")
       )
     )
   )

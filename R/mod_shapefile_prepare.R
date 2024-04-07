@@ -492,7 +492,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                    lwd = input$lwdt,
                                    layer.name = "shapes")
               }
-
             }
 
             mapp@map
@@ -507,7 +506,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
               } else{
                 req(createdshape$shp)
-                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
+                nelem <- length(createdshape$shp)
+                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp[[nelem]])
               }
               observe({
                 shapefilenames <-  setdiff(names(shapefile), "shapefile")

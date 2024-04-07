@@ -1467,7 +1467,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             if(input$compareslidermapind){
               ((basemap$map +  bmshape$bmshape)  | (mapshape$mapshape + mapindiv$mapindiv))@map
             } else{
-              (basemap$map +  mapshape$mapshape)@map
+              (basemap$map +  mapindiv$mapindiv)@map
             }
           }
         })

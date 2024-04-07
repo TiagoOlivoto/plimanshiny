@@ -28,6 +28,7 @@ app_server <- function(input, output, session) {
   mod_aggregate_server("aggregate_1", mosaic_data, r, g, b, basemap)
   mod_resample_server("resample_1", mosaic_data)
   mod_segment_server("segment_1", mosaic_data, r, g, b, re, nir)
+  mod_sentinel_server("sentinel_1", mosaic_data)
 
   # Image analysis
   imgdata <- reactiveValues()

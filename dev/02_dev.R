@@ -42,6 +42,7 @@ golem::add_module(name = "imageindex")
 golem::add_module(name = "imagesegment")
 golem::add_module(name = "imagepalette")
 golem::add_module(name = "slider")
+golem::add_module(name = "sentinel")
 
 ## Add packages
 usethis::use_package("shiny")

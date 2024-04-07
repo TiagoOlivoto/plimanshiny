@@ -278,8 +278,11 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
         B <- try(mosaictmp$mosaic[[as.numeric(b$b)]], TRUE)
         NIR <- try(mosaictmp$mosaic[[as.numeric(nir$nir)]], TRUE)
         RE <- try(mosaictmp$mosaic[[as.numeric(re$re)]], TRUE)
+        usedlayers <- pliman_indexes_eq()
         me <- pliman_indexes_me()
-        if(any(finalindex() %in% me) & inherits(NIR, "try-error") | any(finalindex() %in% me) & inherits(RE, "try-error")){
+        nirind <- usedlayers[grep("NIR", usedlayers$Equation), 1]
+        reind <- usedlayers[grep("RE", usedlayers$Equation), 1]
+        if(any(finalindex() %in% nirind) & inherits(NIR, "try-error") | any(finalindex() %in% reind) & inherits(RE, "try-error")){
           show_alert("Ops, an error occured.",
                      text = "Multispectral indexes cannot be computed since needed bands are not available.",
                      type = "error")
@@ -410,7 +413,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                 indp <-  terra::mask(magg$agg[[input$indextosync]],
                                      shapefile[[input$shapefiletoplot]]$data |> shapefile_input(as_sf = FALSE, info = FALSE))
                 # mosaic_view(indp)@map
-                (basemap$map + mosaic_view(indp,
+                (mosaic_view(indp,
                                            max_pixels = 3000000,
                                            downsample_fun = "average",
                                            show = "index",

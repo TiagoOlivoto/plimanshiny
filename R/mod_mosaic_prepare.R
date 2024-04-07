@@ -110,11 +110,35 @@ mod_mosaic_prepare_ui <- function(id){
           )
         ),
         div(class = "prep4",
-            fileInput(ns("import_mosaic"),
-                      "Browse mosaic file(s) (.tif, .tiff .jpg)",
-                      accept = c('.tif','.tiff','.jpg'),
-                      multiple = TRUE)
+            shinyFilesButton(id=ns("filemosaic"),
+                             label="Search for a raster file",
+                             title="Search for a raster file",
+                             buttonType = "primary",
+                             multiple = TRUE,
+                             class = NULL,
+                             icon = icon("magnifying-glass"),
+                             style = NULL),
+            fluidRow(
+              textInput(
+                ns("filemosaicpath"),
+                label = "Choosen file(s)",
+                value = "",
+                width = "100%"
+              )
+            ),
+            conditionalPanel(
+              condition = "input.filemosaicpath != ''", ns = ns,
+              fluidRow(
+                actionBttn(ns("importmosaic"),
+                           label = "Import the choosen file(s)",
+                           no_outline = FALSE,
+                           icon = icon("file-import"),
+                           style = "material-flat",
+                           color = "primary")
+              )
+            )
         ),
+        br(),
         div(class = "prep5",
             selectInput(ns("mosaictoanalyze"),
                         label = "Active Mosaic",
@@ -191,47 +215,109 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       nir$nir <- input$nir_band
     })
 
-    observeEvent(input$import_mosaic, {
-      new_mosaic_name <- input$import_mosaic$name
-      pathmosaic$path <- input$import_mosaic$datapath
-      # Check if the mosaic already exists in mosaic_data
-      if (any(new_mosaic_name %in% names(mosaic_data))) {
-        # If it exists, update the existing reactiveValues
-        moname <- new_mosaic_name[new_mosaic_name %in% names(mosaic_data)]
-        ask_confirmation(
-          inputId = "confirmmosaicname",
-          type = "warning",
-          title = "Mosaic already imported",
-          text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
-          btn_labels = c("Nope", "Yep"),
-          btn_colors = c("#FE642E", "#04B404")
-        )
-        observe({
-          if (!is.null(input$confirmmosaicname)) {
-            if (input$confirmmosaicname) {
-              for (i in 1:length(new_mosaic_name)) {
-                mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
-              }
-            } else {
-              return()
-            }
-          }
-        })
-      } else {
-        # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
-        for (i in 1:length(new_mosaic_name)) {
-          mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
+    input_file_selected <- reactiveValues(paths = NULL)
+    observe({
+      shinyFileChoose(input, "filemosaic",
+                      root = getVolumes()(),
+                      filetypes = c('tif', 'jp2', 'tiff', 'jpeg'),
+                      session = session)
+      if(!is.null(input$filemosaic)){
+        input_file_selected$paths <- parseFilePaths(getVolumes()(), input$filemosaic)
+        if(length(input_file_selected$paths$datapath) != 0){
+          updateTextInput(session, "filemosaicpath", value = paste0(input_file_selected$paths$datapath, collapse = ", "))
         }
-      }
 
-      observe({
-        mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
-        # Update selectInput choices
-        updateSelectInput(session, "mosaictoanalyze",
-                          choices = mosaicnames,
-                          selected = mosaicnames[[1]])
-      })
+      }
     })
+
+    observeEvent(input$importmosaic, {
+      if(length(input_file_selected$paths$datapath) != 0){
+
+        new_mosaic_name <- sapply(input_file_selected$paths$datapath, file_name)
+        pathmosaic$path <- input_file_selected$paths$datapath
+        # Check if the mosaic already exists in mosaic_data
+        if (any(new_mosaic_name %in% names(mosaic_data))) {
+          # If it exists, update the existing reactiveValues
+          moname <- new_mosaic_name[new_mosaic_name %in% names(mosaic_data)]
+          ask_confirmation(
+            inputId = "confirmmosaicname",
+            type = "warning",
+            title = "Mosaic already imported",
+            text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
+            btn_labels = c("Nope", "Yep"),
+            btn_colors = c("#FE642E", "#04B404")
+          )
+          observe({
+            if (!is.null(input$confirmmosaicname)) {
+              if (input$confirmmosaicname) {
+                for (i in 1:length(new_mosaic_name)) {
+                  mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input_file_selected$paths$datapath[[i]], info = FALSE))
+                }
+              } else {
+                return()
+              }
+            }
+          })
+        } else {
+          # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
+          for (i in 1:length(new_mosaic_name)) {
+            mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input_file_selected$paths$datapath[[i]], info = FALSE))
+          }
+        }
+
+        observe({
+          mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
+          # Update selectInput choices
+          updateSelectInput(session, "mosaictoanalyze",
+                            choices = mosaicnames,
+                            selected = mosaicnames[[1]])
+        })
+      }
+    })
+
+    # observeEvent(input$import_mosaic, {
+    #   new_mosaic_name <- input$import_mosaic$name
+    #   pathmosaic$path <- input$import_mosaic$datapath
+    #   # Check if the mosaic already exists in mosaic_data
+    #   if (any(new_mosaic_name %in% names(mosaic_data))) {
+    #     # If it exists, update the existing reactiveValues
+    #     moname <- new_mosaic_name[new_mosaic_name %in% names(mosaic_data)]
+    #     ask_confirmation(
+    #       inputId = "confirmmosaicname",
+    #       type = "warning",
+    #       title = "Mosaic already imported",
+    #       text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
+    #       btn_labels = c("Nope", "Yep"),
+    #       btn_colors = c("#FE642E", "#04B404")
+    #     )
+    #     observe({
+    #       if (!is.null(input$confirmmosaicname)) {
+    #         if (input$confirmmosaicname) {
+    #           for (i in 1:length(new_mosaic_name)) {
+    #             mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
+    #           }
+    #         } else {
+    #           return()
+    #         }
+    #       }
+    #     })
+    #   } else {
+    #     # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
+    #     for (i in 1:length(new_mosaic_name)) {
+    #       mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
+    #     }
+    #   }
+    #
+    #   observe({
+    #     mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
+    #     # Update selectInput choices
+    #     updateSelectInput(session, "mosaictoanalyze",
+    #                       choices = mosaicnames,
+    #                       selected = mosaicnames[[1]])
+    #   })
+    # })
+
+
 
 
     observe({
