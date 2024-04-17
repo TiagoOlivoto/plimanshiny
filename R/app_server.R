@@ -41,6 +41,9 @@ app_server <- function(input, output, session) {
   # Phytopathometry
   mod_measurediseaseind_server("measurediseaseind_1", imgdata)
   mod_imageimport_server("imageimport_2", imgdata)
+  mod_colorpalette_server("colorpalette_1", imgdata)
+  mod_measurediseasepal_server("measurediseasepal_1", imgdata)
+  mod_measurediseasepick_server("measurediseasepick_1", imgdata)
 }
 
 

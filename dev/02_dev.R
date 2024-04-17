@@ -43,11 +43,16 @@ golem::add_module(name = "imagesegment")
 golem::add_module(name = "imagepalette")
 golem::add_module(name = "slider")
 golem::add_module(name = "sentinel")
+golem::add_module(name = "colorpalette")
+golem::add_module(name = "colorpalette")
+golem::add_module(name = "measurediseasepal")
+golem::add_module(name = "measurediseasepick")
 
 ## Add packages
 usethis::use_package("shiny")
 usethis::use_package("DT")
 usethis::use_package("histoslider")
+usethis::use_package("glue")
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*

@@ -267,3 +267,30 @@ extract_number <- function(.data,
 str_split <- function(string){
   gsub("[[:space:]]", "", strsplit(string, split = ',')[[1]])
 }
+
+create_palette <- function(img, points, width = 150, height = 100, shape = "box", r = 1){
+  nc <- ncol(img)
+  colnames(points) <- c("x", "y")
+  points[, 2] <- nc - points[, 2]
+  bind <- NULL
+  for (i in 1:nrow(points)) {
+    xrmin <- trunc(points[, 1][i]) - r
+    xrmax <- trunc(points[, 1][i]) + r
+    yrmin <- trunc(points[, 2][i]) - r
+    yrmax <- trunc(points[, 2][i]) + r
+    sqr <- xrmax - xrmin + 1
+    kern <- as.logical(EBImage::makeBrush(sqr, shape = shape))
+    R <- img[xrmin:xrmax, yrmin:yrmax, 1][kern]
+    G <- img[xrmin:xrmax, yrmin:yrmax, 2][kern]
+    B <- img[xrmin:xrmax, yrmin:yrmax, 3][kern]
+    bind <- rbind(bind, cbind(R, G, B))
+  }
+  dim_mat <- trunc(sqrt(nrow(bind)))
+  bind <- bind[sample(1:nrow(bind)), ][1:dim_mat^2, ]
+  pal <-
+    EBImage::Image(c(bind[, 1], bind[, 2], bind[, 3]),
+                   dim = c(dim_mat, dim_mat, 3),
+                   colormode = "Color") |>
+    image_resize(width = width, height = height)
+  return(pal)
+}

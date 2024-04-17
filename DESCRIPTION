@@ -16,6 +16,7 @@ Imports:
     foreach,
     future,
     ggplot2,
+    glue,
     golem (>= 0.4.1),
     graphics,
     grDevices,

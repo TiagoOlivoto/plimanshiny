@@ -287,7 +287,6 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                      text = "Multispectral indexes cannot be computed since needed bands are not available.",
                      type = "error")
         } else{
-
           # compute the indexes
           req(mosaictmp$mosaic)  # Ensure mosaictmp$mosaic is not NULL
           waiter_show(
@@ -363,9 +362,9 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                   terra::plot(trunctemp, maxcell=100000, smooth=TRUE, range = inrange)
                 })
               } else{
-                  output$plotindex <- renderPlot({
-                    terra::plot(magg$agg[[input$indextosync]])
-                  })
+                output$plotindex <- renderPlot({
+                  terra::plot(magg$agg[[input$indextosync]])
+                })
 
               }
             }
@@ -413,7 +412,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                 indp <-  terra::mask(magg$agg[[input$indextosync]],
                                      shapefile[[input$shapefiletoplot]]$data |> shapefile_input(as_sf = FALSE, info = FALSE))
                 # mosaic_view(indp)@map
-                (mosaic_view(indp,
+                (basemap$map + mosaic_view(indp,
                                            max_pixels = 3000000,
                                            downsample_fun = "average",
                                            show = "index",

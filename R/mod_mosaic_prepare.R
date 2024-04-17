@@ -111,8 +111,8 @@ mod_mosaic_prepare_ui <- function(id){
         ),
         div(class = "prep4",
             shinyFilesButton(id=ns("filemosaic"),
-                             label="Search for a raster file",
-                             title="Search for a raster file",
+                             label="Raster file(s)",
+                             title="Raster file(s)",
                              buttonType = "primary",
                              multiple = TRUE,
                              class = NULL,
@@ -232,7 +232,6 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
 
     observeEvent(input$importmosaic, {
       if(length(input_file_selected$paths$datapath) != 0){
-
         new_mosaic_name <- sapply(input_file_selected$paths$datapath, file_name)
         pathmosaic$path <- input_file_selected$paths$datapath
         # Check if the mosaic already exists in mosaic_data
@@ -274,50 +273,6 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         })
       }
     })
-
-    # observeEvent(input$import_mosaic, {
-    #   new_mosaic_name <- input$import_mosaic$name
-    #   pathmosaic$path <- input$import_mosaic$datapath
-    #   # Check if the mosaic already exists in mosaic_data
-    #   if (any(new_mosaic_name %in% names(mosaic_data))) {
-    #     # If it exists, update the existing reactiveValues
-    #     moname <- new_mosaic_name[new_mosaic_name %in% names(mosaic_data)]
-    #     ask_confirmation(
-    #       inputId = "confirmmosaicname",
-    #       type = "warning",
-    #       title = "Mosaic already imported",
-    #       text = paste0("The object '", paste0(moname, collapse = ", "), "' is already available in the list of imported mosaics. Do you really want to overwrite it?"),
-    #       btn_labels = c("Nope", "Yep"),
-    #       btn_colors = c("#FE642E", "#04B404")
-    #     )
-    #     observe({
-    #       if (!is.null(input$confirmmosaicname)) {
-    #         if (input$confirmmosaicname) {
-    #           for (i in 1:length(new_mosaic_name)) {
-    #             mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
-    #           }
-    #         } else {
-    #           return()
-    #         }
-    #       }
-    #     })
-    #   } else {
-    #     # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
-    #     for (i in 1:length(new_mosaic_name)) {
-    #       mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input$import_mosaic$datapath[[i]], info = FALSE))
-    #     }
-    #   }
-    #
-    #   observe({
-    #     mosaicnames <-  setdiff(names(mosaic_data), "mosaic")
-    #     # Update selectInput choices
-    #     updateSelectInput(session, "mosaictoanalyze",
-    #                       choices = mosaicnames,
-    #                       selected = mosaicnames[[1]])
-    #   })
-    # })
-
-
 
 
     observe({
@@ -377,23 +332,25 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
           max_pixels = input$maxpixels
         )
       } else{
-        mosaictmp <- mosaic_data$mosaic
-        aggr <- find_aggrfact(mosaictmp)
-        if(aggr > 0){
-          magg <- mosaic_aggregate(mosaictmp, round(100 / aggr))
-        } else{
-          magg <- mosaictmp
-        }
+        # mosaictmp <- mosaic_data[[input$mosaictoanalyze]]
+        # aggr <- find_aggrfact(mosaictmp)
+        # if(aggr > 0){
+        #   magg <- mosaic_aggregate(mosaictmp, round(100 / aggr))
+        # } else{
+        #   magg <- mosaictmp
+        # }
+        # print(magg)
         bmtmp <-
-          mapview::mapview(magg[[input$howtoplot]],
-                           col.regions = scales::brewer_pal(palette = "RdYlGn")(8),
-                           layer.name = input$howtoplot,
-                           maxpixels = 5000000,
-                           na.color = "transparent")
+          mosaic_view(mosaic_data$mosaic[input$howtoplot],
+                      show = "index",
+                      color_regions  = scales::brewer_pal(palette = "RdYlGn")(8),
+                      max_pixels = input$maxpixels,
+                      na.color = "transparent")
       }
 
-      basemap$map <- bmtmp
+        basemap$map <- bmtmp
     })
+
 
 
     output$mosaic_mapview <- renderLeaflet({

@@ -102,8 +102,6 @@ mod_segment_ui <- function(id){
           collapsible = FALSE,
           width = 12,
           height = "710px",
-          # fluidRow(
-          # col_6(
           conditionalPanel("input.usemaskorind == true",  ns = ns,
                            fluidRow(
                              col_6(
@@ -118,9 +116,6 @@ mod_segment_ui <- function(id){
           ),
           uiOutput(ns("uipick")),
           editModUI(ns("samplepoints"), height = "640px") |> add_spinner()
-
-          # )
-          # )
         )
       )
     )

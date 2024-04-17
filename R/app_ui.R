@@ -163,9 +163,24 @@ app_ui <- function(request) {
               icon = shiny::icon("image", verify_fa = FALSE)
             ),
             bs4SidebarMenuSubItem(
-              text = "Measure disease (index)",
+              text = "Color palettes",
+              tabName = "createcolorpal",
+              icon = shiny::icon("palette", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Severity (index)",
               tabName = "measurediseaseind",
               icon = shiny::icon("ruler-combined", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Severity (interactive)",
+              tabName = "measurediseaseint",
+              icon = shiny::icon("computer-mouse", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Severity (color palettes)",
+              tabName = "measurediseasepal",
+              icon = shiny::icon("palette", verify_fa = FALSE)
             )
 
           ),
@@ -236,8 +251,22 @@ app_ui <- function(request) {
             mod_imageimport_ui("imageimport_2")
           ),
           bs4TabItem(
+            tabName = "createcolorpal",
+            mod_colorpalette_ui("colorpalette_1")
+          ),
+          bs4TabItem(
             tabName = "measurediseaseind",
             mod_measurediseaseind_ui("measurediseaseind_1")
+          ),
+          bs4TabItem(
+            tabName = "measurediseasepal",
+            mod_measurediseasepal_ui("measurediseasepal_1")
+
+          ),
+          bs4TabItem(
+            tabName = "measurediseaseint",
+            mod_measurediseasepick_ui("measurediseasepick_1")
+
           ),
 
           # Image analysis

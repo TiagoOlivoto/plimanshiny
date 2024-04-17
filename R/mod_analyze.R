@@ -1439,7 +1439,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             }
             mshp <- shapefile_view(result_plot,
                                    attribute = attrib,
-                                   color_regions = return_colors(input$palplot),
+                                   color_regions = return_colors(input$palplot, reverse = input$palplotrev),
                                    alpha.regions = input$alpharesplot)
             bmshp <- mapview::mapview(result_plot, alpha.regions = 0, legend = FALSE)
             indshp <- NULL
@@ -1520,7 +1520,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           sendSweetAlert(
             session = session,
             title = "Error",
-            text = paste0("The object'", input$globalvarname, "' already exists in the global environment. Please, change the name."),
+            text = paste0("The object '", input$globalvarname, "' already exists in the global environment. Please, change the name."),
             type = "success"
           )
         } else {
@@ -1529,7 +1529,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             inputId = "myconfirmation",
             type = "warning",
             title = "Close the App?",
-            text = paste0("The object'", input$globalvarname, "' has been created in the Global environment. To access the created object, you need first to stop the App. Do you really want to close the app now?"),
+            text = paste0("The object '", input$globalvarname, "' has been created in the Global environment. To access the created object, you need first to stop the App. Do you really want to close the app now?"),
             btn_labels = c("Nope", "Yep"),
             btn_colors = c("#FE642E", "#04B404")
           )
