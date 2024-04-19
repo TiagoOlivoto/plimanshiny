@@ -48,7 +48,14 @@ mod_sentinel_ui <- function(id){
           ),
           textInput(ns("outputfile"),
                     label = "Output file",
-                    value = "sentinel_bands.tif")
+                    value = "sentinel_bands.tif"),
+          actionBttn(
+            ns("bindlayers"),
+            label = "Bind!",
+            style = "pill",
+            color = "success",
+            icon = icon("layer-group")
+          )
         )
       ),
       col_9(
@@ -86,38 +93,40 @@ mod_sentinel_server <- function(id, mosaic_data){
       shinyFileChoose(input, "filePath",
                       root = c("Input folder" = input$indirloc),
                       session = session)
+      observeEvent(input$bindlayers, {
+        if(!is.null(input$filePath)){
+          input_file_selected <- parseFilePaths(c("Input folder" = input$indirloc), input$filePath)
+          if(length(input_file_selected$datapath) != 0){
+            waiter_show(
+              html = tagList(
+                spin_google(),
+                h2("Binding the layers. Please, wait.")
+              ),
+              color = "#228B227F"
+            )
+            sentinel_to_tif(input_file_selected$datapath,
+                            path = dirname(input_file_selected$datapath[[1]]),
+                            destination = input$outputfile,
+                            spat_res = input$spatres
+            )
+            waiter_hide()
+            output$plotsentinel <- renderPlot({
+              mosaic <- mosaic_input(paste0(dirname(input_file_selected$datapath[[1]]), "/", input$outputfile), info = FALSE)
+              mosaic_data[[input$outputfile]] <- create_reactval(input$outputfile, mosaic)
+              terra::plot(mosaic)
+            })
 
-      if(!is.null(input$filePath)){
-        input_file_selected <- parseFilePaths(c("Input folder" = input$indirloc), input$filePath)
-        if(length(input_file_selected$datapath) != 0){
-          waiter_show(
-            html = tagList(
-              spin_google(),
-              h2("Binding the layers. Please, wait.")
-            ),
-            color = "#228B227F"
-          )
-          sentinel_to_tif(input_file_selected$datapath,
-                          path = dirname(input_file_selected$datapath[[1]]),
-                          destination = input$outputfile,
-                          spat_res = input$spatres
-          )
-          waiter_hide()
-          output$plotsentinel <- renderPlot({
-            mosaic <- mosaic_input(paste0(dirname(input_file_selected$datapath[[1]]), "/", input$outputfile), info = FALSE)
-            mosaic_data[[input$outputfile]] <- create_reactval(input$outputfile, mosaic)
-            terra::plot(mosaic)
-          })
 
-
-          sendSweetAlert(
-            session = session,
-            title = "Layers successfully binded.",
-            text = paste0("You can now find the binded raster on ", paste0(dirname(input_file_selected$datapath[[1]]), "/", input$outputfile)),
-            type = "success"
-          )
+            sendSweetAlert(
+              session = session,
+              title = "Layers successfully binded.",
+              text = paste0("You can now find the binded raster on ", paste0(dirname(input_file_selected$datapath[[1]]), "/", input$outputfile)),
+              type = "success"
+            )
+          }
         }
-      }
+      })
+
     })
 
 

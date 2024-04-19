@@ -69,7 +69,7 @@ app_ui <- function(request) {
             tabName = "home", icon = shiny::icon("home", verify_fa = FALSE)
           ),
           bs4SidebarMenuItem(
-            "Analyze orthomosaics",
+            "Single orthomosaic",
             icon = shiny::icon("camera"),
             startExpanded = F,
             bs4SidebarMenuSubItem(
@@ -95,9 +95,29 @@ app_ui <- function(request) {
             bs4SidebarMenuSubItem(
               text = "Analyze",
               tabName = "mosaicanalyze",
+              icon = shiny::icon("chart-simple")
+            )
+          ),
+          # time series
+          bs4SidebarMenuItem(
+            "Time series",
+            icon = shiny::icon("chart-line"),
+            startExpanded = F,
+            bs4SidebarMenuSubItem(
+              text = "Mosaics and shapefile",
+              tabName = "mosaicshape",
+              icon = shiny::icon("file-upload", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Index",
+              tabName = "indexseries",
+              icon = shiny::icon("leaf")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Analyze",
+              tabName = "analyzeseries",
               icon = shiny::icon("chart-line")
             )
-
           ),
 ### to be included ###
           bs4SidebarMenuItem(
@@ -221,6 +241,7 @@ app_ui <- function(request) {
       ),
       body = bs4DashBody(
         bs4TabItems(
+          # Single mosaic
           bs4TabItem(
             tabName = "home",
             mod_home_ui("home_1")
@@ -245,6 +266,10 @@ app_ui <- function(request) {
             tabName = "mosaicanalyze",
             mod_analyze_ui("analyze_1")
           ),
+
+          # Time series
+
+
           # Phytopathometry
           bs4TabItem(
             tabName = "imageimportphyt",

@@ -28,11 +28,13 @@ mod_bindlayer_ui <- function(id){
           textInput(ns("newmosaicnames"),
                     label = "Optional layer names (comma separated)",
                     value = NA),
-          actionBttn(ns("bindlayers"),
-                     label = "Bind!",
-                     style = "pill",
-                     color = "success",
-                     icon = icon("layer-group")),
+          actionBttn(
+            ns("bindlayers"),
+            label = "Bind!",
+            style = "pill",
+            color = "success",
+            icon = icon("layer-group")
+          ),
           hl(),
           mod_download_mosaic_ui(ns("downloadlayersbind"))
         )

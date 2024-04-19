@@ -149,7 +149,7 @@ mod_mosaic_prepare_ui <- function(id){
             awesomeRadio(
               inputId = ns("showmosaic"),
               label = "Show",
-              choices = c("rgb", "mapview", "bands"),
+              choices = c("rgb", "mapview", "bands", "hist"),
               selected = "rgb",
               inline = TRUE
             ),
@@ -176,7 +176,7 @@ mod_mosaic_prepare_ui <- function(id){
         status = "success",
         maximizable = TRUE,
         conditionalPanel(
-          condition = "input.showmosaic == 'rgb' | input.showmosaic == 'bands'", ns = ns,
+          condition = "input.showmosaic == 'rgb' | input.showmosaic == 'bands' | input.showmosaic == 'hist'", ns = ns,
           plotOutput(ns("mosaic_plot"), height = "740px") |> add_spinner()
         ),
         conditionalPanel(
@@ -316,6 +316,9 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         nl <- terra::nlyr(mosaic_data$mosaic)
         terra::plot(mosaic_data$mosaic, nc = ifelse(nl < 4, 3, ceiling(sqrt(nl))))
       }
+      if(input$showmosaic == "hist"){
+        terra::hist(mosaic_data$mosaic)
+      }
     })
 
     #
@@ -328,18 +331,12 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
           r = as.numeric(r$r),
           g = as.numeric(g$g),
           b = as.numeric(b$b),
+          re = as.numeric(re$re),
+          nir = as.numeric(nir$nir),
           quantiles = input$quantileplot,
           max_pixels = input$maxpixels
         )
       } else{
-        # mosaictmp <- mosaic_data[[input$mosaictoanalyze]]
-        # aggr <- find_aggrfact(mosaictmp)
-        # if(aggr > 0){
-        #   magg <- mosaic_aggregate(mosaictmp, round(100 / aggr))
-        # } else{
-        #   magg <- mosaictmp
-        # }
-        # print(magg)
         bmtmp <-
           mosaic_view(mosaic_data$mosaic[input$howtoplot],
                       show = "index",
