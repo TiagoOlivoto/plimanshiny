@@ -13,7 +13,3 @@ golem::document_and_reload()
 
 # Run the application
 run_app()
-
-dev
-((1.2*(2.5*(NIR-R)-1.3*(NIR-G))/sqrt((2*NIR+1)^2-(6*NIR-5*sqrt(R))-0.5)))})
-
