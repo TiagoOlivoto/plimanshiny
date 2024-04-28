@@ -742,7 +742,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         plot_ind <-
           result_plot |>
           as.data.frame() |>
-          dplyr::select(all_of(c("date", input$plotattribute)))
+          dplyr::select(dplyr::all_of(c("date", input$plotattribute)))
         p <-
           ggplot(plot_ind, aes(x = .data[["date"]], y = .data[[input$plotattribute]])) +
           geom_boxplot(fill = "#28a745") +
@@ -784,7 +784,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         plot_ind <-
           result_plot |>
           as.data.frame() |>
-          dplyr::select(all_of(c("date", input$groupingvar, input$plotattribute))) |>
+          dplyr::select(dplyr::all_of(c("date", input$groupingvar, input$plotattribute))) |>
           dplyr::filter(!!dplyr::sym(input$groupingvar) %in% input$levelsvar) |>
           dplyr::group_by(date, !!dplyr::sym(input$groupingvar)) |>
           dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}))
