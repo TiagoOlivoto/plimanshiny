@@ -226,7 +226,6 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
         if(length(input_file_selected$paths$datapath) != 0){
           updateTextInput(session, "filemosaicpath", value = paste0(input_file_selected$paths$datapath, collapse = ", "))
         }
-
       }
     })
 
@@ -307,7 +306,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
             r = as.numeric(r$r),
             g = as.numeric(g$g),
             b = as.numeric(b$b),
-            stretch = "lin"
+            stretch = "hist"
           )
         }
 

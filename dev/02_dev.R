@@ -47,6 +47,9 @@ golem::add_module(name = "colorpalette")
 golem::add_module(name = "colorpalette")
 golem::add_module(name = "measurediseasepal")
 golem::add_module(name = "measurediseasepick")
+golem::add_module(name = "timeseriesinput")
+golem::add_module(name = "timeseriesanalysis")
+golem::add_module(name = "cropbatch")
 
 ## Add packages
 usethis::use_package("shiny")

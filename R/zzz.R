@@ -12,6 +12,6 @@
 if (getRversion() >= "2.15.1") {
   utils::globalVariables(
     c("geometry", "name", "value", "plot_id", "block", "individual", "ind", "coverage_fraction", "cl",
-      "label", "symptomatic", "vals")
+      "label", "symptomatic", "vals", "unique_id")
   )
 }

@@ -66,7 +66,7 @@ mod_shapefile_prepare_ui <- function(id){
                            selectInput(
                              ns("fillid"),
                              label = "Fill color",
-                             choices = c("none", "block", "plot_id"),
+                             choices = c("none", "unique_id", "block", "plot_id"),
                              selected = "none",
                            ),
                            sliderInput(ns("alphacolorfill"),
@@ -164,6 +164,18 @@ mod_shapefile_prepare_ui <- function(id){
                                  label = "Number of rows",
                                  value = 1)
                      )
+                   ),
+                   fluidRow(
+                     col_6(
+                       textInput(ns("plot_width"),
+                                 label = "Plot width",
+                                 value = NA)
+                     ),
+                     col_6(
+                       textInput(ns("plot_height"),
+                                 label = "Plot height",
+                                 value = NA)
+                     )
                    )
           ),
           divclass("shape4",
@@ -223,7 +235,7 @@ mod_shapefile_prepare_ui <- function(id){
           divclass("shapeimp1",
                    fileInput(ns("import_shapefile"),
                              "Import a shapefile (.shp, .rds)",
-                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg" ), multiple=TRUE)
+                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg"), multiple=TRUE)
           ),
           tags$hr(),
           divclass("shapeimp2",
@@ -399,53 +411,88 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           nrlayout <- reactiveValues(nr = NULL)
           createdshape <- reactiveValues(shp = NULL)
           cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
-          observeEvent(c(cpoints()$finished, !input$shapedone, input$ncols, input$nrows, input$buffercol, input$bufferrow, input$buildshapefile, input$plotlayout), {
-            if(input$buildshapefile){
-              if(!is.null(cpoints()$edited)){
-                cpo <- cpoints()$edited
-              } else{
-                cpo <- cpoints()$finished
-              }
-              # Check if edits()$finished is not NULL and shapedone is FALSE
-              if (!is.null(cpoints()$finished) && !input$shapedone) {
-                nr <- input$nrows |> chrv2numv()
-                nc <- input$ncols |> chrv2numv()
-                bc <- input$buffercol |> chrv2numv()
-                bf <- input$bufferrow |> chrv2numv()
-                if(all(!is.na(nc)) & all(!is.na(nr)) & all(!is.na(bc)) & all(!is.na(bf))){
-                  shp <- shapefile_build(mosaic_data$mosaic,
-                                         basemap,
-                                         controlpoints = cpo,
-                                         nrow = nr,
-                                         ncol = nc,
-                                         layout = input$plotlayout,
-                                         buffer_col = bc,
-                                         buffer_row = bf,
-                                         verbose = FALSE)
-                  # Update the reactiveVal with the cropped mosaic
-                  createdshape$shp <- shp
-                }
-              }
-            } else{
-              req(input$nrows)
-              req(input$ncols)
-              req(input$buffercol)
-              req(input$bufferrow)
-              # nclayout$nc <- input$nrows
-              # nrlayout$nr <- input$ncols
-              shp <- shapefile_build(mosaic_data$mosaic,
-                                     basemap,
-                                     nrow = input$nrows,
-                                     ncol = input$ncols,
-                                     layout = input$plotlayout,
-                                     buffer_col = input$buffercol,
-                                     buffer_row = input$bufferrow,
-                                     build_shapefile = FALSE,
-                                     verbose = FALSE)
-              createdshape$shp <- shp
+          observeEvent(c(cpoints()$finished,
+                         !input$shapedone,
+                         input$ncols,
+                         input$nrows,
+                         input$buffercol,
+                         input$bufferrow,
+                         input$plot_width,
+                         input$plot_height,
+                         input$buildshapefile,
+                         input$plotlayout), {
+                           if(input$buildshapefile){
+                             if(!is.null(cpoints()$edited)){
+                               cpo <- cpoints()$edited
+                             } else{
+                               cpo <- cpoints()$finished
+                             }
+                             # Check if edits()$finished is not NULL and shapedone is FALSE
+                             if (!is.null(cpoints()$finished) && !input$shapedone) {
+                               nr <- input$nrows |> chrv2numv()
+                               nc <- input$ncols |> chrv2numv()
+                               bc <- input$buffercol |> chrv2numv()
+                               bf <- input$bufferrow |> chrv2numv()
+                               pw <- input$plot_width |> chrv2numv()
+                               ph <- input$plot_height |> chrv2numv()
+                               t1 <- nr == 1
+                               t2 <- nc == 1
+                               ps <- any(t2 & t1 == TRUE)
+                               if(length(ph) == 0 | ps){
+                                 ph <- NULL
+                               }
+                               if(length(pw) == 0 | ps){
+                                 pw <- NULL
+                               }
+                               if(all(!is.na(nc)) & all(!is.na(nr)) & all(!is.na(bc)) & all(!is.na(bf))){
+                                 shp <- shapefile_build(mosaic_data$mosaic,
+                                                        basemap,
+                                                        controlpoints = cpo,
+                                                        nrow = nr,
+                                                        ncol = nc,
+                                                        layout = input$plotlayout,
+                                                        buffer_col = bc,
+                                                        buffer_row = bf,
+                                                        plot_width = pw,
+                                                        plot_height = ph,
+                                                        verbose = FALSE)
+                                 # plot(shp)
+                                 # Update the reactiveVal with the cropped mosaic
+                                 createdshape$shp <- shp
+                               }
+                             }
+                           } else{
 
-            }
-          })
+                             nr <- input$nrows |> chrv2numv()
+                             nc <- input$ncols |> chrv2numv()
+                             bc <- input$buffercol |> chrv2numv()
+                             bf <- input$bufferrow |> chrv2numv()
+                             pw <- input$plot_width |> chrv2numv()
+                             ph <- input$plot_height |> chrv2numv()
+                             t1 <- nr == 1
+                             t2 <- nc == 1
+                             ps <- any(t2 & t1 == TRUE)
+                             if(length(ph) == 0 | ps){
+                               ph <- NULL
+                             }
+                             if(length(pw) == 0 | ps){
+                               pw <- NULL
+                             }
+                             shp <- shapefile_build(mosaic_data$mosaic,
+                                                    basemap,
+                                                    nrow = nr,
+                                                    ncol = nc,
+                                                    layout = input$plotlayout,
+                                                    buffer_col = bf,
+                                                    buffer_row = br,
+                                                    plot_width = pw,
+                                                    plot_height = ph,
+                                                    build_shapefile = FALSE,
+                                                    verbose = FALSE)
+                             createdshape$shp <- shp
+
+                           }
+                         })
 
           output$createdshapes <- renderLeaflet({
             req(createdshape$shp)
@@ -463,7 +510,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               } else{
                 mapp <-
                   basemap$map +
-                  mapview::mapview(createdshape$shp |> extract_number(block, plot_id),
+                  mapview::mapview(createdshape$shp |> dplyr::bind_rows() |>  extract_number(block, plot_id),
                                    zcol = input$fillid,
                                    alpha.regions = input$alphacolorfill,
                                    lwd = input$lwdt,
@@ -503,11 +550,16 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             observe({
               if(input$buildblocks){
                 req(createdshape$shp)
-                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp)
+                shptemp <-
+                  createdshape$shp |>
+                  dplyr::bind_rows() |>
+                  dplyr::mutate(unique_id = dplyr::row_number(), .before = 1)
+                shptemp <- split(shptemp, shptemp$block)
+                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, shptemp)
               } else{
                 req(createdshape$shp)
                 nelem <- length(createdshape$shp)
-                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp[[nelem]])
+                shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, createdshape$shp[[nelem]]|> dplyr::mutate(unique_id = dplyr::row_number(), .before = 1))
               }
               observe({
                 shapefilenames <-  setdiff(names(shapefile), "shapefile")

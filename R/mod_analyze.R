@@ -41,7 +41,7 @@ mod_analyze_ui <- function(id){
                      pickerInput(
                        inputId = ns("summarizefun"),
                        label = "Summarize function(s)",
-                       selected = "mean",
+                       selected = "median",
                        choices = c("none", "min", "max", "count", "sum", "mean", "median", "quantile", "stdev", "coefficient_of_variation"),
                        options = list(
                          `actions-box` = TRUE
@@ -1040,61 +1040,80 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           if(input$segmentindividuals){
             unndata <-
               res$result_indiv |>
+              dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
               sf::st_drop_geometry() |>
-              dplyr::select(block, plot_id, individual, data) |>
+              dplyr::select(unique_id, block, plot_id, individual, data) |>
               tidyr::unnest(cols = data) |>
-              dplyr::group_by(block, plot_id, individual) |>
+              dplyr::group_by(unique_id, block, plot_id, individual) |>
               dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
 
-            result_indiv <- dplyr::left_join(res$result_indiv |> dplyr::select(-data), unndata, by = dplyr::join_by(block, plot_id, individual))
+            result_indiv <- dplyr::left_join(res$result_indiv |> dplyr::select(-data), unndata, by = dplyr::join_by(unique_id, block, plot_id, individual))
             unndata <-
               res$result_plot |>
+              dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
               sf::st_drop_geometry() |>
               tidyr::unnest(cols = data) |>
-              dplyr::group_by(block, plot_id) |>
+              dplyr::group_by(unique_id, block, plot_id) |>
               dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
               sf::st_drop_geometry()
-            result_plot_summ<- dplyr::left_join(res$result_plot_summ, unndata, by = dplyr::join_by(block, plot_id))
+            result_plot_summ<- dplyr::left_join(res$result_plot_summ, unndata, by = dplyr::join_by(unique_id, block, plot_id))
 
             result_plot <-
               res$result_plot |>
-              # sf::st_drop_geometry() |>
+              dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
               tidyr::unnest(cols = data) |>
-              dplyr::group_by(block, plot_id) |>
+              dplyr::group_by(unique_id, block, plot_id) |>
               dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
           }
 
           if(input$segmentplot){
             unndata <-
               res$result_plot |>
+              dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
               sf::st_drop_geometry() |>
               tidyr::unnest(cols = data) |>
-              dplyr::group_by(block, plot_id) |>
+              dplyr::group_by(unique_id, block, plot_id) |>
               dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
               sf::st_drop_geometry() |>
               dplyr::select(-c(3:5))
-            result_plot <- dplyr::left_join(res$result_plot |> dplyr::select(-data), unndata, by = dplyr::join_by(block, plot_id))
+            result_plot <- dplyr::left_join(res$result_plot |> dplyr::select(-data), unndata, by = dplyr::join_by(unique_id, block, plot_id))
             result_indiv <- res$result_indiv
             result_plot_summ <- res$result_plot_summ
           }
           if(!input$segmentindividuals & !input$segmentplot){
             result_plot <-
               res$result_plot |>
-              # sf::st_drop_geometry() |>
+              dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
               tidyr::unnest(cols = data) |>
-              dplyr::group_by(block, plot_id) |>
+              dplyr::group_by(unique_id, block, plot_id) |>
               dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
             result_indiv <- res$result_indiv
             result_plot_summ <- res$result_plot_summ
           }
         } else{
-          result_indiv <- res$result_indiv
-          result_plot_summ <- res$result_plot_summ
-          result_plot <- res$result_plot
+          if(is.null(res$result_indiv)){
+            result_indiv <- NULL
+          } else{
+            result_indiv <-
+              res$result_indiv |>
+              dplyr::mutate(unique_id = dplyr::row_number()) |>
+              dplyr::relocate(unique_id, .before = 1)
+          }
+          if(is.null(res$result_plot_summ)){
+            result_plot_summ <- NULL
+          } else{
+            result_plot_summ <-
+              res$result_plot_summ |>
+              dplyr::mutate(unique_id = dplyr::row_number()) |>
+              dplyr::relocate(unique_id, .before = 1)
+          }
+          result_plot <-
+            res$result_plot |>
+            dplyr::mutate(unique_id = dplyr::row_number()) |>
+            dplyr::relocate(unique_id, .before = 1)
         }
 
 
-        # if(!is.null(indcomp)){
         if(input$segmentindividuals){
           updateSelectInput(session, "plotattribute", choices = names(result_plot_summ), selected = "coverage")
           updateSelectInput(session, "indivattribute", choices = names(result_indiv), selected = "diam_mean")
@@ -1329,7 +1348,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
 
         } else {
-          updateSelectInput(session, "plotattribute", choices = names(result_plot), selected = names(result_plot)[[3]])
+          sel <- grep(input$summarizefunoutput[[1]], names(result_plot))[1]
+          updateSelectInput(session, "plotattribute", choices = names(result_plot), selected = names(result_plot)[[sel]])
           output$boxresults <- renderPlotly({
             if(input$summarizefunoutput[[1]] == "none"){
               plot_ind <-
@@ -1377,7 +1397,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               pageLength = 15
             )
           )
-
           mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
         }
         # }

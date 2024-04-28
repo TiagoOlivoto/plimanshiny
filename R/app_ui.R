@@ -69,6 +69,11 @@ app_ui <- function(request) {
             tabName = "home", icon = shiny::icon("home", verify_fa = FALSE)
           ),
           bs4SidebarMenuItem(
+            text = "Manipulate",
+            tabName = "mosaicmanipula",
+            icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
+          ),
+          bs4SidebarMenuItem(
             "Single orthomosaic",
             icon = shiny::icon("camera"),
             startExpanded = F,
@@ -81,11 +86,6 @@ app_ui <- function(request) {
               text = "Shapefile",
               tabName = "shapefileimport",
               icon = shiny::icon("draw-polygon")
-            ),
-            bs4SidebarMenuSubItem(
-              text = "Manipulate",
-              tabName = "mosaicmanipula",
-              icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
             ),
             bs4SidebarMenuSubItem(
               text = "Index",
@@ -107,11 +107,6 @@ app_ui <- function(request) {
               text = "Mosaics and shapefile",
               tabName = "mosaicshape",
               icon = shiny::icon("file-upload", verify_fa = FALSE)
-            ),
-            bs4SidebarMenuSubItem(
-              text = "Index",
-              tabName = "indexseries",
-              icon = shiny::icon("leaf")
             ),
             bs4SidebarMenuSubItem(
               text = "Analyze",
@@ -268,6 +263,14 @@ app_ui <- function(request) {
           ),
 
           # Time series
+          bs4TabItem(
+            tabName = "mosaicshape",
+            mod_timeseriesinput_ui("timeseriesinput_1")
+          ),
+          bs4TabItem(
+            tabName = "analyzeseries",
+            mod_timeseriesanalysis_ui("timeseriesanalysis_1")
+          ),
 
 
           # Phytopathometry

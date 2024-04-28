@@ -156,7 +156,7 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
               r = as.numeric(r$r),
               g = as.numeric(g$g),
               b = as.numeric(b$b),
-              stretch = "lin"
+              stretch = "hist"
             )
           } else{
             terra::plot(mtemp)
@@ -189,7 +189,7 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
                 r = as.numeric(r$r),
                 g = as.numeric(g$g),
                 b = as.numeric(b$b),
-                stretch = "lin"
+                stretch = "hist"
               )
             } else{
               terra::plot(seg)

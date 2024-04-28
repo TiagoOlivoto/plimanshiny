@@ -256,9 +256,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
     finalindex <- reactive({
       mindex <- strsplit(input$myindex, split = ",")[[1]]
       finalindex <- c(mindex, input$plotindexes)
-
-      finalindex
     })
+
     observeEvent(input$computeindex, {
       req(mosaictmp$mosaic)
       if(is.null(mosaictmp$mosaic)){

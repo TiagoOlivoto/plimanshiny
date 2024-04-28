@@ -20,8 +20,13 @@ app_server <- function(input, output, session) {
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index, shapefile)
   mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic)
+  mosaiclist <- reactiveValues()
+  mod_timeseriesinput_server("timeseriesinput_1", shapefile, mosaiclist, r, g, b, re, nir, basemap)
+  mod_cropbatch_server("cropbatch_1", shapefile, mosaiclist)
+
   # manipulation
   mod_crop_server("crop_1", mosaic_data, shapefile, r, g, b, basemap)
+  mod_timeseriesanalysis_server("timeseriesanalysis_1", shapefile, mosaiclist, r, g, b, re, nir, basemap)
   mod_plotclip_server("plotclip_1", mosaic_data, shapefile, r, g, b, basemap)
   mod_bindlayer_server("bindlayer_1", mosaic_data)
   mod_interpolate_server("interpolate_1", mosaic_data, r, g, b, basemap)

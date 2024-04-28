@@ -39,6 +39,7 @@ Imports:
     stats,
     terra,
     tidyr,
+    tidyterra,
     utils,
     waiter
 Remotes: 
