@@ -306,6 +306,20 @@ mod_timeseriesanalysis_ui <- function(id){
                         label = "Attribute",
                         choices = NULL),
             hl(),
+            pickerpalette(id, "palplot", selected = "RdYlGn"),
+            prettyCheckbox(
+              inputId = ns("palplotrev"),
+              label = "Reverse",
+              value = FALSE,
+              icon = icon("check"),
+              status = "success",
+              animation = "rotate"
+            ),
+            sliderInput(ns("alpharesplot"),
+                        label = "Fill opacity",
+                        min = 0,
+                        max = 1,
+                        value = 0.75),
             h3("Export the results"),
             divclass("out4",
                      mod_download_shapefile_ui(ns("downresplot"), label = "Plot results")
@@ -444,6 +458,36 @@ mod_timeseriesanalysis_ui <- function(id){
                 plotOutput(ns("compplot2"), height = "540px") |> add_spinner()
               )
             )
+          ),
+          tabPanel(
+            title = "Map plot (single data)",
+            fluidRow(
+              col_4(
+                pickerInput(
+                  inputId = ns("filterdate"),
+                  label = "Date to explore",
+                  choices = NULL,
+                  multiple = FALSE
+                )
+              ),
+              col_4(
+                pickerInput(
+                  inputId = ns("groupvarsd"),
+                  label = "Select a grouping variable:",
+                  choices = NULL,
+                  multiple = FALSE
+                )
+              ),
+              col_4(
+                pickerInput(
+                  inputId = ns("levelsvarsd"),
+                  label = "Select levels to filter:",
+                  choices = NULL,
+                  multiple = TRUE
+                )
+              )
+            ),
+            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
           ),
           tabPanel(
             title = "Raw results",
@@ -947,6 +991,52 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       })
 
 
+      # single data
+      # filter by date
+      # update the values
+      observe({
+        updatePickerInput(session, "groupvarsd",
+                          choices = colnames(result_plot),
+                          selected = "plot_id")
+      })
+      observe({
+        req(input$groupvarsd)
+        levels <- sort(unique(result_plot[[input$groupvarsd]]))
+        updatePickerInput(session, "levelsvarsd",
+                          choices = levels)
+      })
+      observe({
+        levels <- unique(result_plot |> as.data.frame() |>  dplyr::select(date) |> dplyr::pull())
+        updatePickerInput(session, "filterdate",
+                          choices = levels)
+      })
+
+
+      output$resultsplotmap <- renderLeaflet({
+        req(input$filterdate)
+
+        dftemp <-
+          result_plot |>
+          dplyr::filter(date == input$filterdate)
+
+        if(!is.null(input$levelsvarsd)){
+          dftemp <-
+            dftemp |>
+            dplyr::filter(!!dplyr::sym(input$groupvarsd) %in% input$levelsvarsd)
+        }
+
+
+        if((!input$plotattribute %in% colnames(dftemp)) & !is.null(summf)){
+          attrib <- paste0(input$summarizefun[[1]], ".", input$segmentindex)
+        } else{
+          attrib <- input$plotattribute
+        }
+        mshp <- shapefile_view(dftemp,
+                               attribute = attrib,
+                               color_regions = return_colors(input$palplot, reverse = input$palplotrev),
+                               alpha.regions = input$alpharesplot)
+        (basemap$map +  mshp)@map
+      })
 
 
       # raw results
@@ -972,7 +1062,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
 
       closeSweetAlert(session = session)
-
 
     })
   })

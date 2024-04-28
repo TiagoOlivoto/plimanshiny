@@ -1476,7 +1476,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           } else{
             (basemap$map +  mapshape$mapshape)@map
           }
-
         })
 
 
