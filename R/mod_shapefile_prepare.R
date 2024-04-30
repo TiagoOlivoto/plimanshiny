@@ -256,11 +256,24 @@ mod_shapefile_prepare_ui <- function(id){
                                label = "Fill color",
                                choices = NULL)
           ),
-          materialSwitch(
-            inputId = ns("editplotsimpo"),
-            label = "Edit Shapefile?",
-            value = FALSE,
-            status = "danger"
+          fluidRow(
+            col_6(
+              materialSwitch(
+                inputId = ns("editplotsimpo"),
+                label = "Edit Shapefile?",
+                value = FALSE,
+                status = "danger"
+              )
+            ),
+            col_6(
+              actionButton(
+                inputId = ns("plotinfo2"),
+                label = tagList(
+                  icon = icon("question-circle", verify_fa = FALSE), "Plot info"
+                ),
+                class = "btn-info"
+              )
+            )
           ),
           conditionalPanel(
             condition = "input.editplotsimpo == true", ns = ns,
@@ -870,52 +883,100 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 })
               }
             })
-
           })
         }
       })
     })
 
 
-    observeEvent(input$plotinfo, {
-      output$plotinfop <- renderPlot({
-        shpinfo <- shapefile$shapefile[1, ]
-        coords <- sf::st_coordinates(shpinfo)[1:4, 1:2]
-        dists <-  coords |> dist()
-        p1 <- coords[1, ]
-        p2 <- coords[2, ]
-        p3 <- coords[3, ]
-        a <- (p1 - p2) / 2
-        b <- (p2 - p3) / 2
-        nc <- p1 - a
-        nc2 <- p2 - b
-        mcro <- terra::crop(mosaic_data$mosaic, terra::vect(shpinfo) |> terra::buffer(1.5))
-        if(terra::nlyr(mcro) > 2){
-          terra::plotRGB(mcro, stretch = "hist")
-        } else{
-          terra::plot(mcro[[1]])
-        }
-        shapefile_plot(shpinfo, add = TRUE, col ="salmon")
-        boxtext(x =  nc[1],
-                y =  nc[2],
-                labels = paste0(round(dists[1], 2), " m"),
-                col.bg = "salmon", font = 1, cex = 1)
-        boxtext(x =  nc2[1],
-                y =  nc2[2],
-                labels = paste0(round(dists[3], 2), " m"),
-                col.bg = "salmon", font = 1, cex = 1)
-        boxtext(x =  mean(coords[, 1]),
-                y = mean(coords[, 2]),
-                labels = paste0(round(dists[1] * dists[3], 2), " m2"),
-                col.bg = "salmon", font = 1, cex = 1)
-      })
+    observeEvent(c(input$plotinfo, input$plotinfo2), {
+      distsss <- reactiveValues()
+      if(input$plotinfo | input$plotinfo2){
+        output$plotinfop <- renderPlot({
+          shpinfo <- shapefile$shapefile[1, ]
+          coords <- sf::st_coordinates(shpinfo)[1:4, 1:2]
+          dists <-  coords |> dist()
+          distsss$val <- dists
+          p1 <- coords[1, ]
+          p2 <- coords[2, ]
+          p3 <- coords[3, ]
+          a <- (p1 - p2) / 2
+          b <- (p2 - p3) / 2
+          nc <- p1 - a
+          nc2 <- p2 - b
+          mcro <- terra::crop(mosaic_data$mosaic, terra::vect(shpinfo) |> terra::buffer(1))
+          if(terra::nlyr(mcro) > 2){
+            terra::plotRGB(mcro, stretch = "hist")
+          } else{
+            terra::plot(mcro[[1]])
+          }
+          shapefile_plot(shpinfo, add = TRUE, col ="salmon")
+          boxtext(x =  nc[1],
+                  y =  nc[2],
+                  labels = paste0(round(dists[1], 2), " m"),
+                  col.bg = "salmon", font = 1, cex = 1)
+          boxtext(x =  nc2[1],
+                  y =  nc2[2],
+                  labels = paste0(round(dists[3], 2), " m"),
+                  col.bg = "salmon", font = 1, cex = 1)
+          boxtext(x =  mean(coords[, 1]),
+                  y = mean(coords[, 2]),
+                  labels = paste0(round(dists[1] * dists[3], 2), " m2"),
+                  col.bg = "salmon", font = 1, cex = 1)
+        })
 
-      showModal(modalDialog(
-        plotOutput(ns("plotinfop"), height = "480px"),
-        footer = NULL,
-        easyClose = TRUE,
-        size = "l"
-      ))
+
+        output$nplots <- renderValueBox({
+          valueBox(
+            value = nrow(shapefile$shapefile),
+            subtitle = "Number of plots       ",
+            color = "success",
+            icon = icon("list-ol")
+          )
+        })
+        output$pwidth <- renderValueBox({
+          valueBox(
+            value = round(distsss$val[3], 3),
+            subtitle = "Plot width (m)       .",
+            color = "success",
+            icon = icon("arrows-left-right")
+          )
+        })
+        output$phight <- renderValueBox({
+          valueBox(
+            value = round(distsss$val[1], 3),
+            subtitle = "Plot height (m)       ",
+            color = "success",
+            icon = icon("arrows-up-down")
+          )
+        })
+        output$exparea <- renderValueBox({
+          valueBox(
+            value = round(sum(sf::st_area(shapefile$shapefile)), 3),
+            subtitle = "Covered area (m2)       ",
+            color = "success",
+            icon = icon("draw-polygon")
+          )
+        })
+
+        showModal(modalDialog(
+          title = "Plot measures",
+          fluidRow(
+            col_5(
+              valueBoxOutput(ns("nplots")),
+              valueBoxOutput(ns("pwidth")),
+              valueBoxOutput(ns("phight")),
+              valueBoxOutput(ns("exparea"))
+            ),
+            col_7(
+              plotOutput(ns("plotinfop"), height = "480px")
+            )
+          ),
+          footer = NULL,
+          easyClose = TRUE,
+          size = "xl"
+        ))
+      }
     })
 
     # shape

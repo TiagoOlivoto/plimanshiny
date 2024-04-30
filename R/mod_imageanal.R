@@ -531,6 +531,8 @@ mod_imageanal_server <- function(id, imgdata){
                           `actions-box` = TRUE,
                           `live-search` = TRUE
                         ))
+    })
+    observe({
       if(input$dpi & input$reference){
         updateMaterialSwitch(session, "reference", value = FALSE)
         sendSweetAlert(
@@ -632,7 +634,7 @@ mod_imageanal_server <- function(id, imgdata){
            filter = input$filter,
            bfind = input$back_fore_index,
            frind = input$fore_ref_index,
-           refarea =  na.omit(c(input$refareasiz, input$refareacol)),
+           refarea =  na.omit(c(as.numeric(input$refareasiz), as.numeric(input$refareacol))),
            fillhull = input$fillhull,
            thresval = thresval,
            upper_size = upper_size,
@@ -689,7 +691,6 @@ mod_imageanal_server <- function(id, imgdata){
 
 
     observeEvent(input$analyzeimg, {
-
       if(input$singleorbatch == "Single image"){
         req(imgdata$img)
         waiter_show(
@@ -709,6 +710,9 @@ mod_imageanal_server <- function(id, imgdata){
         } else{
           myobjectind <- NULL
         }
+        # print(parms()$reflarger)
+        # print(parms()$refsmaller)
+        # print(parms()$refarea)
         res <-
           analyze_objects(imgdata$img,
                           index = parms()$index,
