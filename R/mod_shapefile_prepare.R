@@ -193,15 +193,28 @@ mod_shapefile_prepare_ui <- function(id){
                    )
           ),
           divclass("shape5",
-                   prettyCheckbox(
-                     inputId = ns("shapedone"),
-                     label = "Shapefile finished!",
-                     value = FALSE,
-                     status = "info",
-                     icon = icon("thumbs-up"),
-                     plain = TRUE,
-                     outline = TRUE,
-                     animation = "rotate"
+                   fluidRow(
+                     col_7(
+                       prettyCheckbox(
+                         inputId = ns("shapedone"),
+                         label = "Shapefile finished!",
+                         value = FALSE,
+                         status = "info",
+                         icon = icon("thumbs-up"),
+                         plain = TRUE,
+                         outline = TRUE,
+                         animation = "rotate"
+                       )
+                     ),
+                     col_5(
+                       actionButton(
+                         inputId = ns("plotinfo"),
+                         label = tagList(
+                           icon = icon("question-circle", verify_fa = FALSE), "Plot info"
+                         ),
+                         class = "btn-info"
+                       )
+                     )
                    ),
                    conditionalPanel(
                      condition = "input.shapedone == true", ns = ns,
@@ -857,13 +870,53 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 })
               }
             })
+
           })
         }
       })
     })
 
 
+    observeEvent(input$plotinfo, {
+      output$plotinfop <- renderPlot({
+        shpinfo <- shapefile$shapefile[1, ]
+        coords <- sf::st_coordinates(shpinfo)[1:4, 1:2]
+        dists <-  coords |> dist()
+        p1 <- coords[1, ]
+        p2 <- coords[2, ]
+        p3 <- coords[3, ]
+        a <- (p1 - p2) / 2
+        b <- (p2 - p3) / 2
+        nc <- p1 - a
+        nc2 <- p2 - b
+        mcro <- terra::crop(mosaic_data$mosaic, terra::vect(shpinfo) |> terra::buffer(1.5))
+        if(terra::nlyr(mcro) > 2){
+          terra::plotRGB(mcro, stretch = "hist")
+        } else{
+          terra::plot(mcro[[1]])
+        }
+        shapefile_plot(shpinfo, add = TRUE, col ="salmon")
+        boxtext(x =  nc[1],
+                y =  nc[2],
+                labels = paste0(round(dists[1], 2), " m"),
+                col.bg = "salmon", font = 1, cex = 1)
+        boxtext(x =  nc2[1],
+                y =  nc2[2],
+                labels = paste0(round(dists[3], 2), " m"),
+                col.bg = "salmon", font = 1, cex = 1)
+        boxtext(x =  mean(coords[, 1]),
+                y = mean(coords[, 2]),
+                labels = paste0(round(dists[1] * dists[3], 2), " m2"),
+                col.bg = "salmon", font = 1, cex = 1)
+      })
 
+      showModal(modalDialog(
+        plotOutput(ns("plotinfop"), height = "480px"),
+        footer = NULL,
+        easyClose = TRUE,
+        size = "l"
+      ))
+    })
 
     # shape
     # terra::crop(mosaic, terra::ext(terra::vect(shape)))
