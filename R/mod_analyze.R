@@ -1167,7 +1167,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
 
           output$boxresults <- renderPlotly({
-
             if(input$summarizefunoutput[[1]] == "none"){
               plot_ind <-
                 result_plot_summ |>

@@ -888,100 +888,166 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
       })
     })
 
-
+ # Plot information
     observeEvent(c(input$plotinfo, input$plotinfo2), {
       distsss <- reactiveValues()
+      perim <- reactiveValues()
+      area <- reactiveValues()
+      wid <- reactiveValues()
+      hei <- reactiveValues()
+      req(shapefile$shapefile)
+      updateSelectInput(session, "uniqueidinfo",
+                        choices = 1:nrow(shapefile$shapefile),
+                        selected = 1)
       if(input$plotinfo | input$plotinfo2){
         output$plotinfop <- renderPlot({
-          shpinfo <- shapefile$shapefile[1, ]
-          coords <- sf::st_coordinates(shpinfo)[1:4, 1:2]
-          dists <-  coords |> dist()
-          distsss$val <- dists
-          p1 <- coords[1, ]
-          p2 <- coords[2, ]
-          p3 <- coords[3, ]
-          a <- (p1 - p2) / 2
-          b <- (p2 - p3) / 2
-          nc <- p1 - a
-          nc2 <- p2 - b
-          mcro <- terra::crop(mosaic_data$mosaic, terra::vect(shpinfo) |> terra::buffer(1))
-          if(terra::nlyr(mcro) > 2){
-            terra::plotRGB(mcro, stretch = "hist")
-          } else{
-            terra::plot(mcro[[1]])
+          shpinfo <- shapefile$shapefile[input$uniqueidinfo, ]
+          npoints <- sf::st_coordinates(shpinfo) |> nrow()
+          coords <- sf::st_coordinates(shpinfo)[, 1:2]
+          buff <- diff(range(coords[, 1])) * 0.15
+          dists <-  coords |> dist() |> as.matrix()
+          seq_dists <- c()
+          for (i in 1:(ncol(dists) - 1)) {
+            seq_dists <- c(seq_dists, dists[i, i + 1])
           }
-          shapefile_plot(shpinfo, add = TRUE, col ="salmon")
-          boxtext(x =  nc[1],
-                  y =  nc[2],
-                  labels = paste0(round(dists[1], 2), " m"),
-                  col.bg = "salmon", font = 1, cex = 1)
-          boxtext(x =  nc2[1],
-                  y =  nc2[2],
-                  labels = paste0(round(dists[3], 2), " m"),
-                  col.bg = "salmon", font = 1, cex = 1)
-          boxtext(x =  mean(coords[, 1]),
-                  y = mean(coords[, 2]),
-                  labels = paste0(round(dists[1] * dists[3], 2), " m2"),
-                  col.bg = "salmon", font = 1, cex = 1)
+          # distsss$val <- dists
+          perim$val <- sf::st_perimeter(shpinfo)
+          area$val <- sf::st_area(shpinfo)
+          ncoors <-
+            do.call(
+              rbind,
+              lapply(1:(nrow(coords) - 1), function(i){
+                p1 <- coords[i, ]
+                p2 <- coords[i + 1, ]
+                p1 - (p1 - p2) / 2
+              })
+            )
+          if(!is.null(mosaic_data$mosaic)){
+            mcro <- terra::crop(mosaic_data$mosaic, terra::vect(shpinfo) |> terra::buffer(buff))
+            if(terra::nlyr(mcro) > 2){
+              terra::plotRGB(mcro, stretch = "hist")
+            } else{
+              terra::plot(mcro[[1]])
+            }
+            shapefile_plot(shpinfo, add = TRUE, col = adjustcolor("salmon", 0.9))
+          } else{
+            shapefile_plot(shpinfo, col =adjustcolor("salmon", 0.9))
+          }
+          wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
+          hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
+          boxtext(x =  ncoors[, 1],
+                  y =  ncoors[, 2],
+                  labels = paste0(round(seq_dists, 2), " m"),
+                  col.bg = "salmon",
+                  cex = 1.5)
+          boxtext(x =  mean(ncoors[, 1]),
+                  y =  mean(ncoors[, 2]),
+                  labels = paste0(round(area$val, 2), " m2"),
+                  col.bg = "salmon",
+                  cex = 1.5)
         })
 
 
         output$nplots <- renderValueBox({
           valueBox(
-            value = nrow(shapefile$shapefile),
-            subtitle = "Number of plots       ",
+            value = tags$p(nrow(shapefile$shapefile), style = "font-size: 200%;"),
+            subtitle = "Number of shapes",
             color = "success",
             icon = icon("list-ol")
           )
         })
+        output$exparea <- renderValueBox({
+          valueBox(
+            value = tags$p(round(sum(sf::st_area(shapefile$shapefile)), 3), style = "font-size: 200%;"),
+            subtitle = "Covered area (m2)",
+            color = "success",
+            icon = icon("square")
+          )
+        })
         output$pwidth <- renderValueBox({
           valueBox(
-            value = round(distsss$val[3], 3),
-            subtitle = "Plot width (m)       .",
+            value = tags$p(wid$val, style = "font-size: 200%;"),
+            subtitle = "Plot width (m)",
             color = "success",
             icon = icon("arrows-left-right")
           )
         })
         output$phight <- renderValueBox({
           valueBox(
-            value = round(distsss$val[1], 3),
+            value = tags$p(hei$val, style = "font-size: 200%;"),
             subtitle = "Plot height (m)       ",
             color = "success",
             icon = icon("arrows-up-down")
           )
         })
-        output$exparea <- renderValueBox({
+
+        output$pperimeter <- renderValueBox({
           valueBox(
-            value = round(sum(sf::st_area(shapefile$shapefile)), 3),
-            subtitle = "Covered area (m2)       ",
+            value = tags$p(round(perim$val, 3), style = "font-size: 200%;"),
+            subtitle = "Perimeter (m)       ",
+            color = "success",
+            icon = icon("draw-polygon")
+          )
+        })
+        output$parea <- renderValueBox({
+          valueBox(
+            value = tags$p(round(area$val, 3), style = "font-size: 200%;"),
+            subtitle = "Area (m2)       ",
             color = "success",
             icon = icon("draw-polygon")
           )
         })
 
-        showModal(modalDialog(
-          title = "Plot measures",
-          fluidRow(
-            col_5(
-              valueBoxOutput(ns("nplots")),
-              valueBoxOutput(ns("pwidth")),
-              valueBoxOutput(ns("phight")),
-              valueBoxOutput(ns("exparea"))
+        showModal(
+          modalDialog(
+            title = "Plot measures",
+            fluidRow(
+              col_5(
+                h4("Overview"),
+                fluidRow(
+                  col_6(
+                    valueBoxOutput(ns("nplots"), width = 12)
+                  ),
+                  col_6(
+                    valueBoxOutput(ns("exparea"), width = 12),
+                  )
+                ),
+                h4("Individual measures"),
+                fluidRow(
+                  col_6(
+                    valueBoxOutput(ns("pwidth"), width = 12)
+                  ),
+                  col_6(
+                    valueBoxOutput(ns("phight"), width = 12)
+                  )
+                ),
+                fluidRow(
+                  col_6(
+                    valueBoxOutput(ns("parea"), width = 12)
+                  ),
+                  col_6(
+                    valueBoxOutput(ns("pperimeter"), width = 12)
+                  )
+                )
+              ),
+              col_7(
+                selectInput(ns("uniqueidinfo"),
+                            label = "Unique id",
+                            choices = NULL,
+                            width = "100%"),
+                plotOutput(ns("plotinfop"), height = "600px")
+              )
             ),
-            col_7(
-              plotOutput(ns("plotinfop"), height = "480px")
-            )
-          ),
-          footer = NULL,
-          easyClose = TRUE,
-          size = "xl"
-        ))
+            footer = NULL,
+            easyClose = TRUE,
+            size = "xl"
+          )
+        )
       }
     })
 
     # shape
     # terra::crop(mosaic, terra::ext(terra::vect(shape)))
-
     mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE))
 
 

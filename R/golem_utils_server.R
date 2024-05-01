@@ -370,7 +370,8 @@ boxtext <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
                  ybottom = yMid - rectHeight/2,
                  xright = xMid + rectWidth/2,
                  ytop = yMid + rectHeight/2,
-                 col = col.bg, border = border.bg)
+                 col = adjustcolor(col.bg, 0.9),
+                 border = adjustcolor(border.bg, 0.9))
 
   ## Place the text:
   graphics::text(xMid, yMid, labels, col = col.text, cex = theCex, font = font,
