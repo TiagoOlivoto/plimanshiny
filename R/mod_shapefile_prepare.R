@@ -888,7 +888,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
       })
     })
 
- # Plot information
+    # Plot information
     observeEvent(c(input$plotinfo, input$plotinfo2), {
       distsss <- reactiveValues()
       perim <- reactiveValues()
@@ -900,6 +900,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                         choices = 1:nrow(shapefile$shapefile),
                         selected = 1)
       if(input$plotinfo | input$plotinfo2){
+
+
         output$plotinfop <- renderPlot({
           shpinfo <- shapefile$shapefile[input$uniqueidinfo, ]
           npoints <- sf::st_coordinates(shpinfo) |> nrow()
@@ -935,11 +937,13 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           }
           wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
           hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
-          boxtext(x =  ncoors[, 1],
-                  y =  ncoors[, 2],
-                  labels = paste0(round(seq_dists, 2), " m"),
-                  col.bg = "salmon",
-                  cex = 1.5)
+          if(npoints < 15){
+            boxtext(x =  ncoors[, 1],
+                    y =  ncoors[, 2],
+                    labels = paste0(round(seq_dists, 2), " m"),
+                    col.bg = "salmon",
+                    cex = 1.5)
+          }
           boxtext(x =  mean(ncoors[, 1]),
                   y =  mean(ncoors[, 2]),
                   labels = paste0(round(area$val, 2), " m2"),
