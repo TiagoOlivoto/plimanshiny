@@ -68,6 +68,37 @@ app_ui <- function(request) {
             "Home",
             tabName = "home", icon = shiny::icon("home", verify_fa = FALSE)
           ),
+          # Dataset
+          bs4SidebarMenuItem(
+            text = "Datasets",
+            startExpanded = F,
+            icon = shiny::icon("database", verify_fa = FALSE),
+            bs4SidebarMenuSubItem(
+              text = "Input",
+              tabName = "datasets",
+              icon = shiny::icon("file-import", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Filter",
+              tabName = "filter",
+              icon = shiny::icon("filter", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Edit",
+              tabName = "edit",
+              icon = shiny::icon("pencil", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Update",
+              tabName = "update",
+              icon = shiny::icon("rotate-right", verify_fa = FALSE)
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Join",
+              tabName = "join",
+              icon = shiny::icon("code-merge", verify_fa = FALSE)
+            )
+          ),
           bs4SidebarMenuItem(
             text = "Manipulate",
             tabName = "mosaicmanipula",
@@ -241,6 +272,28 @@ app_ui <- function(request) {
             tabName = "home",
             mod_home_ui("home_1")
           ),
+          # Datasets
+          bs4TabItem(
+            tabName = "datasets",
+            mod_datasets_ui("datasets_1")
+          ),
+          bs4TabItem(
+            tabName = "filter",
+            mod_dffilter_ui("dffilter_1")
+          ),
+          bs4TabItem(
+            tabName = "edit",
+            mod_dfedit_ui("dfedit_1")
+          ),
+          bs4TabItem(
+            tabName = "update",
+            mod_dfupdate_ui("dfupdate_1")
+          ),
+          bs4TabItem(
+            tabName = "join",
+            mod_dfjoin_ui("dfjoin_1")
+          ),
+          # Mosaics
           bs4TabItem(
             tabName = "mosaicimport",
             mod_mosaic_prepare_ui("mosaic_prepare_1")

@@ -49,6 +49,14 @@ app_server <- function(input, output, session) {
   mod_colorpalette_server("colorpalette_1", imgdata)
   mod_measurediseasepal_server("measurediseasepal_1", imgdata)
   mod_measurediseasepick_server("measurediseasepick_1", imgdata)
+
+  # Datasets
+  dfs <- reactiveValues()
+  mod_datasets_server("datasets_1", dfs)
+  mod_dffilter_server("dffilter_1", dfs)
+  mod_dfedit_server("dfedit_1", dfs)
+  mod_dfupdate_server("dfupdate_1", dfs)
+  mod_dfjoin_server("dfjoin_1", dfs)
 }
 
 

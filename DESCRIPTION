@@ -8,6 +8,7 @@ License: MIT + file LICENSE
 Imports: 
     bs4Dash,
     config (>= 0.3.2),
+    datamods,
     doFuture,
     dplyr,
     DT,
@@ -29,6 +30,7 @@ Imports:
     parallel,
     pliman,
     plotly,
+    reactable,
     rintrojs,
     scales,
     sf,

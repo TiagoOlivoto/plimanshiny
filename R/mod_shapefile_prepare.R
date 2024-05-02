@@ -951,7 +951,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   cex = 1.5)
         })
 
-
         output$nplots <- renderValueBox({
           valueBox(
             value = tags$p(nrow(shapefile$shapefile), style = "font-size: 200%;"),

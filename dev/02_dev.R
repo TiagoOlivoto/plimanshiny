@@ -50,6 +50,11 @@ golem::add_module(name = "measurediseasepick")
 golem::add_module(name = "timeseriesinput")
 golem::add_module(name = "timeseriesanalysis")
 golem::add_module(name = "cropbatch")
+golem::add_module(name = "datasets")
+golem::add_module(name = "dffilter")
+golem::add_module(name = "dfedit")
+golem::add_module(name = "dfupdate")
+golem::add_module(name = "dfjoin")
 
 ## Add packages
 usethis::use_package("shiny")
