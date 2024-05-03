@@ -84,9 +84,9 @@ mod_dfedit_server <- function(id, dfs, shapefile){
     observe({
       req(input$dftoedit)
       if(input$dforshape == "data.frame"){
-        dfactive$df <- dfs[[input$dftoedit]]$data
+        dfactive$df <- dfs[[input$dftoedit]]$data |> convert_numeric_cols()
       } else{
-        dfactive$df <-  shapefile[[input$dftoedit]]$data
+        dfactive$df <-  shapefile[[input$dftoedit]]$data |> convert_numeric_cols()
       }
     })
 

@@ -672,7 +672,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             req(input$shapefiletoanalyze)
             selected_shp <- shapefile[[input$shapefiletoanalyze]]
             if ('data' %in% names(selected_shp)) {
-              shapefile$shapefile <- selected_shp$data
+              shapefile$shapefile <- selected_shp$data |> convert_numeric_cols()
 
             }
           })
@@ -749,7 +749,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             req(input$shapefiletoanalyze)
             selected_shp <- shapefile[[input$shapefiletoanalyze]]
             if ('data' %in% names(selected_shp)) {
-              shapefile$shapefile <- selected_shp$data
+              shapefile$shapefile <- selected_shp$data |> convert_numeric_cols()
             }
           })
 

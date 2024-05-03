@@ -139,7 +139,7 @@ mod_dfjoin_server <- function(id, dfs, shapefile){
                             choices = commvar)
         })
 
-        observeEvent(input$startjoining, {
+        # observeEvent(input$startjoining, {
           req(dfstojoin$vals)
           req(input$varstojoin)
           if(input$type == "left"){
@@ -178,7 +178,7 @@ mod_dfjoin_server <- function(id, dfs, shapefile){
               defaultPageSize = 13
             )
           })
-        })
+        # })
 
         observeEvent(input$donejoining, {
           dfs[[input$newset]] <- create_reactval(input$newset, result$res)
@@ -199,8 +199,8 @@ mod_dfjoin_server <- function(id, dfs, shapefile){
                             choices = commvar)
         })
         req(input$varstojoin)
-        result$res <- dplyr::left_join(shapefile[[input$shapetojoin]]$data,
-                                       dfs[[input$dftojoinshp]]$data,
+        result$res <- dplyr::left_join(shapefile[[input$shapetojoin]]$data |> convert_numeric_cols(),
+                                       dfs[[input$dftojoinshp]]$data |> convert_numeric_cols(),
                                        by =  dplyr::join_by(input$varstojoin))
 
         observeEvent(input$donejoining, {

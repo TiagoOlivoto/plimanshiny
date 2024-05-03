@@ -386,3 +386,14 @@ boxtext <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
                     yMid + rectHeight/2))
   }
 }
+
+convert_numeric_cols <- function(data) {
+  can_convert_to_numeric <- function(x) {
+    all(!is.na(suppressWarnings(as.numeric(x))))
+  }
+  data %>%
+    dplyr::mutate(dplyr::across(
+      dplyr::where(can_convert_to_numeric),
+      as.numeric
+    ))
+}

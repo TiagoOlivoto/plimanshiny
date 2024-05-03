@@ -85,12 +85,12 @@ mod_dffilter_server <- function(id, dfs, shapefile){
     observe({
       req(input$dftofilter)
       if(input$dforshape == "data.frame"){
-        dfactive$df <- dfs[[input$dftofilter]]$data
+        dfactive$df <- dfs[[input$dftofilter]]$data |> convert_numeric_cols()
 
       } else{
         req(input$dftofilter)
         req(shapefile[[input$dftofilter]]$data)
-        dfactive$df <- shapefile[[input$dftofilter]]$data
+        dfactive$df <- shapefile[[input$dftofilter]]$data |> convert_numeric_cols()
       }
     })
 
