@@ -53,10 +53,10 @@ app_server <- function(input, output, session) {
   # Datasets
   dfs <- reactiveValues()
   mod_datasets_server("datasets_1", dfs)
-  mod_dffilter_server("dffilter_1", dfs)
-  mod_dfedit_server("dfedit_1", dfs)
-  mod_dfupdate_server("dfupdate_1", dfs)
-  mod_dfjoin_server("dfjoin_1", dfs)
+  mod_dffilter_server("dffilter_1", dfs, shapefile)
+  mod_dfedit_server("dfedit_1", dfs, shapefile)
+  mod_dfupdate_server("dfupdate_1", dfs, shapefile)
+  mod_dfjoin_server("dfjoin_1", dfs, shapefile)
 }
 
 

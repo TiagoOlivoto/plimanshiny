@@ -193,7 +193,11 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
       updateSelectInput(session, "shapefiletoplot",
                         choices = c("none", setdiff(names(shapefile), "shapefile")),
                         selected = "none")
+    })
+    observe({
       if(!is.null(shapefile$shapefile)){
+        req(mosaic_data$mosaic)
+        req(shapefile$shapefile)
         if((sf::st_crs(shapefile_input(shapefile$shapefile, info = FALSE)) != sf::st_crs(mosaic_data$mosaic))){
           sendSweetAlert(
             session = session,
@@ -216,6 +220,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
         mosaictmp$mosaic <- mosaic_data$mosaic
       }
     })
+
 
     observeEvent(input$mosaicinfoindex, {
       req(mosaictmp$mosaic)

@@ -522,6 +522,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
           output$createdshapes <- renderLeaflet({
             req(createdshape$shp)
+            updateSelectInput(session, "fillid",
+                              choices = c("none", names(createdshape$shp)))
             if(input$buildblocks){
               if(input$fillid == "none"){
                 mapp <-
@@ -757,6 +759,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
 
             updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))
+            updateSelectInput(session, "fillid", choices = c("none", names(shapefile$shapefile)))
+
             if(!is.null(mosaic_data$mosaic)){
               if(sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic)){
                 sendSweetAlert(
@@ -772,37 +776,40 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             }
             output$shapefile_mapview <- renderLeaflet({
               if(is.null(basemap$map)){
-                if(ncol(shapefile$shapefile) ==1){
-                  mapp <- mapview::mapview(shapefile$shapefile, layer.name = "shapes")
-                } else{
-                  req(input$colorshapeimport)
-
+                if(input$fillid == "none"){
                   mapp <- mapview::mapview(shapefile$shapefile,
-                                           zcol = input$colorshapeimport,
                                            color = input$colorstroke,
-                                           lwd = input$lwdt,
+                                           col.regions = input$colorfill,
                                            alpha.regions = input$alphacolorfill,
+                                           legend = FALSE,
+                                           lwd = input$lwdt,
                                            layer.name = "shapes")
-                }
-              } else{
-                if(ncol(shapefile$shapefile) ==1){
+                } else {
                   mapp <-
-                    basemap$map +
                     mapview::mapview(shapefile$shapefile,
-                                     color = input$colorstroke,
-                                     col.regions = input$colorfill,
+                                     zcol = input$fillid,
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
-
-                } else{
-                  req(input$colorshapeimport)
+                }
+              } else{
+                if(input$fillid == "none"){
                   mapp <-
                     basemap$map +
                     mapview::mapview(shapefile$shapefile,
-                                     zcol = input$colorshapeimport,
-                                     color = input$colorstroke,
+                                           color = input$colorstroke,
+                                           col.regions = input$colorfill,
+                                           alpha.regions = input$alphacolorfill,
+                                           legend = FALSE,
+                                           lwd = input$lwdt,
+                                           layer.name = "shapes")
+                } else {
+                  mapp <-
+                    basemap$map +
+                    mapview::mapview(shapefile$shapefile,
+                                     zcol = input$fillid,
                                      alpha.regions = input$alphacolorfill,
+                                     lwd = input$lwdt,
                                      layer.name = "shapes")
                 }
               }

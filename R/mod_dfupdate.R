@@ -17,6 +17,16 @@ mod_dfupdate_ui <- function(id){
           collapsible = FALSE,
           width = 12,
           height = "760px",
+          prettyRadioButtons(
+            inputId = ns("dforshape"),
+            label = "Use",
+            choices = c("data.frame", "shapefile"),
+            icon = icon("check"),
+            bigger = TRUE,
+            status = "info",
+            animation = "jelly",
+            inline = TRUE
+          ),
           pickerInput(
             ns("dftoupdate"),
             label = "Dataset to update",
@@ -28,12 +38,7 @@ mod_dfupdate_ui <- function(id){
             value = "_updated"
           ),
           actionBttn(
-            ns("startedit"),
-            label = "Start updating",
-            icon = icon("pencil")
-          ),
-          actionBttn(
-            ns("doneediting"),
+            ns("doneupdating"),
             label = "Done updating",
             icon = icon("check")
           )
@@ -62,37 +67,48 @@ mod_dfupdate_ui <- function(id){
 #' dfupdate Server Functions
 #'
 #' @noRd
-mod_dfupdate_server <- function(id, dfs){
+mod_dfupdate_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-
     observe({
-      updatePickerInput(session, "dftoupdate",
-                        choices = names(dfs))
+      if(input$dforshape == "data.frame"){
+        updatePickerInput(session, "dftoupdate",
+                          choices = names(dfs))
+      } else{
+        updatePickerInput(session, "dftoupdate",
+                          choices = setdiff(names(shapefile), "shapefile"))
+      }
     })
+
     dfactive <- reactiveValues()
     observe({
       req(input$dftoupdate)
-      req(dfs[[input$dftoupdate]]$data)
-      dfactive$df <- dfs[[input$dftoupdate]]$data |> as.data.frame()
+      if(input$dforshape == "data.frame"){
+        dfactive$df <- dfs[[input$dftoupdate]]$data
+      } else{
+        dfactive$df <-  shapefile[[input$dftoupdate]]$data
+      }
     })
 
     # Update data
     res_update <- reactiveValues()
-    observeEvent(input$startedit, {
-      res_update$res <- update_variables_server(
-        id = "updating",
-        data = reactive(dfactive$df),
-        height = "720px"
-      )
-    })
+    res_update$res <- update_variables_server(
+      id = "updating",
+      data = reactive(dfactive$df),
+      height = "720px"
+    )
 
-    observeEvent(input$doneediting, {
-      dfs[[paste0(input$dftoupdate, input$suffix)]] <- create_reactval(paste0(input$dftoupdate, input$suffix), res_update$res())
+    observeEvent(input$doneupdating, {
+      newfile <- paste0(file_name(input$dftoupdate), input$suffix, ".", file_extension(input$dftoupdate))
+      if(input$dforshape == "data.frame"){
+        dfs[[newfile]] <- create_reactval(newfile, res_update$res())
+      } else{
+        shapefile[[newfile]] <-  create_reactval(newfile, res_update$res())
+      }
       sendSweetAlert(
         session = session,
         title = "Dataset updated",
-        text = "The dataset has been successfully updated and can now be found in the 'Input' tab.",
+        text = "The dataset has been successfully updated and is now available for further analysis.",
         type = "success"
       )
     })

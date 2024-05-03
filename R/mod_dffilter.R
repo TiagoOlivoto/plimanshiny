@@ -17,6 +17,16 @@ mod_dffilter_ui <- function(id){
           collapsible = FALSE,
           width = 12,
           height = "760px",
+          prettyRadioButtons(
+            inputId = ns("dforshape"),
+            label = "Use",
+            choices = c("data.frame", "shapefile"),
+            icon = icon("check"),
+            bigger = TRUE,
+            status = "info",
+            animation = "jelly",
+            inline = TRUE
+          ),
           pickerInput(
             ns("dftofilter"),
             label = "Dataset to filter",
@@ -26,11 +36,6 @@ mod_dffilter_ui <- function(id){
             ns("suffix"),
             label = "Suffix",
             value = "_filtered"
-          ),
-          actionBttn(
-            ns("startfilter"),
-            label = "Start filtering",
-            icon = icon("filter")
           ),
           actionBttn(
             ns("donefiltering"),
@@ -62,40 +67,56 @@ mod_dffilter_ui <- function(id){
 #' dffilter Server Functions
 #'
 #' @noRd
-mod_dffilter_server <- function(id, dfs){
+mod_dffilter_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     observe({
-      updatePickerInput(session, "dftofilter",
-                        choices = names(dfs))
+      if(input$dforshape == "data.frame"){
+        updatePickerInput(session, "dftofilter",
+                          choices = names(dfs))
+      } else{
+        updatePickerInput(session, "dftofilter",
+                          choices = setdiff(names(shapefile), "shapefile"))
+      }
     })
+
     dfactive <- reactiveValues()
     observe({
       req(input$dftofilter)
-      req(dfs[[input$dftofilter]]$data)
-      dfactive$df <- dfs[[input$dftofilter]]$data |> as.data.frame()
+      if(input$dforshape == "data.frame"){
+        dfactive$df <- dfs[[input$dftofilter]]$data
+
+      } else{
+        req(input$dftofilter)
+        req(shapefile[[input$dftofilter]]$data)
+        dfactive$df <- shapefile[[input$dftofilter]]$data
+      }
     })
 
     # Filter data
     res_filter <- reactiveValues()
-    observeEvent(input$startfilter, {
-      res_filter$res <- filter_data_server(
-        id = "filtering",
-        data = reactive(dfactive$df),
-        name = reactive(input$dftofilter),
-        vars = reactive(names(dfactive$df)),
-        widget_num = "slider",
-        widget_date = "slider",
-        label_na = "Missing"
-      )
-    })
+    res_filter$res <- filter_data_server(
+      id = "filtering",
+      data = reactive(dfactive$df),
+      name = reactive(input$dftofilter),
+      vars = reactive(names(dfactive$df)),
+      widget_num = "slider",
+      widget_date = "slider",
+      label_na = "Missing",
+      drop_ids = FALSE
+    )
     observeEvent(input$donefiltering, {
-      dfs[[paste0(input$dftofilter, input$suffix)]] <- create_reactval(paste0(input$dftofilter, input$suffix), res_filter$res$filtered())
+      newfile <- paste0(file_name(input$dftofilter), input$suffix, ".", file_extension(input$dftofilter))
+      if(input$dforshape == "data.frame"){
+        dfs[[newfile]] <- create_reactval(newfile, res_filter$res$filtered())
+      } else{
+        shapefile[[newfile]] <- create_reactval(newfile, res_filter$res$filtered())
+      }
       sendSweetAlert(
         session = session,
         title = "Dataset filtered",
-        text = "The dataset has been successfully filtered and can now be found in the 'Input' tab.",
+        text = "The dataset has been successfully filtered and is now available for further analysis.",
         type = "success"
       )
     })

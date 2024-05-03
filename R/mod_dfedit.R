@@ -17,6 +17,16 @@ mod_dfedit_ui <- function(id){
           collapsible = FALSE,
           width = 12,
           height = "760px",
+          prettyRadioButtons(
+            inputId = ns("dforshape"),
+            label = "Use",
+            choices = c("data.frame", "shapefile"),
+            icon = icon("check"),
+            bigger = TRUE,
+            status = "info",
+            animation = "jelly",
+            inline = TRUE
+          ),
           pickerInput(
             ns("dftoedit"),
             label = "Dataset to edit",
@@ -26,11 +36,6 @@ mod_dfedit_ui <- function(id){
             ns("suffix"),
             label = "Suffix",
             value = "_edited"
-          ),
-          actionBttn(
-            ns("startedit"),
-            label = "Start editing",
-            icon = icon("pencil")
           ),
           actionBttn(
             ns("doneediting"),
@@ -62,34 +67,50 @@ mod_dfedit_ui <- function(id){
 #' dfedit Server Functions
 #'
 #' @noRd
-mod_dfedit_server <- function(id, dfs){
+mod_dfedit_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observe({
-      updatePickerInput(session, "dftoedit",
-                        choices = names(dfs))
+      if(input$dforshape == "data.frame"){
+        updatePickerInput(session, "dftoedit",
+                          choices = names(dfs))
+      } else{
+        updatePickerInput(session, "dftoedit",
+                          choices = setdiff(names(shapefile), "shapefile"))
+      }
     })
+
     dfactive <- reactiveValues()
     observe({
       req(input$dftoedit)
-      req(dfs[[input$dftoedit]]$data)
-      dfactive$df <- dfs[[input$dftoedit]]$data |> as.data.frame()
+      if(input$dforshape == "data.frame"){
+        dfactive$df <- dfs[[input$dftoedit]]$data
+      } else{
+        dfactive$df <-  shapefile[[input$dftoedit]]$data
+      }
     })
 
     # Filter data
     res_edit <- reactiveValues()
-    observeEvent(input$startedit, {
+    observe({
+      req(dfactive$df)
       res_edit$res <- edit_data_server(
         id = "editing",
         data_r = reactive(dfactive$df)
       )
     })
+
     observeEvent(input$doneediting, {
-      dfs[[paste0(input$dftoedit, input$suffix)]] <- create_reactval(paste0(input$dftoedit, input$suffix), res_edit$res())
+      newfile <- paste0(file_name(input$dftoedit), input$suffix, ".", file_extension(input$dftoedit))
+      if(input$dforshape == "data.frame"){
+        dfs[[newfile]] <- create_reactval(newfile, res_edit$res())
+      } else{
+        shapefile[[newfile]] <- create_reactval(newfile, res_edit$res() |> sf::st_as_sf())
+      }
       sendSweetAlert(
         session = session,
         title = "Dataset edited",
-        text = "The dataset has been successfully edited and can now be found in the 'Input' tab.",
+        text = "The dataset has been successfully edited and is now available for further analysis.",
         type = "success"
       )
     })

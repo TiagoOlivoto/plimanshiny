@@ -29,8 +29,7 @@ mod_datasets_ui <- function(id){
           ),
           hl(),
           h4("Send to global environment"),
-          hl(),
-          h4("Save to a file")
+          "Coming soon..."
         )
       ),
       col_9(
@@ -45,7 +44,8 @@ mod_datasets_ui <- function(id){
           type = "tabs",
           tabPanel(
             title = "Active dataset",
-            reactableOutput(ns("resultsindivtab"), height = "700px")
+            edit_data_ui(ns("editing"))
+            # reactableOutput(ns("resultsindivtab"), height = "700px")
           )
         )
       )
@@ -83,20 +83,23 @@ mod_datasets_server <- function(id, dfs){
     observe({
       req(input$activedf)
       req(dfs[[input$activedf]]$data)
-      dfactive$df <- dfs[[input$activedf]]$data |> as.data.frame()
-    })
+      dfactive$df <- dfs[[input$activedf]]$data
+        res <- edit_data_server(
+          id = "editing",
+          file_name_export = input$activedf,
+          data_r = reactive(dfs[[input$activedf]]$data),
+          update = FALSE,
+          delete = FALSE,
+          add = FALSE,
+          reactable_options = list(height = "680px",
+                                   filterable = TRUE,
+                                   searchable = TRUE,
+                                   striped = TRUE,
+                                   pagination = TRUE,
+                                   defaultPageSize = 13)
+        )
 
-    output$resultsindivtab <- reactable::renderReactable({
-      req(dfactive$df)
-      reactable::reactable(
-        dfactive$df |> roundcols(),
-        filterable = TRUE,
-        searchable = TRUE,
-        striped = TRUE,
-        pagination = FALSE
-      )
     })
-
 
   })
 }
