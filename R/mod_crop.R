@@ -108,7 +108,7 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
       req(shapefile)
       req(mosaic_data)
       updateSelectInput(session, "mosaic_to_crop", choices = c("Active mosaic", setdiff(names(mosaic_data), "mosaic")), selected = "Active mosaic")
-      updateSelectInput(session, "shape_to_crop", choices = setdiff(names(shapefile), "shapefile"))
+      updateSelectInput(session, "shape_to_crop", choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
     })
     observe({
       updateTextInput(session, "new_cropped", value = paste0(input$mosaic_to_crop, "_cropped"))

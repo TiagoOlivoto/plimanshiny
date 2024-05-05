@@ -76,7 +76,7 @@ mod_dfupdate_server <- function(id, dfs, shapefile){
                           choices = names(dfs))
       } else{
         updatePickerInput(session, "dftoupdate",
-                          choices = setdiff(names(shapefile), "shapefile"))
+                          choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
       }
     })
 

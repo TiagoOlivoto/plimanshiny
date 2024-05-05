@@ -16,7 +16,7 @@ mod_mosaic_prepare_ui <- function(id){
         title = "Mosaic input",
         color = "success",
         fluidRow(
-          col_6(
+          col_4(
             actionButton(
               inputId = ns("guidemosaic"),
               label = tagList(
@@ -26,25 +26,10 @@ mod_mosaic_prepare_ui <- function(id){
               class = "btn-danger"
             )
           ),
-          col_6(
-            actionButton(
-              inputId = ns("mosaicinfomosaic"),
-              label = tagList(
-                icon = icon("circle-info", verify_fa = FALSE), "Mosaic Info"
-              ),
-              status = "info"
-            )
-          )
-        ),
-        width = 12,
-        status = "success",
-        footer = "Here, you can configure the mosaic for further analysis. First to import, you can choose the correct order of bands (layers), the maximum number of pixels to be rendered, and the upper and lower quantiles used for color stretching.",
-        br(),
-        fluidRow(
-          col_2(
+          col_3(
             div(class = "prep1",
                 dropdown(
-                  tags$h3("Bands"),
+                  tags$h3("Settings"),
                   selectInput(
                     inputId = ns("r_band"),
                     label = "R",
@@ -75,6 +60,18 @@ mod_mosaic_prepare_ui <- function(id){
                     choices = 1:5,
                     selected = 5,
                   ),
+                  div(class = "prep2",
+                      sliderInput(ns("quantileplot"),
+                                  label = "Quantiles",
+                                  min = 0,
+                                  max = 1,
+                                  value = c(0, 1))
+                  ),
+                  div(class = "prep3",
+                      numericInput(ns("maxpixels"),
+                                   label = "Maximum Pixels",
+                                   value = 1e6)
+                  ),
                   actionBttn(
                     ns("donebands"),
                     label = "Done",
@@ -85,30 +82,26 @@ mod_mosaic_prepare_ui <- function(id){
                   circle = FALSE,
                   status = "success",
                   style = "unite",
-                  width = "170px",
-                  icon = icon("layer-group"),
+                  width = "420px",
+                  icon = icon("gear"),
                   animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
                   tooltip = tooltipOptions(title = "Configure the bands")
                 )
             )
           ),
           col_5(
-            div(class = "prep2",
-                sliderInput(ns("quantileplot"),
-                            label = "Quantiles",
-                            min = 0,
-                            max = 1,
-                            value = c(0, 1))
-            )
-          ),
-          col_5(
-            div(class = "prep3",
-                numericInput(ns("maxpixels"),
-                             label = "Maximum Pixels",
-                             value = 1e6)
+            actionButton(
+              inputId = ns("mosaicinfomosaic"),
+              label = tagList(
+                icon = icon("circle-info", verify_fa = FALSE), "Mosaic Info"
+              ),
+              status = "info"
             )
           )
         ),
+        width = 12,
+        status = "success",
+        br(),
         div(class = "prep4",
             shinyFilesButton(id=ns("filemosaic"),
                              label="Raster file(s)",
@@ -195,7 +188,7 @@ helpmo <-
 #' mosaic_prepare Server Functions
 #'
 #' @noRd
-mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, pathmosaic) {
+mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, pathmosaic, quantiles, maxpixel) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     observeEvent(input$guidemosaic, introjs(session,
@@ -213,6 +206,8 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       b$b <- input$b_band
       re$re <- input$re_band
       nir$nir <- input$nir_band
+      quantiles$q <- input$quantileplot
+      maxpixel$mp <- input$maxpixels
     })
 
     input_file_selected <- reactiveValues(paths = NULL)
@@ -310,12 +305,9 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
           )
         }
 
-      }
-      if (input$showmosaic == "bands") {
-        nl <- terra::nlyr(mosaic_data$mosaic)
-        terra::plot(mosaic_data$mosaic, nc = ifelse(nl < 4, 3, ceiling(sqrt(nl))))
-      }
-      if(input$showmosaic == "hist"){
+      } else if (input$showmosaic == "bands") {
+        terra::plot(mosaic_data$mosaic)
+      } else {
         terra::hist(mosaic_data$mosaic)
       }
     })
@@ -332,8 +324,8 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
           b = as.numeric(b$b),
           re = as.numeric(re$re),
           nir = as.numeric(nir$nir),
-          quantiles = input$quantileplot,
-          max_pixels = input$maxpixels
+          quantiles = quantiles$q,
+          max_pixels = maxpixel$mp
         )
       } else{
         bmtmp <-
@@ -344,10 +336,8 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
                       na.color = "transparent")
       }
 
-        basemap$map <- bmtmp
+      basemap$map <- bmtmp
     })
-
-
 
     output$mosaic_mapview <- renderLeaflet({
       req(basemap$map)  # Ensure mosaic_data$mosaic is not NULL

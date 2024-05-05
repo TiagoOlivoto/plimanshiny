@@ -118,7 +118,7 @@ mod_dfjoin_server <- function(id, dfs, shapefile){
     })
     observe({
       updatePickerInput(session, "shapetojoin",
-                        choices = setdiff(names(shapefile), "shapefile"),
+                        choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")),
                         selected = NA)
     })
 

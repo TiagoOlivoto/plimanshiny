@@ -77,7 +77,7 @@ mod_dffilter_server <- function(id, dfs, shapefile){
                           choices = names(dfs))
       } else{
         updatePickerInput(session, "dftofilter",
-                          choices = setdiff(names(shapefile), "shapefile"))
+                          choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
       }
     })
 
@@ -107,7 +107,7 @@ mod_dffilter_server <- function(id, dfs, shapefile){
       drop_ids = FALSE
     )
     observeEvent(input$donefiltering, {
-      newfile <- paste0(file_name(input$dftofilter), input$suffix, ".", file_extension(input$dftofilter))
+      newfile <- add_suffix(input$dftofilter, input$suffix)
       if(input$dforshape == "data.frame"){
         dfs[[newfile]] <- create_reactval(newfile, res_filter$res$filtered())
       } else{

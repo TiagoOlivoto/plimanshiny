@@ -397,3 +397,6 @@ convert_numeric_cols <- function(data) {
       as.numeric
     ))
 }
+add_suffix <- function(name, suffix){
+  gsub(".character\\(0\\)", "", paste0(file_name(name), suffix, ".", file_extension(name)))
+}

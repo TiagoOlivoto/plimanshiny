@@ -191,7 +191,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
     mosaictmp <- reactiveValues(mosaic =NULL)
     observe({
       updateSelectInput(session, "shapefiletoplot",
-                        choices = c("none", setdiff(names(shapefile), "shapefile")),
+                        choices = c("none", setdiff(names(shapefile), c("shapefile", "shapefileplot"))),
                         selected = "none")
     })
     observe({

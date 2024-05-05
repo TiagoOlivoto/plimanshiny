@@ -9,8 +9,8 @@
 #' @importFrom shiny shinyApp
 #' @importFrom tidyr unnest
 #' @importFrom graphics abline par title
-#' @importFrom stats binomial glm reorder runif
-#' @importFrom grDevices dev.off jpeg
+#' @importFrom stats binomial glm reorder runif dist
+#' @importFrom grDevices dev.off jpeg adjustcolor
 #' @importFrom utils data stack
 #' @importFrom future plan multisession
 #' @importFrom doFuture `%dofuture%`

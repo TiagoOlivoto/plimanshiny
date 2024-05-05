@@ -76,7 +76,7 @@ mod_dfedit_server <- function(id, dfs, shapefile){
                           choices = names(dfs))
       } else{
         updatePickerInput(session, "dftoedit",
-                          choices = setdiff(names(shapefile), "shapefile"))
+                          choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
       }
     })
 
@@ -101,7 +101,7 @@ mod_dfedit_server <- function(id, dfs, shapefile){
     })
 
     observeEvent(input$doneediting, {
-      newfile <- paste0(file_name(input$dftoedit), input$suffix, ".", file_extension(input$dftoedit))
+      newfile <- add_suffix(input$dftoedit, input$suffix)
       if(input$dforshape == "data.frame"){
         dfs[[newfile]] <- create_reactval(newfile, res_edit$res())
       } else{
