@@ -327,7 +327,6 @@ mod_measurediseasepick_server <- function(id, imgdata){
               dir_processed = tmpf,
               prefix = "proc_shiny_disease"
             )
-          print(sev)
           output$resultplot <- renderPlot({
             fil <- image_import(list.files(path = tmpf, pattern = "proc_shiny_disease"),
                                 path = tmpf)

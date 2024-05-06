@@ -918,7 +918,6 @@ mod_measurediseaseind_server <- function(id, imgdata){
 
     # send the results to the global environment
     observeEvent(input$savetoglobalenv, {
-      print(sevsad$sev)
       if (exists(input$globalvarname, envir = globalenv())) {
         sendSweetAlert(
           session = session,

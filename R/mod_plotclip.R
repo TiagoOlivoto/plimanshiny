@@ -243,7 +243,6 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
 
 
           filestoremove <- list.files(diroutput, pattern = "png.aux")
-          # print(filestoremove)
           file.remove(paste0(diroutput, "/", filestoremove))
           waiter_hide()
 

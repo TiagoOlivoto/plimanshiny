@@ -710,9 +710,7 @@ mod_imageanal_server <- function(id, imgdata){
         } else{
           myobjectind <- NULL
         }
-        # print(parms()$reflarger)
-        # print(parms()$refsmaller)
-        # print(parms()$refarea)
+
         res <-
           analyze_objects(imgdata$img,
                           index = parms()$index,

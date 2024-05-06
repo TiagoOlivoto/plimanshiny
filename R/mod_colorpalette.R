@@ -121,7 +121,6 @@ mod_colorpalette_server <- function(id, imgdata){
       req(bmap$map)
       cpoints <- callModule(editMod, "pointpicksample", bmap$map@map , editor = "leafpm")
       observeEvent(cpoints()$finished, {
-        # print(lastvalue$val)
         if(lastvalue$val != "tt" & nrow(cpoints()$finished) > 1){
           points$val <-
             cpoints()$finished |>

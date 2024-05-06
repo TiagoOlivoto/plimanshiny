@@ -573,7 +573,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               if(input$fillid == "none"){
                 mapp <-
                   basemap$map +
-                  mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id),
+                  mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
                                    color = input$colorstroke,
                                    col.regions = input$colorfill,
                                    alpha.regions = input$alphacolorfill,
@@ -581,9 +581,15 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                    lwd = input$lwdt,
                                    layer.name = "shapes")
               } else{
+                if(length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$fillid))) > 7){
+                  shptemp <- shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id)
+                } else{
+                  shptemp <- shapefile[[input$shapefiletoanalyze]]$data
+                }
+
                 mapp <-
                   basemap$map +
-                  mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id),
+                  mapview::mapview(shptemp,
                                    zcol = input$fillid,
                                    col.regions = return_colors(input$palplot),
                                    alpha.regions = input$alphacolorfill,
@@ -775,8 +781,13 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                            lwd = input$lwdt,
                                            layer.name = "shapes")
                 } else {
+                  if(length(unique(shapefile$shapefile |> sf::st_drop_geometry() |> dplyr::pull(input$fillid))) > 7){
+                    shptemp <- shapefile$shapefile |> extract_number(block, plot_id)
+                  } else{
+                    shptemp <- shapefile$shapefile
+                  }
                   mapp <-
-                    mapview::mapview(shapefile$shapefile,
+                    mapview::mapview(shptemp,
                                      zcol = input$fillid,
                                      col.regions = return_colors(input$palplot),
                                      alpha.regions = input$alphacolorfill,
@@ -795,9 +806,14 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
                 } else {
+                  if(length(unique(shapefile$shapefile |> sf::st_drop_geometry() |> dplyr::pull(input$fillid))) > 7){
+                    shptemp <- shapefile$shapefile |> extract_number(block, plot_id)
+                  } else{
+                    shptemp <- shapefile$shapefile
+                  }
                   mapp <-
                     basemap$map +
-                    mapview::mapview(shapefile$shapefile,
+                    mapview::mapview(shptemp,
                                      zcol = input$fillid,
                                      col.regions = return_colors(input$palplot),
                                      alpha.regions = input$alphacolorfill,
