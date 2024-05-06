@@ -289,6 +289,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
 
     output$mosaic_plot <- renderPlot({
       req(mosaic_data$mosaic)  # Ensure mosaic_data$mosaic is not NULL
+      # if(input$showmosaic != "mapview"){
       if (input$showmosaic == "rgb") {
         if(nlyr(mosaic_data$mosaic) < 3){
           show_alert("Ops, too few bands",
@@ -304,10 +305,11 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
             stretch = "hist"
           )
         }
-
-      } else if (input$showmosaic == "bands") {
+      }
+      if (input$showmosaic == "bands") {
         terra::plot(mosaic_data$mosaic)
-      } else {
+      }
+      if (input$showmosaic == "hist") {
         terra::hist(mosaic_data$mosaic)
       }
     })

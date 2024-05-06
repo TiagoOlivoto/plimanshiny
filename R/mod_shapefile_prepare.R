@@ -63,6 +63,7 @@ mod_shapefile_prepare_ui <- function(id){
                              choices = c("none", "unique_id", "block", "plot_id"),
                              selected = "none",
                            ),
+                           pickerpalette(id, "palplot", selected = "RdYlGn"),
                            sliderInput(ns("alphacolorfill"),
                                        label = "Fill opacity",
                                        min = 0,
@@ -502,6 +503,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                  basemap$map + mapview::mapview(
                                    shpt[[1]] |> extract_number(block, plot_id),
                                    zcol = input$fillid,
+                                   col.regions = return_colors(input$palplot),
                                    alpha.regions = input$alphacolorfill,
                                    lwd = input$lwdt,
                                    layer.name = "shapes"
@@ -568,6 +570,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   basemap$map +
                   mapview::mapview(shapefile[[input$shapenamebuild]]$data |> extract_number(block, plot_id),
                                    zcol = input$fillid,
+                                   col.regions = return_colors(input$palplot),
                                    alpha.regions = input$alphacolorfill,
                                    lwd = input$lwdt,
                                    layer.name = "shapes")
