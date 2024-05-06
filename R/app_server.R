@@ -21,7 +21,7 @@ app_server <- function(input, output, session) {
   shapefile <- reactiveValues()
   mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile)
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, basemap, index, shapefile)
-  mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic)
+  mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic, dfs)
   mosaiclist <- reactiveValues()
   mod_timeseriesinput_server("timeseriesinput_1", shapefile, mosaiclist, r, g, b, re, nir, basemap)
   mod_cropbatch_server("cropbatch_1", shapefile, mosaiclist)

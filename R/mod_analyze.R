@@ -402,7 +402,7 @@ helpout <-
 #' analyze Server Functions
 #'
 #' @noRd
-mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathmosaic){
+mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathmosaic, dfs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -491,7 +491,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Results plot",
-            DT::dataTableOutput(ns("resultplottab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultplottab"), height = "700px")  |> add_spinner()
           ),
           tabPanel(
             title = "Map individuals",
@@ -514,7 +514,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Results individuals",
-            DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultsindivtab"), height = "700px")  |> add_spinner()
           )
         )
       } else if(input$segmentplot){
@@ -574,7 +574,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Results plot",
-            DT::dataTableOutput(ns("resultplottab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultplottab"), height = "70px")  |> add_spinner()
           )
         )
       } else {
@@ -617,7 +617,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Results plot",
-            DT::dataTableOutput(ns("resultplottab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultplottab"), height = "700px")  |> add_spinner()
           )
         )
       }
@@ -683,7 +683,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         req(basemap$map)
         req(input$segmentindex)
         layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-        m1 <-  basemap$map + mapview::mapview(do.call(rbind, lapply(shptemp$shapefile, function(x){x})),
+        m1 <-  basemap$map + mapview::mapview(shptemp$shapefile |> dplyr::bind_rows(),
                                               z.col = "plot_id",
                                               legend = FALSE)
         m2 <- mosaic_view(index$index[[layer]], show = "index")
@@ -1222,39 +1222,18 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             ggplotly(indat)
           })
 
-          output$resultplottab <- DT::renderDataTable(
+          output$resultplottab <- reactable::renderReactable(
             result_plot_summ |>
-              as.data.frame() |>
-              dplyr::select(-geometry) |>
-              roundcols(),
-
-            extensions = 'Buttons',
-            rownames = FALSE,
-            options = list(
-              dom = 'Blrtip',
-              buttons = c('copy', 'excel'),
-              paging = FALSE,
-              scrollX = TRUE,
-              scrollY = "620px",
-              pageLength = 15
-            )
+              sf::st_drop_geometry() |>
+              roundcols(digits = 3) |>
+              render_reactable()
           )
 
-          output$resultsindivtab <- DT::renderDataTable(
+          output$resultsindivtab <- reactable::renderReactable(
             result_indiv |>
-              as.data.frame() |>
-              dplyr::select(-geometry) |>
-              roundcols(),
-            extensions = 'Buttons',
-            rownames = FALSE,
-            options = list(
-              dom = 'Blrtip',
-              buttons = c('copy', 'excel'),
-              paging = FALSE,
-              scrollX = TRUE,
-              scrollY = "620px",
-              pageLength = 15
-            )
+              sf::st_drop_geometry() |>
+              roundcols(digits = 3) |>
+              render_reactable()
           )
 
           mod_download_shapefile_server("downresplot", terra::vect(result_plot_summ), name = "plot_level_results")
@@ -1325,22 +1304,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
 
 
-          output$resultplottab <- DT::renderDataTable(
+          output$resultplottab <- reactable::renderReactable(
             result_plot |>
-              as.data.frame() |>
-              dplyr::select(-geometry) |>
-              roundcols(),
-
-            extensions = 'Buttons',
-            rownames = FALSE,
-            options = list(
-              dom = 'Blrtip',
-              buttons = c('copy', 'excel'),
-              paging = FALSE,
-              scrollX = TRUE,
-              scrollY = "620px",
-              pageLength = 15
-            )
+              sf::st_drop_geometry() |>
+              roundcols(digits = 3) |>
+              render_reactable()
           )
 
           mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
@@ -1379,22 +1347,11 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             plotly::ggplotly(p, dynamicTicks = TRUE)
           })
 
-          output$resultplottab <- DT::renderDataTable(
+          output$resultplottab <- reactable::renderReactable(
             result_plot |>
-              as.data.frame() |>
-              dplyr::select(-geometry) |>
-              roundcols(),
-
-            extensions = 'Buttons',
-            rownames = FALSE,
-            options = list(
-              dom = 'Blrtip',
-              buttons = c('copy', 'excel'),
-              paging = FALSE,
-              scrollX = TRUE,
-              scrollY = "620px",
-              pageLength = 15
-            )
+              sf::st_drop_geometry() |>
+              roundcols(digits = 3) |>
+              render_reactable()
           )
           mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
         }
@@ -1510,29 +1467,43 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         # }
       }
 
-      # send the results to the global environment
-      observeEvent(input$savetoglobalenv, {
+      # Sent do datasets
+      report <- reactive({
+        req(res)
         if(input$segmentindividuals){
-          report <-
-            list(result_plot = res$result_plot,
-                 result_plot_summ = res$result_plot_summ,
-                 result_individ = res$result_indiv,
-                 result_individ_map = res$result_individ_map,
-                 map_plot = (basemap$map + mapshape$mapshape),
-                 map_individual = (basemap$map + mapindiv$mapindiv),
-                 shapefile = shptemp$shapefile)
+          list(result_plot = res$result_plot,
+               result_plot_summ = res$result_plot_summ,
+               result_individ = res$result_indiv,
+               result_individ_map = res$result_individ_map,
+               map_plot = (basemap$map + mapshape$mapshape),
+               map_individual = (basemap$map + mapindiv$mapindiv),
+               shapefile = shptemp$shapefile)
         } else if(input$segmentplot){
-          report <-
-            list(result_plot = res$result_plot,
-                 map_plot = (basemap$map + mapshape$mapshape),
-                 shapefile = shptemp$shapefile)
+          list(result_plot = res$result_plot,
+               map_plot = (basemap$map + mapshape$mapshape),
+               shapefile = shptemp$shapefile)
         } else{
-          report <-
-            list(result_plot = res$result_plot,
-                 map_plot = (basemap$map + mapshape$mapshape),
-                 shapefile = shptemp$shapefile)
+          list(result_plot = res$result_plot,
+               map_plot = (basemap$map + mapshape$mapshape),
+               shapefile = shptemp$shapefile)
 
         }
+      })
+
+      observe({
+        req(report())
+        dfs[["result_plot"]] <- create_reactval("result_plot", report()$result_plot |> sf::st_drop_geometry())
+        if(!is.null(report()$result_plot_summ)){
+          dfs[["result_plot_summ"]] <- create_reactval("result_plot_summ", report()$result_plot_summ|> sf::st_drop_geometry())
+        }
+        if(!is.null(report()$result_individ)){
+          dfs[["result_individ"]] <- create_reactval("result_individ", report()$result_individ|> sf::st_drop_geometry())
+        }
+      })
+
+      # send the results to the global environment
+      observeEvent(input$savetoglobalenv, {
+
         if (exists(input$globalvarname, envir = globalenv())) {
           sendSweetAlert(
             session = session,
@@ -1541,7 +1512,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             type = "success"
           )
         } else {
-          assign(input$globalvarname, report, envir = globalenv())
+          assign(input$globalvarname, report(), envir = globalenv())
           ask_confirmation(
             inputId = "myconfirmation",
             type = "warning",

@@ -100,7 +100,6 @@ mod_datasets_server <- function(id, dfs){
         )
 
     })
-
   })
 }
 

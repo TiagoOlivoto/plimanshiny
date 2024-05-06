@@ -400,3 +400,36 @@ convert_numeric_cols <- function(data) {
 add_suffix <- function(name, suffix){
   gsub(".character\\(0\\)", "", paste0(file_name(name), suffix, ".", file_extension(name)))
 }
+
+render_reactable <- function(df,
+                             filterable = TRUE,
+                             searchable = TRUE,
+                             striped = TRUE,
+                             pagination = TRUE,
+                             defaultPageSize = 15,
+                             defaultColDef = colDef(
+                               maxWidth = 300,
+                               footer = function(values) {
+                               if (!is.numeric(values)) return()
+                               sparkline::sparkline(values, type = "box", width = 100, height = 30)
+                             }),
+                             theme = reactableTheme(
+                               cellPadding = "8px 10px",
+                               style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
+                               searchInputStyle = list(width = "100%")
+                             ),
+                             ...){
+
+
+  reactable(
+    df,
+    filterable = filterable,
+    searchable = searchable,
+    striped = striped,
+    pagination = pagination,
+    defaultPageSize = defaultPageSize,
+    defaultColDef = defaultColDef,
+    theme = theme,
+    ...
+  )
+}

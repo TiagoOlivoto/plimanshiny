@@ -38,6 +38,7 @@ Imports:
     shinycssloaders,
     shinyFiles,
     shinyWidgets,
+    sparkline,
     stats,
     terra,
     tidyr,
