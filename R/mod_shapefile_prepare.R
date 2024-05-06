@@ -196,25 +196,25 @@ mod_shapefile_prepare_ui <- function(id){
           ),
           divclass("shape5",
                    fluidRow(
-                     col_7(
+                     col_6(
+                       actionBttn(
+                         ns("plotinfo"),
+                         label = "Plot info",
+                         icon = icon("info"),
+                         color = "success",
+                         style = "jelly"
+                       )
+                     ),
+                     col_6(
                        prettyCheckbox(
                          inputId = ns("shapedone"),
-                         label = "Shapefile finished!",
+                         label = "Sahpefile built",
                          value = FALSE,
                          status = "info",
                          icon = icon("thumbs-up"),
                          plain = TRUE,
                          outline = TRUE,
                          animation = "rotate"
-                       )
-                     ),
-                     col_5(
-                       actionButton(
-                         inputId = ns("plotinfo"),
-                         label = tagList(
-                           icon = icon("question-circle", verify_fa = FALSE), "Plot info"
-                         ),
-                         class = "btn-info"
                        )
                      )
                    ),
@@ -438,8 +438,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
     observe({
       # create a basemap if mosaic is not available
       if(is.null(mosaic_data$mosaic)){
-       basemap$map <- mapview::mapview(map.types = c("Esri.WorldImagery", "OpenStreetMap", "CartoDB.Positron"))
-       mosaic_data$mosaic <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
+        basemap$map <- mapview::mapview(map.types = c("Esri.WorldImagery", "OpenStreetMap", "CartoDB.Positron"))
+        mosaic_data$mosaic <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
       }
     })
     observeEvent(c(basemap$map, mosaic_data$mosaic), {
@@ -455,8 +455,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                        input$plot_height,
                        input$plotlayout), {
                          if(!is.null(cpoints()$finished)){
-                           # print(is.null(cpoints()$edited))
-                           # req(cpoints()$finished)
                            cpo <- cpoints()$edited %||% cpoints()$finished
                            nr <- input$nrows |> chrv2numv()
                            nc <- input$ncols |> chrv2numv()
@@ -558,7 +556,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               if(input$fillid == "none"){
                 mapp <-
                   basemap$map +
-                  mapview::mapview(shapefile[[input$shapenamebuild]]$data |> extract_number(block, plot_id),
+                  mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id),
                                    color = input$colorstroke,
                                    col.regions = input$colorfill,
                                    alpha.regions = input$alphacolorfill,
@@ -568,7 +566,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               } else{
                 mapp <-
                   basemap$map +
-                  mapview::mapview(shapefile[[input$shapenamebuild]]$data |> extract_number(block, plot_id),
+                  mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id),
                                    zcol = input$fillid,
                                    col.regions = return_colors(input$palplot),
                                    alpha.regions = input$alphacolorfill,
@@ -587,7 +585,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           } else{
             shptmp <- shapefile[[input$shapenamebuild]]$data
           }
-
           if(input$editplots == TRUE){
             shapes <-
               shptmp |>
@@ -640,10 +637,11 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
           # Check if a mosaic is selected
           req(input$shapefiletoanalyze)
           selected_shp <- shapefile[[input$shapefiletoanalyze]]
-          req(selected_shp$data)
-          if ('data' %in% names(selected_shp)) {
+          req(selected_shp)
+          if (inherits(selected_shp, "reactivevalues")) {
             shapefile$shapefile <- selected_shp$data |> convert_numeric_cols()
-
+          } else{
+            shapefile$shapefile <- selected_shp |> convert_numeric_cols()
           }
         })
       }
@@ -763,6 +761,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                   mapp <-
                     mapview::mapview(shapefile$shapefile,
                                      zcol = input$fillid,
+                                     col.regions = return_colors(input$palplot),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
@@ -783,6 +782,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                     basemap$map +
                     mapview::mapview(shapefile$shapefile,
                                      zcol = input$fillid,
+                                     col.regions = return_colors(input$palplot),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
