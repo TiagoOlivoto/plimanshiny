@@ -37,7 +37,7 @@ mod_download_shapefile_server <- function(id, data, name = "shapefile"){
       output$downloadshapefile <- downloadHandler(
         filename = function() {
           if(input$formatshp == ".shp"){
-            "shapefile.zip"
+            paste0(name, ".zip")
           } else{
             paste(name, input$formatshp, sep = "")
           }

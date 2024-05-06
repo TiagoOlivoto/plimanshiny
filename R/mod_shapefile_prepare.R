@@ -156,6 +156,26 @@ mod_shapefile_prepare_ui <- function(id){
                      )
                    ),
                    fluidRow(
+                     col_7(
+                       actionBttn(
+                         ns("createupdate"),
+                         label = "Create/update",
+                         icon = icon("check"),
+                         color = "success",
+                         style = "jelly"
+                       )
+                     ),
+                     col_5(
+                       actionBttn(
+                         ns("plotinfo"),
+                         label = "Plot info",
+                         icon = icon("info"),
+                         color = "success",
+                         style = "jelly"
+                       )
+                     )
+                   ),
+                   fluidRow(
                      col_6(
                        textInput(ns("ncols"),
                                  label = "Number of columns",
@@ -196,26 +216,15 @@ mod_shapefile_prepare_ui <- function(id){
           ),
           divclass("shape5",
                    fluidRow(
-                     col_6(
-                       actionBttn(
-                         ns("plotinfo"),
-                         label = "Plot info",
-                         icon = icon("info"),
-                         color = "success",
-                         style = "jelly"
-                       )
-                     ),
-                     col_6(
-                       prettyCheckbox(
-                         inputId = ns("shapedone"),
-                         label = "Sahpefile built",
-                         value = FALSE,
-                         status = "info",
-                         icon = icon("thumbs-up"),
-                         plain = TRUE,
-                         outline = TRUE,
-                         animation = "rotate"
-                       )
+                     prettyCheckbox(
+                       inputId = ns("shapedone"),
+                       label = "Sahpefile built",
+                       value = FALSE,
+                       status = "info",
+                       icon = icon("thumbs-up"),
+                       plain = TRUE,
+                       outline = TRUE,
+                       animation = "rotate"
                      )
                    ),
                    conditionalPanel(
@@ -294,7 +303,7 @@ mod_shapefile_prepare_ui <- function(id){
           )
         ),
         tags$hr(),
-        mod_download_shapefile_ui(ns("downloadshapefile"))
+        mod_download_shapefile_ui(ns("downloadshapefile"), label = "Download")
       )
     ),
     col_9(
@@ -449,11 +458,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
         observeEvent(c(cpoints()$finished,
                        input$ncols,
                        input$nrows,
-                       input$buffercol,
-                       input$bufferrow,
                        input$plot_width,
-                       input$plot_height,
-                       input$plotlayout), {
+                       input$plot_height), {
                          if(!is.null(cpoints()$finished)){
                            cpo <- cpoints()$edited %||% cpoints()$finished
                            nr <- input$nrows |> chrv2numv()
@@ -469,54 +475,65 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                            if(length(pw) == 0 | ps){
                              pw <- NULL
                            }
-                           shpt <- shapefile_build(
-                             mosaic_data$mosaic,
-                             basemap$map,
-                             controlpoints = dplyr::slice_tail(cpo, n = 1),
-                             nrow = input$nrows |> chrv2numv(),
-                             ncol = input$ncols |> chrv2numv(),
-                             layout = input$plotlayout,
-                             buffer_col = input$buffercol |> chrv2numv(),
-                             buffer_row = input$bufferrow |> chrv2numv(),
-                             plot_width = pw,
-                             plot_height = ph,
-                             verbose = FALSE
-                           )
-                           shapefile[["shapefileplot"]] <- shpt[[1]]
-                           tmpshape$tmp <- shpt
-                           output$createdshapes <- renderLeaflet({
-                             if(input$fillid == "none"){
-                               mapp <-
-                                 basemap$map + mapview::mapview(
-                                   shpt[[1]] |> extract_number(block, plot_id),
-                                   color = input$colorstroke,
-                                   col.regions = input$colorfill,
-                                   alpha.regions = input$alphacolorfill,
-                                   legend = FALSE,
-                                   lwd = input$lwdt,
-                                   layer.name = "shapes"
-                                 )
-                             } else{
-                               mapp <-
-                                 basemap$map + mapview::mapview(
-                                   shpt[[1]] |> extract_number(block, plot_id),
-                                   zcol = input$fillid,
-                                   col.regions = return_colors(input$palplot),
-                                   alpha.regions = input$alphacolorfill,
-                                   lwd = input$lwdt,
-                                   layer.name = "shapes"
-                                 )
-                             }
-
-                             mapp@map
-                           })
+                           layout_params$cpo <- cpo
+                           layout_params$nr <- nr
+                           layout_params$nc <- nc
+                           layout_params$pw <- pw
+                           layout_params$ph <- ph
+                           layout_params$cpo <- cpo
                          }
                        })
+
+        observeEvent(input$createupdate, {
+          req(layout_params$cpo)
+          shpt <- shapefile_build(
+            mosaic_data$mosaic,
+            basemap$map,
+            controlpoints = dplyr::slice_tail(layout_params$cpo, n = 1),
+            nrow = layout_params$nr,
+            ncol = layout_params$nc,
+            layout = input$plotlayout,
+            buffer_col = input$buffercol |> chrv2numv(),
+            buffer_row = input$bufferrow |> chrv2numv(),
+            plot_width = layout_params$pw,
+            plot_height = layout_params$ph,
+            verbose = FALSE
+          )
+          shapefile[["shapefileplot"]] <- shpt[[1]]
+          tmpshape$tmp <- shpt
+          output$createdshapes <- renderLeaflet({
+            if(input$fillid == "none"){
+              mapp <-
+                basemap$map + mapview::mapview(
+                  shpt[[1]] |> extract_number(block, plot_id),
+                  color = input$colorstroke,
+                  col.regions = input$colorfill,
+                  alpha.regions = input$alphacolorfill,
+                  legend = FALSE,
+                  lwd = input$lwdt,
+                  layer.name = "shapes"
+                )
+            } else{
+              mapp <-
+                basemap$map + mapview::mapview(
+                  shpt[[1]] |> extract_number(block, plot_id),
+                  zcol = input$fillid,
+                  col.regions = return_colors(input$palplot),
+                  alpha.regions = input$alphacolorfill,
+                  lwd = input$lwdt,
+                  layer.name = "shapes"
+                )
+            }
+
+            mapp@map
+          })
+        })
+
+
         nblock <- reactiveVal(0)
         observe({
           if(input$buildblocks){
             observeEvent(input$doneblock, {
-              # req(shp$shp)
               nblock(nblock() + 1)
               block_name <- paste0("B", sprintf("%02d", nblock()))
               createdshape[[block_name]] <- tmpshape$tmp[[1]]
@@ -1030,8 +1047,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
     })
 
     # shape
-    # terra::crop(mosaic, terra::ext(terra::vect(shape)))
-    mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE))
+    mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE))
 
 
   })
