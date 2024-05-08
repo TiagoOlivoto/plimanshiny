@@ -122,14 +122,28 @@ mod_shapefile_prepare_ui <- function(id){
                              label = "Shapefile Name",
                              value = "Shapefile Build"),
                    fluidRow(
-                     col_3(
+                     col_6(
                        selectInput(
                          ns("plotlayout"),
                          label = "Layout",
-                         choices = c("lrtb", "lrbt", "tblr", "tbrl", "rltb", "rlbt"),
+                         choices = c("tblr", "tbrl", "btlr", "btrl", "lrtb", "lrbt", "rltb", "rlbt"),
                          selected = "lrtb",
                        )
                      ),
+                     col_6(
+                       prettyCheckbox(
+                         inputId = ns("serpentine"),
+                         label = "Serpentine layout?",
+                         value = TRUE,
+                         status = "info",
+                         icon = icon("thumbs-up"),
+                         plain = TRUE,
+                         outline = TRUE,
+                         animation = "rotate"
+                       )
+                     )
+                   ),
+                   fluidRow(
                      col_3(
                        prettyCheckbox(
                          inputId = ns("buildblocks"),
@@ -155,7 +169,9 @@ mod_shapefile_prepare_ui <- function(id){
                        )
                      )
                    ),
+                   hl(),
                    fluidRow(
+                     style = "margin-top: -10px;",
                      col_7(
                        actionBttn(
                          ns("createupdate"),
@@ -188,6 +204,7 @@ mod_shapefile_prepare_ui <- function(id){
                      )
                    ),
                    fluidRow(
+                     style = "margin-top: -10px;",
                      col_6(
                        textInput(ns("plot_width"),
                                  label = "Plot width",
@@ -202,6 +219,7 @@ mod_shapefile_prepare_ui <- function(id){
           ),
           divclass("shape4",
                    fluidRow(
+                     style = "margin-top: -10px;",
                      col_6(
                        textInput(ns("buffercol"),
                                  label = "Column buffer",
@@ -216,6 +234,7 @@ mod_shapefile_prepare_ui <- function(id){
           ),
           divclass("shape5",
                    fluidRow(
+                     style = "margin-top: -10px;",
                      prettyCheckbox(
                        inputId = ns("shapedone"),
                        label = "Sahpefile built",
@@ -493,6 +512,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             nrow = layout_params$nr,
             ncol = layout_params$nc,
             layout = input$plotlayout,
+            serpentine = input$serpentine,
             buffer_col = input$buffercol |> chrv2numv(),
             buffer_row = input$bufferrow |> chrv2numv(),
             plot_width = layout_params$pw,

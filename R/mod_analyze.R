@@ -1304,6 +1304,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
 
 
+            print(result_plot)
           output$resultplottab <- reactable::renderReactable(
             result_plot |>
               sf::st_drop_geometry() |>
