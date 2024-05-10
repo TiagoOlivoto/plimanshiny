@@ -70,7 +70,7 @@ mod_dfupdate_ui <- function(id){
 mod_dfupdate_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    observe({
+    observeEvent(input$dforshape,{
       if(input$dforshape == "data.frame"){
         updatePickerInput(session, "dftoupdate",
                           choices = names(dfs))

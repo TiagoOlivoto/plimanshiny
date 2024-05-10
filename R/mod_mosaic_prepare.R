@@ -30,35 +30,61 @@ mod_mosaic_prepare_ui <- function(id){
             div(class = "prep1",
                 dropdown(
                   tags$h3("Settings"),
-                  selectInput(
-                    inputId = ns("r_band"),
-                    label = "R",
-                    choices = 1:5,
-                    selected = 1
+                  fluidRow(
+                    col_3(
+                      selectInput(
+                        inputId = ns("r_band"),
+                        label = "R",
+                        choices = 1:5,
+                        selected = 1
+                      )
+                    ),
+                    col_3(
+                      selectInput(
+                        inputId = ns("g_band"),
+                        label = "G",
+                        choices = 1:5,
+                        selected = 2,
+                      )
+                    ),
+                    col_3(
+                      selectInput(
+                        inputId = ns("b_band"),
+                        label = "B",
+                        choices = 1:5,
+                        selected = 3,
+                      )
+                    ),
+                    col_3(
+                      selectInput(
+                        inputId = ns("re_band"),
+                        label = "RE",
+                        choices = NA
+                      )
+                    )
                   ),
-                  selectInput(
-                    inputId = ns("g_band"),
-                    label = "G",
-                    choices = 1:5,
-                    selected = 2,
-                  ),
-                  selectInput(
-                    inputId = ns("b_band"),
-                    label = "B",
-                    choices = 1:5,
-                    selected = 3,
-                  ),
-                  selectInput(
-                    inputId = ns("re_band"),
-                    label = "RE",
-                    choices = 1:5,
-                    selected = 4,
-                  ),
-                  selectInput(
-                    inputId = ns("nir_band"),
-                    label = "NIR",
-                    choices = 1:5,
-                    selected = 5,
+                  fluidRow(
+                    col_4(
+                      selectInput(
+                        inputId = ns("nir_band"),
+                        label = "NIR",
+                        choices = NA
+                      )
+                    ),
+                    col_4(
+                      selectInput(
+                        inputId = ns("swir_band"),
+                        label = "SWIR",
+                        choices = NA
+                      )
+                    ),
+                    col_4(
+                      selectInput(
+                        inputId = ns("tir_band"),
+                        label = "TIR",
+                        choices = NA
+                      )
+                    )
                   ),
                   div(class = "prep2",
                       sliderInput(ns("quantileplot"),
@@ -142,12 +168,20 @@ mod_mosaic_prepare_ui <- function(id){
             awesomeRadio(
               inputId = ns("showmosaic"),
               label = "Show",
-              choices = c("rgb", "mapview", "bands", "hist"),
+              choices = c("rgb", "bands", "hist"),
               selected = "rgb",
               inline = TRUE
             ),
+            prettyCheckbox(
+              inputId = ns("intmap"),
+              label = "Create an interative base map?",
+              value = TRUE,
+              icon = icon("check"),
+              status = "success",
+              animation = "rotate"
+            ),
             conditionalPanel(
-              condition = "input.showmosaic == 'mapview'", ns = ns,
+              condition = "input.intmap == true", ns = ns,
               selectInput(ns("howtoplot"),
                           label = "How to plot",
                           choices = NULL)
@@ -169,11 +203,11 @@ mod_mosaic_prepare_ui <- function(id){
         status = "success",
         maximizable = TRUE,
         conditionalPanel(
-          condition = "input.showmosaic == 'rgb' | input.showmosaic == 'bands' | input.showmosaic == 'hist'", ns = ns,
+          condition = "(input.showmosaic == 'rgb' | input.showmosaic == 'bands' | input.showmosaic == 'hist') & input.intmap == false", ns = ns,
           plotOutput(ns("mosaic_plot"), height = "740px") |> add_spinner()
         ),
         conditionalPanel(
-          condition = "input.showmosaic == 'mapview'", ns = ns,
+          condition = "input.intmap == true", ns = ns,
           leafletOutput(ns("mosaic_mapview"), height = "740px") |> add_spinner()
         )
       )
@@ -188,7 +222,7 @@ helpmo <-
 #' mosaic_prepare Server Functions
 #'
 #' @noRd
-mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, pathmosaic, quantiles, maxpixel) {
+mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, basemap, pathmosaic, quantiles, maxpixel, activemosaic) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     observeEvent(input$guidemosaic, introjs(session,
@@ -206,6 +240,8 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
       b$b <- input$b_band
       re$re <- input$re_band
       nir$nir <- input$nir_band
+      swir$swir <- input$swir_band
+      tir$tir <- input$tir_band
       quantiles$q <- input$quantileplot
       maxpixel$mp <- input$maxpixels
     })
@@ -264,89 +300,104 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, basemap
           updateSelectInput(session, "mosaictoanalyze",
                             choices = mosaicnames,
                             selected = mosaicnames[[1]])
+
         })
       }
     })
 
+    observe({
+      req(input$mosaictoanalyze)
+      activemosaic$name <- input$mosaictoanalyze
+      nl <- terra::nlyr(mosaic_data[[input$mosaictoanalyze]]$data)
+      updateSelectInput(session, "r_band",
+                        choices = 1:nl,
+                        selected = "1")
+      updateSelectInput(session, "g_band",
+                        choices = 1:nl,
+                        selected = "2")
+      updateSelectInput(session, "b_band",
+                        choices = 1:nl,
+                        selected = "3")
+      updateSelectInput(session, "re_band",
+                        choices = paste0(c("NA", paste(1:nl))))
+      updateSelectInput(session, "nir_band",
+                        choices = paste0(c("NA", paste(1:nl))))
+      updateSelectInput(session, "swir_band",
+                        choices = paste0(c("NA", paste(1:nl))))
+      updateSelectInput(session, "tir_band",
+                        choices = paste0(c("NA", paste(1:nl))))
+    })
 
     observe({
       # Check if a mosaic is selected
       req(input$mosaictoanalyze)
-      selected_mosaic <- mosaic_data[[input$mosaictoanalyze]]
-      # # Check if the selected_mosaic is not NULL and has the 'data' field
-      if ('data' %in% names(selected_mosaic)) {
-        mosaic_data$mosaic <- selected_mosaic$data
-        mosaic_info(selected_mosaic$data)
-      }
       updateSelectInput(session, "howtoplot",
-                        choices = c("RGB", names(selected_mosaic$data)))
+                        choices = c("RGB", names(mosaic_data[[input$mosaictoanalyze]]$data)))
     })
 
     observeEvent(input$mosaicinfomosaic, {
-      req(mosaic_data$mosaic)
-      mosaic_info(mosaic_data$mosaic)
+      req(mosaic_data[[input$mosaictoanalyze]]$data)
+      mosaic_info(mosaic_data[[input$mosaictoanalyze]]$data)
     })
 
     output$mosaic_plot <- renderPlot({
-      req(mosaic_data$mosaic)  # Ensure mosaic_data$mosaic is not NULL
-      # if(input$showmosaic != "mapview"){
+      req(input$mosaictoanalyze)
       if (input$showmosaic == "rgb") {
-        if(nlyr(mosaic_data$mosaic) < 3){
+        if(nlyr(mosaic_data[[input$mosaictoanalyze]]$data) < 3){
           show_alert("Ops, too few bands",
                      text = "The current mosaic has too few bands and an RGB image cannot be rendered. Plotting a raster image",
                      type = "warning")
-          terra::plot(mosaic_data$mosaic)
+          terra::plot(mosaic_data[[input$mosaictoanalyze]]$data)
         } else{
           terra::plotRGB(
-            mosaic_data$mosaic,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
+            mosaic_data[[input$mosaictoanalyze]]$data,
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
             stretch = "hist"
           )
         }
       }
       if (input$showmosaic == "bands") {
-        terra::plot(mosaic_data$mosaic)
+        terra::plot(mosaic_data[[input$mosaictoanalyze]]$data)
       }
       if (input$showmosaic == "hist") {
-        terra::hist(mosaic_data$mosaic)
+        terra::hist(mosaic_data[[input$mosaictoanalyze]]$data)
       }
     })
 
     #
     observe({
-      req(mosaic_data$mosaic)
-      req(input$howtoplot)
-      if(input$howtoplot == "RGB"){
-        bmtmp <- mosaic_view(
-          mosaic_data$mosaic,
-          r = as.numeric(r$r),
-          g = as.numeric(g$g),
-          b = as.numeric(b$b),
-          re = as.numeric(re$re),
-          nir = as.numeric(nir$nir),
-          quantiles = quantiles$q,
-          max_pixels = maxpixel$mp
-        )
-      } else{
-        bmtmp <-
-          mosaic_view(mosaic_data$mosaic[input$howtoplot],
-                      show = "index",
-                      color_regions  = scales::brewer_pal(palette = "RdYlGn")(8),
-                      max_pixels = input$maxpixels,
-                      na.color = "transparent")
+      if(input$intmap){
+        req(input$mosaictoanalyze)
+        req(input$howtoplot)
+        if(input$howtoplot == "RGB"){
+          bmtmp <- mosaic_view(
+            mosaic_data[[input$mosaictoanalyze]]$data,
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
+            quantiles = quantiles$q,
+            max_pixels = maxpixel$mp
+          )
+        } else{
+          bmtmp <-
+            mosaic_view(mosaic_data[[input$mosaictoanalyze]]$data[input$howtoplot],
+                        show = "index",
+                        color_regions  = scales::brewer_pal(palette = "RdYlGn")(8),
+                        max_pixels = input$maxpixels,
+                        na.color = "transparent")
+        }
+
+        basemap$map <- bmtmp
+        output$mosaic_mapview <- renderLeaflet({
+          req(bmtmp)
+          bmtmp@map
+        })
       }
-
-      basemap$map <- bmtmp
     })
 
-    output$mosaic_mapview <- renderLeaflet({
-      req(basemap$map)  # Ensure mosaic_data$mosaic is not NULL
-      basemap$map@map
-    })
-
-    mod_download_mosaic_server("downloadmosaic", mosaic_data$mosaic)
+    mod_download_mosaic_server("downloadmosaic", mosaic_data[[input$mosaictoanalyze]]$data)
   })
 }
 

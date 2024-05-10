@@ -345,6 +345,7 @@ pickerpalette <- function(id, inputid, ...){
         "Paired" = scales::brewer_pal(palette = "Paired")(8)
       ),
       "Others" = list(
+        "SoilWater" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = 10),
         "BrBG" = scales::brewer_pal(palette = "BrBG")(8),
         "PiYG" = scales::brewer_pal(palette = "PiYG")(8),
         "PRGn" = scales::brewer_pal(palette = "PRGn")(8),
@@ -387,7 +388,8 @@ return_colors <- function(pal, reverse = FALSE){
          "RdGy" = scales::brewer_pal(palette = "RdGy")(8),
          "RdYlBu" = scales::brewer_pal(palette = "RdYlBu")(8),
          "RdYlGn" = scales::brewer_pal(palette = "RdYlGn")(8),
-         "Spectral" = scales::brewer_pal(palette = "Spectral")(8)
+         "Spectral" = scales::brewer_pal(palette = "Spectral")(8),
+         "SoilWater" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = 100),
   )
   if(reverse){
     return(rev(pals))

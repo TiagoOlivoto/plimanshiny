@@ -11,143 +11,239 @@ mod_shapefile_prepare_ui <- function(id){
   ns <- NS(id)
   fluidRow(
     col_3(
-      bs4Card(
-        title = "Settings",
-        status = "success",
+      bs4TabCard(
+        id = "tabsindex",
         width = 12,
-        fluidRow(
-          col_6(
-            divclass("shape1",
-                     prettyRadioButtons(
-                       inputId = ns("shapetype"),
-                       label = "I want to...",
-                       choices = c("Build", "Import"),
-                       icon = icon("check"),
-                       bigger = TRUE,
-                       status = "info",
-                       animation = "jelly"
-                     )
-            )
-          ),
-          col_6(
-            fluidRow(
-              col_4(
-                divclass("shape2",
-                         br(),
-                         dropdown(
-                           fluidRow(
-                             col_6(
-                               colorPickr(
-                                 inputId = ns("colorfill"),
-                                 label = "Fill color",
-                                 swatches = scales::viridis_pal()(10),
-                                 theme = "monolith",
-                                 useAsButton = TRUE,
-                                 selected = "#0361FC",
+        status = "success",
+        title = "Settings",
+        selected = "Build",
+        solidHeader = FALSE,
+        type = "tabs",
+        tabPanel(
+          title = "Build",
+          fluidRow(
+            col_6(
+              divclass("shape1",
+                       prettyRadioButtons(
+                         inputId = ns("shapetype"),
+                         label = "I want to...",
+                         choices = c("Build", "Import"),
+                         icon = icon("check"),
+                         bigger = TRUE,
+                         status = "info",
+                         animation = "jelly"
+                       )
+              )
+            ),
+            col_6(
+              fluidRow(
+                col_4(
+                  divclass("shape2",
+                           br(),
+                           dropdown(
+                             fluidRow(
+                               col_6(
+                                 colorPickr(
+                                   inputId = ns("colorfill"),
+                                   label = "Fill color",
+                                   swatches = scales::viridis_pal()(10),
+                                   theme = "monolith",
+                                   useAsButton = TRUE,
+                                   selected = "#0361FC",
+                                 )
+                               ),
+                               col_6(
+                                 colorPickr(
+                                   inputId = ns("colorstroke"),
+                                   label = "Stroke color",
+                                   swatches = scales::viridis_pal()(10),
+                                   theme = "monolith",
+                                   useAsButton = TRUE,
+                                   selected = "darkred",
+                                 )
                                )
                              ),
-                             col_6(
-                               colorPickr(
-                                 inputId = ns("colorstroke"),
-                                 label = "Stroke color",
-                                 swatches = scales::viridis_pal()(10),
-                                 theme = "monolith",
-                                 useAsButton = TRUE,
-                                 selected = "darkred",
-                               )
-                             )
-                           ),
-                           selectInput(
-                             ns("fillid"),
-                             label = "Fill color",
-                             choices = c("none", "unique_id", "block", "plot_id"),
-                             selected = "none",
-                           ),
-                           pickerpalette(id, "palplot", selected = "RdYlGn"),
-                           sliderInput(ns("alphacolorfill"),
-                                       label = "Fill opacity",
-                                       min = 0,
-                                       max = 1,
-                                       value = 0.7),
-                           sliderInput(ns("lwdt"),
-                                       label = "Line width",
-                                       min = 0,
-                                       max = 5,
-                                       value = 2),
-                           style = "unite",
-                           icon = icon("gear"),
-                           status = "success",
-                           width = "360px",
-                           animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
-                           tooltip = tooltipOptions(title = "Settings")
-                         )
-                )
-              ),
-              col_8(
-                conditionalPanel(
-                  condition = "input.shapetype == 'Build'", ns = ns,
-                  br(),
-                  actionButton(
-                    inputId = ns("guideshape"),
-                    label = tagList(
-                      icon = icon("question-circle", verify_fa = FALSE), "Guide"
-                    ),
-                    style = "color: white ; background-color: #dd4b39",
-                    class = "btn-danger"
+                             selectInput(
+                               ns("fillid"),
+                               label = "Fill color",
+                               choices = c("none", "unique_id", "block", "plot_id"),
+                               selected = "none",
+                             ),
+                             pickerpalette(id, "palplot", selected = "RdYlGn"),
+                             sliderInput(ns("alphacolorfill"),
+                                         label = "Fill opacity",
+                                         min = 0,
+                                         max = 1,
+                                         value = 0.7),
+                             sliderInput(ns("lwdt"),
+                                         label = "Line width",
+                                         min = 0,
+                                         max = 5,
+                                         value = 2),
+                             style = "unite",
+                             icon = icon("gear"),
+                             status = "success",
+                             width = "360px",
+                             animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
+                             tooltip = tooltipOptions(title = "Settings")
+                           )
                   )
                 ),
-                conditionalPanel(
-                  condition = "input.shapetype == 'Import'", ns = ns,
-                  br(),
-                  actionButton(
-                    inputId = ns("guideshapeimput"),
-                    label = tagList(
-                      icon = icon("question-circle", verify_fa = FALSE), "Guide"
-                    ),
-                    style = "color: white ; background-color: #dd4b39",
-                    class = "btn-danger"
+                col_8(
+                  conditionalPanel(
+                    condition = "input.shapetype == 'Build'", ns = ns,
+                    br(),
+                    actionButton(
+                      inputId = ns("guideshape"),
+                      label = tagList(
+                        icon = icon("question-circle", verify_fa = FALSE), "Guide"
+                      ),
+                      style = "color: white ; background-color: #dd4b39",
+                      class = "btn-danger"
+                    )
+                  ),
+                  conditionalPanel(
+                    condition = "input.shapetype == 'Import'", ns = ns,
+                    br(),
+                    actionButton(
+                      inputId = ns("guideshapeimput"),
+                      label = tagList(
+                        icon = icon("question-circle", verify_fa = FALSE), "Guide"
+                      ),
+                      style = "color: white ; background-color: #dd4b39",
+                      class = "btn-danger"
+                    )
                   )
                 )
               )
             )
-          )
-        ),
-        selectInput(ns("shapefiletoanalyze"),
-                    label = "Active Shapefile",
-                    choices = NULL),
-        conditionalPanel(
-          condition = "input.shapetype == 'Build'", ns = ns,
-          divclass("shape3",
-                   textInput(ns("shapenamebuild"),
-                             label = "Shapefile Name",
-                             value = "Shapefile Build"),
-                   fluidRow(
-                     col_6(
-                       selectInput(
-                         ns("plotlayout"),
-                         label = "Layout",
-                         choices = c("tblr", "tbrl", "btlr", "btrl", "lrtb", "lrbt", "rltb", "rlbt"),
-                         selected = "lrtb",
+          ),
+          selectInput(ns("shapefiletoanalyze"),
+                      label = "Active Shapefile",
+                      choices = NULL),
+          conditionalPanel(
+            condition = "input.shapetype == 'Build'", ns = ns,
+            divclass("shape3",
+                     textInput(ns("shapenamebuild"),
+                               label = "Shapefile Name",
+                               value = "Shapefile Build"),
+                     fluidRow(
+                       col_6(
+                         selectInput(
+                           ns("plotlayout"),
+                           label = "Layout",
+                           choices = c("tblr", "tbrl", "btlr", "btrl", "lrtb", "lrbt", "rltb", "rlbt"),
+                           selected = "lrtb",
+                         )
+                       ),
+                       col_6(
+                         prettyCheckbox(
+                           inputId = ns("serpentine"),
+                           label = "Serpentine layout?",
+                           value = TRUE,
+                           status = "info",
+                           icon = icon("thumbs-up"),
+                           plain = TRUE,
+                           outline = TRUE,
+                           animation = "rotate"
+                         )
                        )
                      ),
-                     col_6(
-                       prettyCheckbox(
-                         inputId = ns("serpentine"),
-                         label = "Serpentine layout?",
-                         value = TRUE,
-                         status = "info",
-                         icon = icon("thumbs-up"),
-                         plain = TRUE,
-                         outline = TRUE,
-                         animation = "rotate"
+                     fluidRow(
+                       col_3(
+                         prettyCheckbox(
+                           inputId = ns("buildblocks"),
+                           label = "Blocks",
+                           value = FALSE,
+                           status = "info",
+                           icon = icon("thumbs-up"),
+                           plain = TRUE,
+                           outline = TRUE,
+                           animation = "rotate"
+                         )
+                       ),
+                       col_6(
+                         conditionalPanel(
+                           condition = "input.buildblocks == true", ns = ns,
+                           actionBttn(
+                             ns("doneblock"),
+                             label = "Block built",
+                             icon = icon("check"),
+                             color = "success",
+                             style = "jelly"
+                           )
+                         )
+                       )
+                     ),
+                     hl(),
+                     fluidRow(
+                       style = "margin-top: -10px;",
+                       col_7(
+                         actionBttn(
+                           ns("createupdate"),
+                           label = "Create/update",
+                           icon = icon("check"),
+                           color = "success",
+                           style = "jelly"
+                         )
+                       ),
+                       col_5(
+                         actionBttn(
+                           ns("plotinfo"),
+                           label = "Plot info",
+                           icon = icon("info"),
+                           color = "success",
+                           style = "jelly"
+                         )
+                       )
+                     ),
+                     fluidRow(
+                       col_6(
+                         textInput(ns("ncols"),
+                                   label = "Number of columns",
+                                   value = 1)
+                       ),
+                       col_6(
+                         textInput(ns("nrows"),
+                                   label = "Number of rows",
+                                   value = 1)
+                       )
+                     ),
+                     fluidRow(
+                       style = "margin-top: -10px;",
+                       col_6(
+                         textInput(ns("plot_width"),
+                                   label = "Plot width",
+                                   value = NA)
+                       ),
+                       col_6(
+                         textInput(ns("plot_height"),
+                                   label = "Plot height",
+                                   value = NA)
                        )
                      )
-                   ),
-                   fluidRow(
-                     col_3(
+            ),
+            divclass("shape4",
+                     fluidRow(
+                       style = "margin-top: -10px;",
+                       col_6(
+                         textInput(ns("buffercol"),
+                                   label = "Column buffer",
+                                   value = 0)
+                       ),
+                       col_6(
+                         textInput(ns("bufferrow"),
+                                   label = "Row buffer",
+                                   value = 0)
+                       )
+                     )
+            ),
+            divclass("shape5",
+                     fluidRow(
+                       style = "margin-top: -10px;",
                        prettyCheckbox(
-                         inputId = ns("buildblocks"),
-                         label = "Blocks",
+                         inputId = ns("shapedone"),
+                         label = "Sahpefile built",
                          value = FALSE,
                          status = "info",
                          icon = icon("thumbs-up"),
@@ -156,173 +252,86 @@ mod_shapefile_prepare_ui <- function(id){
                          animation = "rotate"
                        )
                      ),
-                     col_6(
-                       conditionalPanel(
-                         condition = "input.buildblocks == true", ns = ns,
-                         actionBttn(
-                           ns("doneblock"),
-                           label = "Block built",
-                           icon = icon("check"),
-                           color = "success",
-                           style = "jelly"
-                         )
-                       )
-                     )
-                   ),
-                   hl(),
-                   fluidRow(
-                     style = "margin-top: -10px;",
-                     col_7(
-                       actionBttn(
-                         ns("createupdate"),
-                         label = "Create/update",
-                         icon = icon("check"),
-                         color = "success",
-                         style = "jelly"
-                       )
-                     ),
-                     col_5(
-                       actionBttn(
-                         ns("plotinfo"),
-                         label = "Plot info",
-                         icon = icon("info"),
-                         color = "success",
-                         style = "jelly"
-                       )
-                     )
-                   ),
-                   fluidRow(
-                     col_6(
-                       textInput(ns("ncols"),
-                                 label = "Number of columns",
-                                 value = 1)
-                     ),
-                     col_6(
-                       textInput(ns("nrows"),
-                                 label = "Number of rows",
-                                 value = 1)
-                     )
-                   ),
-                   fluidRow(
-                     style = "margin-top: -10px;",
-                     col_6(
-                       textInput(ns("plot_width"),
-                                 label = "Plot width",
-                                 value = NA)
-                     ),
-                     col_6(
-                       textInput(ns("plot_height"),
-                                 label = "Plot height",
-                                 value = NA)
-                     )
-                   )
-          ),
-          divclass("shape4",
-                   fluidRow(
-                     style = "margin-top: -10px;",
-                     col_6(
-                       textInput(ns("buffercol"),
-                                 label = "Column buffer",
-                                 value = 0)
-                     ),
-                     col_6(
-                       textInput(ns("bufferrow"),
-                                 label = "Row buffer",
-                                 value = 0)
-                     )
-                   )
-          ),
-          divclass("shape5",
-                   fluidRow(
-                     style = "margin-top: -10px;",
-                     prettyCheckbox(
-                       inputId = ns("shapedone"),
-                       label = "Sahpefile built",
-                       value = FALSE,
-                       status = "info",
-                       icon = icon("thumbs-up"),
-                       plain = TRUE,
-                       outline = TRUE,
-                       animation = "rotate"
-                     )
-                   ),
-                   conditionalPanel(
-                     condition = "input.shapedone == true", ns = ns,
-                     divclass("shapeimp3",
-                              materialSwitch(
-                                inputId = ns("editplots"),
-                                label = "Edit the drawn plots?",
-                                value = FALSE,
-                                status = "danger"
-                              ),
-                              conditionalPanel(
-                                condition = "input.editplots == true", ns = ns,
-                                prettyCheckbox(
-                                  inputId = ns("editdone"),
-                                  label = "Edition finished!",
+                     conditionalPanel(
+                       condition = "input.shapedone == true", ns = ns,
+                       divclass("shapeimp3",
+                                materialSwitch(
+                                  inputId = ns("editplots"),
+                                  label = "Edit the drawn plots?",
                                   value = FALSE,
-                                  status = "info",
-                                  icon = icon("thumbs-up"),
-                                  plain = TRUE,
-                                  outline = TRUE,
-                                  animation = "rotate"
+                                  status = "danger"
+                                ),
+                                conditionalPanel(
+                                  condition = "input.editplots == true", ns = ns,
+                                  prettyCheckbox(
+                                    inputId = ns("editdone"),
+                                    label = "Edition finished!",
+                                    value = FALSE,
+                                    status = "info",
+                                    icon = icon("thumbs-up"),
+                                    plain = TRUE,
+                                    outline = TRUE,
+                                    animation = "rotate"
+                                  )
                                 )
-                              )
+                       )
                      )
-                   )
-          )
-        ),
-        conditionalPanel(
-          condition = "input.shapetype == 'Import'", ns = ns,
-          tags$hr(),
-          divclass("shapeimp1",
-                   fileInput(ns("import_shapefile"),
-                             "Import a shapefile (.shp, .rds)",
-                             accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg"), multiple=TRUE)
-          ),
-          tags$hr(),
-          divclass("shapeimp2",
-                   selectInput(ns("colorshapeimport"),
-                               label = "Fill color",
-                               choices = NULL)
-          ),
-          fluidRow(
-            col_6(
-              materialSwitch(
-                inputId = ns("editplotsimpo"),
-                label = "Edit Shapefile?",
-                value = FALSE,
-                status = "danger"
-              )
-            ),
-            col_6(
-              actionButton(
-                inputId = ns("plotinfo2"),
-                label = tagList(
-                  icon = icon("question-circle", verify_fa = FALSE), "Plot info"
-                ),
-                class = "btn-info"
-              )
             )
           ),
           conditionalPanel(
-            condition = "input.editplotsimpo == true", ns = ns,
-            divclass("shapeimp4",
-                     prettyCheckbox(
-                       inputId = ns("editdoneimpo"),
-                       label = "Edition finished!",
-                       value = FALSE,
-                       status = "info",
-                       icon = icon("thumbs-up"),
-                       plain = TRUE,
-                       outline = TRUE,
-                       animation = "rotate"
-                     ), br()
+            condition = "input.shapetype == 'Import'", ns = ns,
+            tags$hr(),
+            divclass("shapeimp1",
+                     fileInput(ns("import_shapefile"),
+                               "Import a shapefile (.shp, .rds)",
+                               accept=c(".rds",  ".shp",  ".json", ".kml",  ".gml",  ".dbf",  ".sbn",  ".sbx",  ".shx",  ".prj", ".cpg"), multiple=TRUE)
+            ),
+            tags$hr(),
+            divclass("shapeimp2",
+                     selectInput(ns("colorshapeimport"),
+                                 label = "Fill color",
+                                 choices = NULL)
+            ),
+            fluidRow(
+              col_6(
+                materialSwitch(
+                  inputId = ns("editplotsimpo"),
+                  label = "Edit Shapefile?",
+                  value = FALSE,
+                  status = "danger"
+                )
+              ),
+              col_6(
+                actionButton(
+                  inputId = ns("plotinfo2"),
+                  label = tagList(
+                    icon = icon("question-circle", verify_fa = FALSE), "Plot info"
+                  ),
+                  class = "btn-info"
+                )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.editplotsimpo == true", ns = ns,
+              divclass("shapeimp4",
+                       prettyCheckbox(
+                         inputId = ns("editdoneimpo"),
+                         label = "Edition finished!",
+                         value = FALSE,
+                         status = "info",
+                         icon = icon("thumbs-up"),
+                         plain = TRUE,
+                         outline = TRUE,
+                         animation = "rotate"
+                       ), br()
+              )
             )
           )
         ),
-        tags$hr(),
-        mod_download_shapefile_ui(ns("downloadshapefile"), label = "Download")
+        tabPanel(
+          title = "Download",
+          mod_download_shapefile_ui(ns("downloadshapefile"), label = "Download")
+        )
       )
     ),
     col_9(
@@ -341,7 +350,7 @@ shapeimp <-
 #' shapefile_prepare Server Functions
 #'
 #' @noRd
-mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
+mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, activemosaic){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observeEvent(input$guideshape, introjs(session,
@@ -465,9 +474,10 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
     observe({
       # create a basemap if mosaic is not available
-      if(is.null(mosaic_data$mosaic)){
+      if(is.null(activemosaic$name)){
         basemap$map <- mapview::mapview(map.types = c("Esri.WorldImagery", "OpenStreetMap", "CartoDB.Positron"))
-        mosaic_data$mosaic <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
+      } else{
+        mosaic_data$mosaic <- mosaic_data[[activemosaic$name]]$data
       }
     })
     observeEvent(c(basemap$map, mosaic_data$mosaic), {
@@ -504,6 +514,9 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                        })
 
         observeEvent(input$createupdate, {
+          if(is.null(mosaic_data$mosaic)){
+            mosaic_data$mosaic <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
+          }
           req(layout_params$cpo)
           shpt <- shapefile_build(
             mosaic_data$mosaic,
@@ -579,6 +592,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
               reactiveValuesToList(createdshape) |>
               dplyr::bind_rows(.id = "block") |>
               dplyr::mutate(unique_id = dplyr::row_number(), .before = 1)
+            shapefile[["shapefileplot"]] <- shptemp
             shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, shptemp)
 
             observe({
@@ -675,18 +689,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             })
           }
         })
-
-        observe({
-          # Check if a mosaic is selected
-          req(input$shapefiletoanalyze)
-          selected_shp <- shapefile[[input$shapefiletoanalyze]]
-          req(selected_shp)
-          if (inherits(selected_shp, "reactivevalues")) {
-            shapefile$shapefile <- selected_shp$data |> convert_numeric_cols()
-          } else{
-            shapefile$shapefile <- selected_shp |> convert_numeric_cols()
-          }
-        })
       }
     })
 
@@ -718,13 +720,13 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                     shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
                       create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
                                                                                                  input$import_shapefile,
-                                                                                                 session))
+                                                                                                 session))|> convert_numeric_cols()
                   } else{
                     for (i in 1:length(newshpname)) {
                       shapefile[[newshpname[[i]]]] <-
                         create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
                                                                         input$import_shapefile[[i]],
-                                                                        session))
+                                                                        session))|> convert_numeric_cols()
                     }
                   }
                 } else {
@@ -759,26 +761,13 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
 
           observe({
-            # Check if a mosaic is selected
-            req(input$shapefiletoanalyze)
-            selected_shp <- shapefile[[input$shapefiletoanalyze]]
-            req(selected_shp$data)
-            if ('data' %in% names(selected_shp)) {
-              shapefile$shapefile <- selected_shp$data |> convert_numeric_cols()
-              shapefile[["shapefileplot"]] <- selected_shp$data |> convert_numeric_cols()
-            }
-          })
+            req(input$shapefiletoanalyze)  # Ensure mosaic_data$mosaic is not NULL
 
-
-
-          observe({
-            req(shapefile$shapefile)  # Ensure mosaic_data$mosaic is not NULL
-
-            updateSelectInput(session, "colorshapeimport", choices = names(shapefile$shapefile))
-            updateSelectInput(session, "fillid", choices = c("none", names(shapefile$shapefile)))
+            updateSelectInput(session, "colorshapeimport", choices = c("none", names(shapefile[[input$shapefiletoanalyze]]$data)))
+            updateSelectInput(session, "fillid", choices = c("none", names(shapefile[[input$shapefiletoanalyze]]$data)))
 
             if(!is.null(mosaic_data$mosaic)){
-              if(sf::st_crs(shapefile$shapefile) != sf::st_crs(mosaic_data$mosaic)){
+              if(sf::st_crs(shapefile[[input$shapefiletoanalyze]]$data) != sf::st_crs(mosaic_data$mosaic)){
                 sendSweetAlert(
                   session = session,
                   title = "Invalid CRS",
@@ -786,39 +775,40 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
             not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
             type = "warning"
                 )
-                shp <- shapefile$shapefile |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
-                shapefile$shapefile <- shp
+                shp <- shapefile[[input$shapefiletoanalyze]]$data |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
+                shapefile[[input$shapefiletoanalyze]] <- create_reactval(input$shapefiletoanalyze, shp)
               }
             }
             output$shapefile_mapview <- renderLeaflet({
+              req(input$colorshapeimport)
               if(is.null(basemap$map)){
-                if(input$fillid == "none"){
-                  mapp <- mapview::mapview(shapefile$shapefile,
+                if(input$colorshapeimport == "none"){
+                  mapp <- mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
                                            color = input$colorstroke,
-                                           col.regions = input$colorfill,
+                                           col.regions = input$colorshapeimport,
                                            alpha.regions = input$alphacolorfill,
                                            legend = FALSE,
                                            lwd = input$lwdt,
                                            layer.name = "shapes")
                 } else {
-                  if(length(unique(shapefile$shapefile |> sf::st_drop_geometry() |> dplyr::pull(input$fillid))) > 7){
-                    shptemp <- shapefile$shapefile |> extract_number(block, plot_id)
+                  if(length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$colorshapeimport))) > 7){
+                    shptemp <- shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id)
                   } else{
-                    shptemp <- shapefile$shapefile
+                    shptemp <- shapefile[[input$shapefiletoanalyze]]$data
                   }
                   mapp <-
                     mapview::mapview(shptemp,
-                                     zcol = input$fillid,
+                                     zcol = input$colorshapeimport,
                                      col.regions = return_colors(input$palplot),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
                 }
               } else{
-                if(input$fillid == "none"){
+                if(input$colorshapeimport == "none"){
                   mapp <-
                     basemap$map +
-                    mapview::mapview(shapefile$shapefile,
+                    mapview::mapview(shapefile[[input$shapefiletoanalyze]]$data,
                                      color = input$colorstroke,
                                      col.regions = input$colorfill,
                                      alpha.regions = input$alphacolorfill,
@@ -826,15 +816,15 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
                 } else {
-                  if(length(unique(shapefile$shapefile |> sf::st_drop_geometry() |> dplyr::pull(input$fillid))) > 7){
-                    shptemp <- shapefile$shapefile |> extract_number(block, plot_id)
+                  if(length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$colorshapeimport))) > 7){
+                    shptemp <- shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id)
                   } else{
-                    shptemp <- shapefile$shapefile
+                    shptemp <- shapefile[[input$shapefiletoanalyze]]$data
                   }
                   mapp <-
                     basemap$map +
                     mapview::mapview(shptemp,
-                                     zcol = input$fillid,
+                                     zcol = input$colorshapeimport,
                                      col.regions = return_colors(input$palplot),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
@@ -925,6 +915,12 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
 
     # Plot information
     observeEvent(c(input$plotinfo, input$plotinfo2), {
+      if(is.null(activemosaic$name)){
+        # basemap$map <- mapview::mapview(map.types = c("Esri.WorldImagery", "OpenStreetMap", "CartoDB.Positron"))
+        mos <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
+      } else{
+        mos <- mosaic_data$mosaic
+      }
       distsss <- reactiveValues()
       perim <- reactiveValues()
       area <- reactiveValues()
@@ -957,8 +953,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
                 p1 - (p1 - p2) / 2
               })
             )
-          if(!is.null(mosaic_data$mosaic) & (nrow(mosaic_data$mosaic) != 180) & (nrow(mosaic_data$mosaic) != 360)){
-            mcro <- terra::crop(mosaic_data$mosaic, terra::vect(shpinfo) |> terra::buffer(buff))
+          if(!is.null(mos) & (nrow(mos) != 180) & (nrow(mos) != 360)){
+            mcro <- terra::crop(mos, terra::vect(shpinfo) |> terra::buffer(buff))
             if(terra::nlyr(mcro) > 2){
               terra::plotRGB(mcro, stretch = "hist")
             } else{
@@ -1082,8 +1078,15 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile){
       }
     })
 
-    # shape
-    mod_download_shapefile_server("downloadshapefile", shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE))
+    observe({
+      req(input$shapefiletoanalyze)
+      shapefile[["shapefileplot"]] <- shapefile[[input$shapefiletoanalyze]]$data
+
+    })
+
+      mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefileplot))
+
+
 
 
   })

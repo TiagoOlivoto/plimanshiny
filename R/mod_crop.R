@@ -128,9 +128,9 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
             bcrop <-
               mosaic_view(
                 mosaic_data[[input$mosaic_to_crop]]$data,
-                r = as.numeric(r$r),
-                g = as.numeric(g$g),
-                b = as.numeric(b$b),
+                r = suppressWarnings(as.numeric(r$r)),
+                g = suppressWarnings(as.numeric(g$g)),
+                b = suppressWarnings(as.numeric(b$b)),
                 max_pixels = 500000
               )
           }
@@ -155,9 +155,9 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
           mapcrop <-
             mosaic_view(
               mosaic_data[[input$mosaic_to_crop]]$data,
-              r = as.numeric(r$r),
-              g = as.numeric(g$g),
-              b = as.numeric(b$b),
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
               max_pixels = 300000
             )@map
         }
@@ -188,9 +188,9 @@ mod_crop_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
         # bcrop <-
         #   mosaic_view(
         #     cropped_mosaic(),
-        #     r = as.numeric(r$r),
-        #     g = as.numeric(g$g),
-        #     b = as.numeric(b$b)
+        #     r = suppressWarnings(as.numeric(r$r)),
+        #     g = suppressWarnings(as.numeric(g$g)),
+        #     b = suppressWarnings(as.numeric(b$b))
         #   )
         # bcrop@map
         terra::plotRGB(cropped_mosaic())

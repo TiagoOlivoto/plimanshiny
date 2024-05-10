@@ -158,9 +158,9 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
         bcrop <-
           mosaic_view(
             mosaic_data[[input$mosaic_to_clip]]$data,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
             max_pixels = 500000
           )
         mosaictocrop <- mosaic_data[[input$mosaic_to_clip]]$data
@@ -275,9 +275,9 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
             croppplot <-
               mosaic_view(
                 motemp,
-                r = as.numeric(r$r),
-                g = as.numeric(g$g),
-                b = as.numeric(b$b),
+                r = suppressWarnings(as.numeric(r$r)),
+                g = suppressWarnings(as.numeric(g$g)),
+                b = suppressWarnings(as.numeric(b$b)),
                 max_pixels = 500000
               )
             croppplot@map

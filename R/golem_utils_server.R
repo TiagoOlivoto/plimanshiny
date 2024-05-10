@@ -167,7 +167,7 @@ import_shp_mod <- function(datapath, file, session){
 write_shp <- function(data, file){
   temp_shp <- tempdir()
   # write shp files
-  terra::writeVector(data, paste0(temp_shp, "/my_shp.shp"), overwrite = TRUE)
+  sf::stwri(data, paste0(temp_shp, "/my_shp.shp"), overwrite = TRUE)
   # zip all the shp files
   zip_file <- file.path(temp_shp, "vector_shp.zip")
   shp_files <- list.files(temp_shp,
@@ -389,7 +389,7 @@ boxtext <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
 
 convert_numeric_cols <- function(data) {
   can_convert_to_numeric <- function(x) {
-    all(!is.na(suppressWarnings(as.numeric(x))))
+    is.vector(x) & all(!is.na(suppressWarnings(as.numeric(x))))
   }
   data %>%
     dplyr::mutate(dplyr::across(
@@ -397,6 +397,23 @@ convert_numeric_cols <- function(data) {
       as.numeric
     ))
 }
+convert_numeric_cols <- function(data) {
+  # Function to check if a column can be converted to numeric
+  can_convert_to_numeric <- function(x) {
+    is.character(x) && all(!is.na(suppressWarnings(as.numeric(x))))
+  }
+
+  # Get the names of the columns that can be converted
+  numeric_col_names <- names(data)[sapply(data, can_convert_to_numeric)]
+
+  # Convert only those columns to numeric
+  data <- data  |>
+    dplyr::mutate(across(all_of(numeric_col_names), as.numeric))
+
+  return(data)
+}
+
+
 add_suffix <- function(name, suffix){
   gsub(".character\\(0\\)", "", paste0(file_name(name), suffix, ".", file_extension(name)))
 }
@@ -408,7 +425,7 @@ render_reactable <- function(df,
                              pagination = TRUE,
                              defaultPageSize = 15,
                              defaultColDef = colDef(
-                               maxWidth = 300,
+                               maxWidth = 400,
                                footer = function(values) {
                                if (!is.numeric(values)) return()
                                sparkline::sparkline(values, type = "box", width = 100, height = 30)

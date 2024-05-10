@@ -12,86 +12,114 @@ mod_indexes_ui <- function(id){
   tagList(
     fluidRow(
       col_3(
-        bs4Card(
-          title = "Mosaic index",
-          color = "success",
-          fluidRow(
-            col_6(
-              actionButton(
-                inputId = ns("guideindex"),
-                label = tagList(
-                  icon = icon("question-circle", verify_fa = FALSE), "Guide"
-                ),
-                style = "color: white ; background-color: #dd4b39",
-                class = "btn-danger"
+        bs4TabCard(
+          id = "tabsindex",
+          width = 12,
+          status = "success",
+          title = "Vegetation indexes",
+          selected = "Build",
+          solidHeader = FALSE,
+          type = "tabs",
+          tabPanel(
+            title = "Build",
+            fluidRow(
+              col_6(
+                actionButton(
+                  inputId = ns("guideindex"),
+                  label = tagList(
+                    icon = icon("question-circle", verify_fa = FALSE), "Guide"
+                  ),
+                  style = "color: white ; background-color: #dd4b39",
+                  class = "btn-danger"
+                )
+              ),
+              col_6(
+                actionButton(
+                  inputId = ns("mosaicinfoindex"),
+                  label = tagList(
+                    icon = icon("circle-info", verify_fa = FALSE), "Mosaic Info"
+                  ),
+                  status = "info"
+                )
               )
             ),
-            col_6(
-              actionButton(
-                inputId = ns("mosaicinfoindex"),
-                label = tagList(
-                  icon = icon("circle-info", verify_fa = FALSE), "Mosaic Info"
-                ),
-                status = "info"
+            width = 12,
+            status = "success",
+            hl(),
+            selectInput(ns("rastertocompute"),
+                        label = "Raster to compute the index(s)",
+                        choices = NULL),
+            pickerInput(
+              inputId = ns("imgbands"),
+              label = "Image Bands",
+              choices = c("RGB", "MS"),
+              selected = "RGB",
+              multiple = TRUE
+            ),
+            pickerInput(
+              inputId = ns("plotindexes"),
+              label = "Vegetation indexes",
+              choices = "",
+              multiple = TRUE
+            ),
+            textInput(ns("myindex"),
+                      label = "My personalized index",
+                      value = ""),
+            prettyCheckbox(
+              inputId = ns("inmemory"),
+              label = "Compute indexes in memory?",
+              value = TRUE,
+              icon = icon("check"),
+              status = "success",
+              animation = "rotate"
+            ),
+            fluidRow(
+              col_6(
+                numericInput(ns("workers"),
+                             label = "Number of workers",
+                             value = 1)
+              ),
+              col_6(
+                textInput(ns("storeas"),
+                          label = "Save index as...",
+                          value = "index")
+              )
+            ),
+            actionBttn(
+              inputId = ns("computeindex"),
+              label = "Compute the indexes!",
+              style = "pill",
+              color = "primary",
+              icon = icon("chart-simple")
+            ),
+            hl(),
+            selectInput(ns("activeindex"),
+                        label = "Active index",
+                        choices = NULL),
+            fluidRow(
+              col_6(
+                selectInput(ns("indextosync"),
+                            label = "Index to sync",
+                            choices = NULL)
+              ),
+              col_6(
+                selectInput(ns("shapefiletoplot"),
+                            label = "Shapefile",
+                            choices = NULL)
               )
             )
           ),
-          width = 12,
-          status = "success",
-          hl(),
-          divclass("ind1",
-                   pickerInput(
-                     inputId = ns("imgbands"),
-                     label = "Image Bands",
-                     choices = c("RGB", "MS"),
-                     selected = "RGB",
-                     multiple = TRUE
-                   ),
-                   pickerInput(
-                     inputId = ns("plotindexes"),
-                     label = "Vegetation indexes",
-                     choices = "",
-                     multiple = TRUE
-                   ),
-                   textInput(ns("myindex"),
-                             label = "My personalized index",
-                             value = ""),
-                   prettyCheckbox(
-                     inputId = ns("inmemory"),
-                     label = "Compute indexes in memory?",
-                     value = TRUE,
-                     icon = icon("check"),
-                     status = "success",
-                     animation = "rotate"
-                   ),
-                   numericInput(ns("workers"),
-                                label = "Number of workers",
-                                value = 1)
-          ),
-          actionBttn(
-            inputId = ns("computeindex"),
-            label = "Compute the indexes!",
-            style = "pill",
-            color = "primary",
-            icon = icon("chart-simple")
-          ),
-          hl(),
-          divclass("ind2",
-                   selectInput(ns("indextosync"),
-                               label = "Index to sync with basemap",
-                               choices = NULL),
-                   selectInput(ns("shapefiletoplot"),
-                               label = "Shapefile",
-                               choices = NULL)
-          ),
-          hl(),
-          pickerInput(
-            inputId = ns("indextodownload"),
-            label = "Index to download",
-            choices = "",
-            multiple = TRUE
-          ),
-          mod_download_mosaic_ui(ns("download_indexes"), "Donwnload index")
+          tabPanel(
+            title = "Export",
+            pickerInput(
+              inputId = ns("indextodownload"),
+              label = "Index to download",
+              choices = "",
+              multiple = TRUE
+            ),
+            mod_download_mosaic_ui(ns("download_indexes"), "Index")
+
+          )
         )
       ),
       col_9(
@@ -106,11 +134,28 @@ mod_indexes_ui <- function(id){
           type = "tabs",
           tabPanel(
             title = "Plot Index (raster)",
-            materialSwitch(
-              inputId = ns("truncateindex"),
-              label = "Truncate index?",
-              value = FALSE,
-              status = "success"
+            fluidRow(
+              col_4(
+                materialSwitch(
+                  inputId = ns("truncateindex"),
+                  label = "Truncate index?",
+                  value = FALSE,
+                  status = "success"
+                )
+              ),
+              col_6(
+                pickerpalette(id, "palplotindex", selected = "RdYlGn"),
+              ),
+              col_2(
+                prettyCheckbox(
+                  inputId = ns("palplotindexrev"),
+                  label = "Reverse",
+                  value = FALSE,
+                  icon = icon("check"),
+                  status = "success",
+                  animation = "rotate"
+                )
+              )
             ),
             conditionalPanel(
               condition = "input.truncateindex == true", ns = ns,
@@ -137,7 +182,7 @@ mod_indexes_ui <- function(id){
             ),
             conditionalPanel(
               condition = "input.truncateindex == false", ns = ns,
-              plotOutput(ns("plotindex"), height = "720px") |> add_spinner()
+              plotOutput(ns("plotindex"), height = "640px") |> add_spinner()
             )
           ),
           tabPanel(
@@ -179,7 +224,7 @@ helpind <-
 #' indexes Server Functions
 #'
 #' @noRd
-mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index, shapefile){
+mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, basemap, index, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observeEvent(input$guideindex, introjs(session,
@@ -195,10 +240,17 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                         selected = "none")
     })
     observe({
-      if(!is.null(shapefile$shapefile)){
-        req(mosaic_data$mosaic)
-        req(shapefile$shapefile)
-        if((sf::st_crs(shapefile_input(shapefile$shapefile, info = FALSE)) != sf::st_crs(mosaic_data$mosaic))){
+      req(mosaic_data)
+      updateSelectizeInput(session, "rastertocompute",
+                           choices = setdiff(names(mosaic_data), "mosaic"))
+    })
+
+    observe({
+      req(input$rastertocompute)
+      req(input$shapefiletoplot)
+      if(input$shapefiletoplot != "none"){
+        req(mosaic_data[[input$rastertocompute]]$data)
+        if((sf::st_crs(shapefile_input(shapefile[[input$shapefiletoplot]]$data, info = FALSE)) != sf::st_crs(mosaic_data[[input$rastertocompute]]$data))){
           sendSweetAlert(
             session = session,
             title = "Invalid CRS",
@@ -206,7 +258,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
             type = "warning"
           )
-        } else if(!overlaps(mosaic_data$mosaic, shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE))){
+        } else if(!overlaps(mosaic_data[[input$rastertocompute]]$data, shapefile_input(shapefile[[input$shapefiletoplot]]$data, as_sf = FALSE, info = FALSE))){
           sendSweetAlert(
             session = session,
             title = "Extend do not overlap",
@@ -214,10 +266,10 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             type = "warning"
           )
         } else{
-          mosaictmp$mosaic <- terra::crop(mosaic_data$mosaic, terra::ext(shapefile_input(shapefile$shapefile, as_sf = FALSE, info = FALSE)))
+          mosaictmp$mosaic <- terra::crop(mosaic_data[[input$rastertocompute]]$data, terra::ext(shapefile_input(shapefile[[input$shapefiletoplot]]$data, as_sf = FALSE, info = FALSE)))
         }
       } else{
-        mosaictmp$mosaic <- mosaic_data$mosaic
+        mosaictmp$mosaic <- mosaic_data[[input$rastertocompute]]$data
       }
     })
 
@@ -226,6 +278,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
       req(mosaictmp$mosaic)
       mosaic_info(mosaictmp$mosaic)
     })
+
     # Creating a new option to select VIs
     observeEvent(input$imgbands, {
       # Check if imgbands is empty
@@ -276,17 +329,23 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
                    type = "error")
       }
       if(length(finalindex()) != 0){
-        updateSelectInput(session, "indextosync", choices = finalindex())
-        R <- try(mosaictmp$mosaic[[as.numeric(r$r)]], TRUE)
-        G <- try(mosaictmp$mosaic[[as.numeric(g$g)]], TRUE)
-        B <- try(mosaictmp$mosaic[[as.numeric(b$b)]], TRUE)
-        NIR <- try(mosaictmp$mosaic[[as.numeric(nir$nir)]], TRUE)
-        RE <- try(mosaictmp$mosaic[[as.numeric(re$re)]], TRUE)
+        R <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(r$r))]], TRUE)
+        G <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(g$g))]], TRUE)
+        B <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(b$b))]], TRUE)
+        NIR <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(nir$nir))]], TRUE)
+        RE <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(re$re))]], TRUE)
+        SWIR <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(swir$swir))]], TRUE)
+        TIR <- try(mosaictmp$mosaic[[suppressWarnings(as.numeric(tir$tir))]], TRUE)
         usedlayers <- pliman_indexes_eq()
         me <- pliman_indexes_me()
         nirind <- usedlayers[grep("NIR", usedlayers$Equation), 1]
         reind <- usedlayers[grep("RE", usedlayers$Equation), 1]
-        if(any(finalindex() %in% nirind) & inherits(NIR, "try-error") | any(finalindex() %in% reind) & inherits(RE, "try-error")){
+        swirind <- usedlayers[grep("SWIR", usedlayers$Equation), 1]
+        tirind <- usedlayers[grep("TIR", usedlayers$Equation), 1]
+        if(any(finalindex() %in% nirind) & inherits(NIR, "try-error") |
+           any(finalindex() %in% reind) & inherits(RE, "try-error") |
+           any(finalindex() %in% swirind) & inherits(SWIR, "try-error") |
+           any(finalindex() %in% tirind) & inherits(TIR, "try-error")){
           show_alert("Ops, an error occured.",
                      text = "Multispectral indexes cannot be computed since needed bands are not available.",
                      type = "error")
@@ -301,19 +360,18 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             color = "#228B227F"
           )
           indextemp <- mosaic_index(mosaictmp$mosaic,
-                                    r = as.numeric(r$r),
-                                    g = as.numeric(g$g),
-                                    b = as.numeric(b$b),
-                                    re = as.numeric(re$re),
-                                    nir = as.numeric(nir$nir),
+                                    r = suppressWarnings(as.numeric(r$r)),
+                                    g = suppressWarnings(as.numeric(g$g)),
+                                    b = suppressWarnings(as.numeric(b$b)),
+                                    re = suppressWarnings(as.numeric(re$re)),
+                                    nir = suppressWarnings(as.numeric(nir$nir)),
+                                    swir = suppressWarnings(as.numeric(swir$swir)),
+                                    tir = suppressWarnings(as.numeric(tir$tir)),
                                     index = finalindex(),
                                     workers = input$workers,
                                     in_memory = input$inmemory,
                                     plot = FALSE)
           req(indextemp)
-          updatePickerInput(session, "indextodownload",
-                            choices = names(indextemp),
-                            selected = names(indextemp))
           waiter_hide()
           sendSweetAlert(
             session = session,
@@ -321,115 +379,136 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, basemap, index
             text = "The vegetation indexes have been computed and are now available for further analysis.",
             type = "success"
           )
-          index$index <- indextemp
-          aggr <- find_aggrfact(indextemp)
-          magg <- reactiveValues(agg = NULL)
-          if(aggr > 0){
-            magg$agg <- mosaic_aggregate(indextemp, round(100 / aggr))
-          } else{
-            magg$agg <- indextemp
-          }
-          req(magg)
-          # update histslider
-          observe({
-            if (input$indextosync != "") {
-              addPopover(
-                id = "truncslider",
-                options = list(
-                  content = "Use the slider to truncate the raster layer to a given range. After pressing 'Truncate!', the mosaic will be updated and will be available for further analysis.",
-                  title = "Truncating an index",
-                  placement = "bottom",
-                  trigger = "hover"
-                )
-              )
-
-              tt <- magg$agg[[input$indextosync]]
-              statsind <- terra::minmax(tt)
-              update_histoslider(
-                id = "truncslider",
-                values = terra::values(tt),
-                breaks = 100
-              )
-            }
-          })
-          truncated <- reactiveValues(trunc = NULL)
-          wastrunc <- reactiveValues(was = 0)
-          observe({
-            if (input$indextosync != "") {
-              if(input$truncateindex){
-                tt <- magg$agg[[input$indextosync]]
-                maskk <- tt > input$truncslider[[1]] & tt < input$truncslider[[2]]
-                trunctemp <- terra::mask(tt,maskk, maskvalues = FALSE)
-                truncated$trunc <- trunctemp
-                inrange <- terra::minmax(tt)
-                output$plotindextrunc <- renderPlot({
-                  terra::plot(trunctemp, maxcell=100000, smooth=TRUE, range = inrange)
-                })
-              } else{
-                output$plotindex <- renderPlot({
-                  terra::plot(magg$agg[[input$indextosync]])
-                })
-
-              }
-            }
-          })
-
-          observeEvent(input$truncindex, {
-            indori <- index$index
-            waiter_show(
-              html = tagList(
-                spin_google(),
-                h2("Truncating the original mosaic. This may take a while for high-resolution mosaics. Please, wait.")
-              ),
-              color = "#228B227F"
-            )
-            maskori <- (indori[[input$indextosync]] > input$truncslider[[1]]) & (indori[[input$indextosync]] < input$truncslider[[2]])
-            index$index <- terra::mask(indori, maskori, maskvalues = FALSE)
-            updateMaterialSwitch(session,
-                                 "truncateindex",
-                                 value = FALSE)
-            magg$agg <- truncated$trunc
-            waiter_hide()
-          })
-
-          output$plotindexhist <- renderPlot({
-            if (input$indextosync != "") {
-              ots <- otsu(na.omit(terra::values(magg$agg[[input$indextosync]])))
-              terra::density(magg$agg[[input$indextosync]],
-                             main = paste0(names(magg$agg[[input$indextosync]]), " - Otsu: ", round(ots, 4)))
-              abline(v = ots,
-                     col = "red",
-                     lty = 2,
-              )
-            }
-          })
-          output$indexsync <- renderUI({
-            req(basemap$map)
-            if (input$indextosync != "") {
-              leafsync::sync(basemap$map@map, mosaic_view(magg$agg[[input$indextosync]],
-                                                          index = input$indextosync))
-            }
-          })
-          output$indexshp <- renderLeaflet({
-            if (input$indextosync != "") {
-              if(input$shapefiletoplot != "none"){
-                indp <-  terra::mask(magg$agg[[input$indextosync]],
-                                     shapefile[[input$shapefiletoplot]]$data |> shapefile_input(as_sf = FALSE, info = FALSE))
-                # mosaic_view(indp)@map
-                (basemap$map + mosaic_view(indp,
-                                           max_pixels = 3000000,
-                                           downsample_fun = "average",
-                                           show = "index",
-                                           color_regions = return_colors(input$palplotindex, reverse = input$palplotindexrev)))@map
-              }
-            }
-          })
-          indextodownload <- input$indextodownload
-          mod_download_mosaic_server("download_indexes", indextemp[[input$indextodownload]], "indexes")
+          index[[input$storeas]] <- create_reactval(input$storeas, indextemp)
 
         }
       }
     })
+
+
+    observe({
+      updateSelectInput(session, "activeindex",
+                        choices = names(index))
+    })
+
+    # Update magg based on selected index
+    magg <- reactiveValues(agg = NULL)
+    observe({
+      req(input$activeindex, "Active index is required.")
+      aggr <- find_aggrfact(index[[input$activeindex]]$data)
+      if(aggr > 0){
+        magg$agg <- mosaic_aggregate(index[[input$activeindex]]$data, round(100 / aggr))
+      } else{
+        magg$agg <- index[[input$activeindex]]$data
+      }
+      updateSelectInput(session, "indextosync", choices = names(magg$agg), selected = names(magg$agg)[1])
+    })
+
+    truncated <- reactiveValues(trunc = NULL)
+    wastrunc <- reactiveValues(was = 0)
+    tt <- reactiveValues(tt = NULL)
+    # Render plot based on the selected index to sync
+    # Update histoslider when indextosync changes
+    observeEvent(input$indextosync, {
+      req(magg$agg)
+      req(input$indextosync %in% names(magg$agg))
+      tt$tt <- magg$agg[[input$indextosync]]
+      update_histoslider("truncslider", values = terra::values(tt$tt), breaks = 100)
+    })
+
+    # Plot the main index based on the selected indextosync
+    observe({
+      if(!input$truncateindex){
+        if(input$indextosync %in% names(magg$agg)){
+          output$plotindex <- renderPlot({
+            terra::plot(magg$agg[[input$indextosync]],
+                        col = return_colors(input$palplotindex, reverse = input$palplotindexrev),
+                        smooth = TRUE
+                        )
+          })
+        }
+      }
+    })
+
+    # Plot the truncated index based on slider values
+    observe({
+      if(input$truncateindex){
+        req(input$indextosync %in% names(magg$agg), "Selected index not found in data.")
+        tt <- magg$agg[[input$indextosync]]
+        maskk <- tt > input$truncslider[[1]] & tt < input$truncslider[[2]]
+        truncated$trunc <- terra::mask(tt, maskk, maskvalues = FALSE)
+        output$plotindextrunc <- renderPlot({
+          terra::plot(truncated$trunc,
+                      col = return_colors(input$palplotindex, reverse = input$palplotindexrev),
+                      smooth = TRUE)
+        })
+      }
+    })
+
+    observeEvent(input$truncindex, {
+      indori <- index[[input$activeindex]]$data
+      waiter_show(
+        html = tagList(
+          spin_google(),
+          h2("Truncating the original mosaic. This may take a while for high-resolution mosaics. Please, wait.")
+        ),
+        color = "#228B227F"
+      )
+      maskori <- (indori[[input$indextosync]] > input$truncslider[[1]]) & (indori[[input$indextosync]] < input$truncslider[[2]])
+      index[[input$activeindex]] <- create_reactval(input$activeindex, terra::mask(indori, maskori, maskvalues = FALSE))
+      updateMaterialSwitch(session,
+                           "truncateindex",
+                           value = FALSE)
+      magg$agg <- truncated$trunc
+      waiter_hide()
+    })
+
+
+    output$plotindexhist <- renderPlot({
+      if(input$indextosync %in% names(magg$agg)){
+        ots <- otsu(na.omit(terra::values(magg$agg[[input$indextosync]])))
+        terra::density(magg$agg[[input$indextosync]],
+                       main = paste0(names(magg$agg[[input$indextosync]]), " - Otsu: ", round(ots, 4)))
+        abline(v = ots,
+               col = "red",
+               lty = 2,
+        )
+      }
+    })
+
+    output$indexsync <- renderUI({
+      if(input$indextosync %in% names(magg$agg)){
+        req(basemap$map)
+        leafsync::sync(basemap$map@map, mosaic_view(magg$agg[[input$indextosync]],
+                                                    index = input$indextosync,
+                                                    color_regions = return_colors(input$palplotindex, reverse = input$palplotindexrev)))
+      }
+    })
+
+    output$indexshp <- renderLeaflet({
+      if (input$indextosync  %in% names(magg$agg)) {
+        if(input$shapefiletoplot != "none"){
+          indp <-  terra::mask(magg$agg[[input$indextosync]],
+                               shapefile[[input$shapefiletoplot]]$data |> shapefile_input(as_sf = FALSE, info = FALSE))
+          (basemap$map + mosaic_view(indp,
+                                     max_pixels = 3000000,
+                                     downsample_fun = "average",
+                                     show = "index",
+                                     color_regions = return_colors(input$palplotindex, reverse = input$palplotindexrev)))@map
+        }
+      }
+    })
+
+    observe({
+      observe({
+        req(input$activeindex)
+        updatePickerInput(session, "indextodownload",
+                          choices = names(index[[input$activeindex]]$data),
+                          selected = names(index[[input$activeindex]]$data))
+      })
+      mod_download_mosaic_server("download_indexes", index[[input$activeindex]]$data[[input$indextodownload]], "indexes")
+    })
+
   })
 }
 

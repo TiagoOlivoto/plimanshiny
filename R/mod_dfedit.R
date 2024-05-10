@@ -70,7 +70,7 @@ mod_dfedit_ui <- function(id){
 mod_dfedit_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    observe({
+    observeEvent(input$dforshape, {
       if(input$dforshape == "data.frame"){
         updatePickerInput(session, "dftoedit",
                           choices = names(dfs))
@@ -84,8 +84,10 @@ mod_dfedit_server <- function(id, dfs, shapefile){
     observe({
       req(input$dftoedit)
       if(input$dforshape == "data.frame"){
+        req(dfs[[input$dftoedit]]$data)
         dfactive$df <- dfs[[input$dftoedit]]$data |> convert_numeric_cols()
       } else{
+        req(shapefile[[input$dftoedit]]$data )
         dfactive$df <-  shapefile[[input$dftoedit]]$data |> convert_numeric_cols()
       }
     })

@@ -129,12 +129,12 @@ mod_cropbatch_ui <- function(id){
           width = 12,
           height = "720px",
           status = "success",
-          title = "Time series",
-          selected = "Time series",
+          title = "Cropping a mosaic",
+          selected = "Cropping a mosaic",
           solidHeader = FALSE,
           type = "tabs",
           tabPanel(
-            title = "Time series",
+            title = "Cropping a mosaic",
             plotOutput(ns("plotmosaic"), height = "650px") |> add_spinner()
           )
         )

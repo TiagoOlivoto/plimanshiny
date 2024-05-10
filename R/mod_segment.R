@@ -153,9 +153,9 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
           if(terra::nlyr(mtemp) > 2){
             terra::plotRGB(
               mtemp,
-              r = as.numeric(r$r),
-              g = as.numeric(g$g),
-              b = as.numeric(b$b),
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
               stretch = "hist"
             )
           } else{
@@ -173,11 +173,11 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
           typeseg <- ifelse(input$maskorseg == "Mask", "mask", "mosaic")
           seg <- mosaic_segment(mtemp,
                                 index = input$segmentindex,
-                                r = as.numeric(r$r),
-                                g = as.numeric(g$g),
-                                b = as.numeric(b$b),
-                                re = as.numeric(re$re),
-                                nir = as.numeric(nir$nir),
+                                r = suppressWarnings(as.numeric(r$r)),
+                                g = suppressWarnings(as.numeric(g$g)),
+                                b = suppressWarnings(as.numeric(b$b)),
+                                re = suppressWarnings(as.numeric(re$re)),
+                                nir = suppressWarnings(as.numeric(nir$nir)),
                                 threshold = thresh,
                                 invert = input$invertmask,
                                 return = typeseg)
@@ -186,9 +186,9 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
             if(terra::nlyr(seg) > 2){
               terra::plotRGB(
                 seg,
-                r = as.numeric(r$r),
-                g = as.numeric(g$g),
-                b = as.numeric(b$b),
+                r = suppressWarnings(as.numeric(r$r)),
+                g = suppressWarnings(as.numeric(g$g)),
+                b = suppressWarnings(as.numeric(b$b)),
                 stretch = "hist"
               )
             } else{
@@ -202,9 +202,9 @@ mod_segment_server <- function(id, mosaic_data, r, g, b, re, nir){
         basemap <-
           mosaic_view(
             mtemp,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
             max_pixels = 2500000
           )
         req(basemap)

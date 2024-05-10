@@ -502,7 +502,7 @@ mod_timeseriesanalysis_ui <- function(id){
 #' timeseriesanalysis Server Functions
 #'
 #' @noRd
-mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir, basemap){
+mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir, swir, tir, basemap){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -634,11 +634,13 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             basemap = bm,
             plot = FALSE,
             crop_to_shape_ext = input$croptoext,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            re = as.numeric(re$re),
-            nir = as.numeric(nir$nir),
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
+            re = suppressWarnings(as.numeric(re$re)),
+            nir = suppressWarnings(as.numeric(nir$nir)),
+            swir = suppressWarnings(as.numeric(swir$swir)),
+            tir = suppressWarnings(as.numeric(tir$tir)),
             plot_index = finalindex(),
             segment_plot = input$segmentplot,
             segment_individuals = input$segmentindividuals,
@@ -903,11 +905,13 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             list_mo[[i]] <-
               terra::crop(mosaiclist$mosaics$data[[i]], shapetmp, mask = TRUE) |>
               mosaic_index(
-                r = as.numeric(r$r),
-                g = as.numeric(g$g),
-                b = as.numeric(b$b),
-                re = as.numeric(re$re),
-                nir = as.numeric(nir$nir),
+                r = suppressWarnings(as.numeric(r$r)),
+                g = suppressWarnings(as.numeric(g$g)),
+                b = suppressWarnings(as.numeric(b$b)),
+                re = suppressWarnings(as.numeric(re$re)),
+                nir = suppressWarnings(as.numeric(nir$nir)),
+                swir = suppressWarnings(as.numeric(swir$swir)),
+                tir = suppressWarnings(as.numeric(tir$tir)),
                 index = tmpind,
                 plot = FALSE
               )
@@ -955,11 +959,13 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
           mosaic_index(
             mc,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            re = as.numeric(re$re),
-            nir = as.numeric(nir$nir),
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
+            re = suppressWarnings(as.numeric(re$re)),
+            nir = suppressWarnings(as.numeric(nir$nir)),
+            swir = suppressWarnings(as.numeric(swir$swir)),
+            tir = suppressWarnings(as.numeric(tir$tir)),
             index = tmpind
           )
         }
@@ -980,11 +986,13 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
           mosaic_index(
             mc,
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            re = as.numeric(re$re),
-            nir = as.numeric(nir$nir),
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
+            re = suppressWarnings(as.numeric(re$re)),
+            nir = suppressWarnings(as.numeric(nir$nir)),
+            swir = suppressWarnings(as.numeric(swir$swir)),
+            tir = suppressWarnings(as.numeric(tir$tir)),
             index = tmpind
           )
         }

@@ -21,35 +21,61 @@ mod_timeseriesinput_ui <- function(id){
                 div(class = "prep1",
                     dropdown(
                       tags$h3("Bands"),
-                      selectInput(
-                        inputId = ns("r_band"),
-                        label = "R",
-                        choices = 1:5,
-                        selected = 1
+                      fluidRow(
+                        col_3(
+                          selectInput(
+                            inputId = ns("r_band"),
+                            label = "R",
+                            choices = 1:5,
+                            selected = 1
+                          )
+                        ),
+                        col_3(
+                          selectInput(
+                            inputId = ns("g_band"),
+                            label = "G",
+                            choices = 1:5,
+                            selected = 2,
+                          )
+                        ),
+                        col_3(
+                          selectInput(
+                            inputId = ns("b_band"),
+                            label = "B",
+                            choices = 1:5,
+                            selected = 3,
+                          )
+                        ),
+                        col_3(
+                          selectInput(
+                            inputId = ns("re_band"),
+                            label = "RE",
+                            choices = NA
+                          )
+                        )
                       ),
-                      selectInput(
-                        inputId = ns("g_band"),
-                        label = "G",
-                        choices = 1:5,
-                        selected = 2,
-                      ),
-                      selectInput(
-                        inputId = ns("b_band"),
-                        label = "B",
-                        choices = 1:5,
-                        selected = 3,
-                      ),
-                      selectInput(
-                        inputId = ns("re_band"),
-                        label = "RE",
-                        choices = 1:5,
-                        selected = 4,
-                      ),
-                      selectInput(
-                        inputId = ns("nir_band"),
-                        label = "NIR",
-                        choices = 1:5,
-                        selected = 5,
+                      fluidRow(
+                        col_4(
+                          selectInput(
+                            inputId = ns("nir_band"),
+                            label = "NIR",
+                            choices = NA
+                          )
+                        ),
+                        col_4(
+                          selectInput(
+                            inputId = ns("swir_band"),
+                            label = "SWIR",
+                            choices = NA
+                          )
+                        ),
+                        col_4(
+                          selectInput(
+                            inputId = ns("tir_band"),
+                            label = "TIR",
+                            choices = NA
+                          )
+                        )
                       ),
                       actionBttn(
                         ns("donebands"),
@@ -61,7 +87,7 @@ mod_timeseriesinput_ui <- function(id){
                       circle = FALSE,
                       status = "success",
                       style = "unite",
-                      width = "170px",
+                      width = "420px",
                       icon = icon("layer-group"),
                       animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
                       tooltip = tooltipOptions(title = "Configure the bands")
@@ -236,7 +262,7 @@ mod_timeseriesinput_ui <- function(id){
 #' timeseriesinput Server Functions
 #'
 #' @noRd
-mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir, basemap){
+mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir,  swir, tir,  basemap){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -247,6 +273,8 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       b$b <- input$b_band
       re$re <- input$re_band
       nir$nir <- input$nir_band
+      swir$swir <- input$swir_band
+      tir$tir <- input$tir_band
     })
 
     input_file_selected <- reactiveValues(paths = NULL)
@@ -322,26 +350,34 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
     })
 
     observe({
+      req(mosaiclist$mosaics$data[[1]])
+
+    })
+
+    observe({
       if(!is.null(basemap$map)){
         waiter_hide()
         # check for correct layer configuration
         if(inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")){
-          r <- as.numeric(r$r)
-          g <- as.numeric(g$g)
-          b <- as.numeric(b$b)
-          re <- as.numeric(re$re)
-          nir <- as.numeric(nir$nir)
-          nlr <- terra::nlyr(mosaiclist$mosaics$data[[1]])
-          if(any(c(r, g, b, re, nir) > nlr)){
-            sendSweetAlert(
-              session = session,
-              title = "Ops, invalid layer configuration",
-              text = glue::glue("Use the 'Configure the bands' button to correctly configure the layers. The rasters have {nlr} layers, but some of the declared bands (R,G,B,RE,NIR) is assumed to be a value greater than that."),
-              type = "error"
-            )
-          }
+          nl <- terra::nlyr(mosaiclist$mosaics$data[[1]])
+          updateSelectInput(session, "r_band",
+                            choices = 1:nl,
+                            selected = "1")
+          updateSelectInput(session, "g_band",
+                            choices = 1:nl,
+                            selected = "2")
+          updateSelectInput(session, "b_band",
+                            choices = 1:nl,
+                            selected = "3")
+          updateSelectInput(session, "re_band",
+                            choices = paste0(c("NA", paste(1:nl))))
+          updateSelectInput(session, "nir_band",
+                            choices = paste0(c("NA", paste(1:nl))))
+          updateSelectInput(session, "swir_band",
+                            choices = paste0(c("NA", paste(1:nl))))
+          updateSelectInput(session, "tir_band",
+                            choices = paste0(c("NA", paste(1:nl))))
         }
-
       }
     })
 
@@ -429,12 +465,9 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
         if(input$showmosaic == "rgb"){
           bmtmp <- mosaic_view(
             mosaiclist$mosaics$data[[input$mosaicslider]],
-            r = as.numeric(r$r),
-            g = as.numeric(g$g),
-            b = as.numeric(b$b),
-            re = as.numeric(re$re),
-            nir = as.numeric(nir$nir),
-            # quantiles = input$quantileplot,
+            r = suppressWarnings(as.numeric(r$r)),
+            g = suppressWarnings(as.numeric(g$g)),
+            b = suppressWarnings(as.numeric(b$b)),
             max_pixels = input$maxpixels
           )
         } else{

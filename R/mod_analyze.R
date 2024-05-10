@@ -37,6 +37,16 @@ mod_analyze_ui <- function(id){
               )
             ),
             hl(),
+            selectInput(
+              ns("activeshape"),
+              label = "Shapefile",
+              choices = NULL
+            ),
+            selectInput(
+              ns("activeindex"),
+              label = "Index to analyze",
+              choices = NULL
+            ),
             divclass("anal1",
                      pickerInput(
                        inputId = ns("summarizefun"),
@@ -574,7 +584,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           ),
           tabPanel(
             title = "Results plot",
-            reactable::reactableOutput(ns("resultplottab"), height = "70px")  |> add_spinner()
+            reactable::reactableOutput(ns("resultplottab"), height = "700px")  |> add_spinner()
           )
         )
       } else {
@@ -628,10 +638,21 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
       updateSelectInput(session, "availablemasks", choices = c("none", setdiff(names(mosaic_data), "mosaic")), selected = "none")
       updatePickerInput(session, "summarizefunoutput", choices = input$summarizefun, selected = input$summarizefunoutput[[1]])
     })
-    maskval <- reactiveValues(mask = NULL)
     observe({
-      req(shapefile$shapefile)
-      shptemp$shapefile <- shapefile$shapefile
+      updateSelectInput(session, "activeindex",
+                        choices = names(index))
+    })
+    observe({
+      updateSelectInput(session, "activeshape",
+                        choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
+    })
+
+    maskval <- reactiveValues(mask = NULL)
+
+    observe({
+      req(input$activeindex)
+      req(input$activeshape)
+      # shptemp$shapefile <- shapefile[[input$activeshape]]$data
       req(input$availablemasks)
       if(input$availablemasks == "none"){
         maskval$mask <- NULL
@@ -658,16 +679,16 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         )
         updateMaterialSwitch(session, "segmentindividuals", value = FALSE)
       }
+
       if(input$segmentplot | input$segmentindividuals){
         if(input$byplot){
-          if(is.null(index$index)){
+          if(is.null(index[[input$activeindex]]$data)){
             updateSelectInput(session, "segmentindex", choices = pliman_indexes())
           } else{
 
           }
         } else{
-          req(index$index)
-          updateSelectInput(session, "segmentindex", choices = names(index$index))
+          updateSelectInput(session, "segmentindex", choices = names(index[[input$activeindex]]$data))
         }
 
       }
@@ -678,15 +699,16 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
     output$baseshapeindex <- renderUI({
       if(!input$byplot){
-        req(index$index)
+        req(input$activeindex)
+        # req(index[[input$activeindex]]$data)
         req(mosaic_data$mosaic)
         req(basemap$map)
         req(input$segmentindex)
         layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-        m1 <-  basemap$map + mapview::mapview(shptemp$shapefile |> dplyr::bind_rows(),
+        m1 <-  basemap$map + mapview::mapview(shapefile[[input$activeshape]]$data |> dplyr::bind_rows(),
                                               z.col = "plot_id",
                                               legend = FALSE)
-        m2 <- mosaic_view(index$index[[layer]], show = "index")
+        m2 <- mosaic_view(index[[input$activeindex]]$data[[layer]], show = "index")
         leafsync::sync(m1@map, m2)
       }
     })
@@ -694,19 +716,19 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
     output$previousdensity <- renderPlot({
       if(!input$byplot){
         if(is.null(maskval$mask)){
-          req(index$index)
+          req(index[[input$activeindex]]$data)
           layer <- ifelse(input$segmentindex != "", input$segmentindex, 1)
-          ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index$index[[layer]]))), input$threshvalue)
+          ots <- ifelse(input$threshold == "Otsu", otsu(na.omit(terra::values(index[[input$activeindex]]$data[[layer]]))), input$threshvalue)
           output$previoussegment <- renderPlot({
             if(input$invertindex){
-              maskplot <- index$index[[layer]] < ots
+              maskplot <- index[[input$activeindex]]$data[[layer]] < ots
             } else{
-              maskplot <- index$index[[layer]] > ots
+              maskplot <- index[[input$activeindex]]$data[[layer]] > ots
             }
             terra::plot(maskplot)
           })
-          terra::density(index$index[[layer]],
-                         main = paste0(names(index$index[[layer]]), " - Otsu: ", round(ots, 4)))
+          terra::density(index[[input$activeindex]]$data[[layer]],
+                         main = paste0(names(index[[input$activeindex]]$data[[layer]]), " - Otsu: ", round(ots, 4)))
           abline(v = ots,
                  col = "red",
                  lty = 2,
@@ -722,7 +744,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
     # Analyze
     observeEvent(input$analyzemosaic, {
-      if(c(!input$byplot & is.null(index$index)) | is.null(mosaic_data$mosaic) | is.null(basemap$map) | is.null(shptemp$shapefile)){
+      if(c(!input$byplot & is.null(index[[input$activeindex]]$data)) | is.null(mosaic_data$mosaic) | is.null(basemap$map) | is.null(shapefile[[input$activeshape]]$data)){
         sendSweetAlert(
           session = session,
           title = "Did you skip any steps?",
@@ -795,10 +817,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
       if(!t1 & !t2){
 
         if(!input$byplot){
-          req(index$index)  # Ensure mosaic_data$mosaic is not NULL
+          req(index[[input$activeindex]]$data)  # Ensure mosaic_data$mosaic is not NULL
           req(mosaic_data$mosaic)
           req(basemap$map)
-          req(shptemp$shapefile)
+          req(shapefile[[input$activeshape]]$data)
 
           waiter_show(
             html = tagList(
@@ -810,8 +832,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           res <-
             mosaic_analyze(mosaic = mosaic_data$mosaic,
                            basemap = basemap$map,
-                           shapefile = shptemp$shapefile,
-                           indexes = index$index,
+                           shapefile = shapefile[[input$activeshape]]$data,
+                           indexes = index[[input$activeindex]]$data,
                            mask = maskval$mask,
                            plot = FALSE,
                            segment_plot = input$segmentplot,
@@ -838,7 +860,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         } else{
           if(!input$parallelanalysis){
             shp <- do.call(rbind,
-                           lapply(shptemp$shapefile, function(x){
+                           lapply(shapefile[[input$activeshape]]$data, function(x){
                              x |> dplyr::select(geometry)
                            }))
             # Analyze the mosaic by plot
@@ -850,7 +872,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               value = 0,
               total = nrow(shp)
             )
-            if(!is.null(index$index)){
+            if(!is.null(index[[input$activeindex]]$data)){
               indexnull <- FALSE
             } else{
               indexnull <- TRUE
@@ -866,7 +888,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
               if(indexnull){
                 indexes <- NULL
               } else{
-                indexes <- terra::crop(index$index, terra::vect(shp$geometry[[i]]) |> terra::ext())
+                indexes <- terra::crop(index[[input$activeindex]]$data, terra::vect(shp$geometry[[i]]) |> terra::ext())
               }
               bind[[paste0("P", leading_zeros(i, 4))]] <-
                 mosaic_analyze(terra::crop(mosaic_data$mosaic, terra::vect(shp$geometry[[i]]) |> terra::ext()),
@@ -912,15 +934,15 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
 
             tmpterra <- tempdir()
-            if(!is.null(index$index)){
-              mosaic_export(index$index, paste0(tmpterra, "/tmpindex.tif"), overwrite = TRUE)
+            if(!is.null(index[[input$activeindex]]$data)){
+              mosaic_export(index[[input$activeindex]]$data, paste0(tmpterra, "/tmpindex.tif"), overwrite = TRUE)
               indexnull <- FALSE
             } else{
               indexnull <- TRUE
             }
             on.exit({
               parallel::stopCluster(cl)
-              if(!is.null(index$index)){
+              if(!is.null(index[[input$activeindex]]$data)){
                 file.remove(paste0(tmpterra, "/tmpindex.tif"))
               }
             })
@@ -1233,7 +1255,12 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             result_indiv |>
               sf::st_drop_geometry() |>
               roundcols(digits = 3) |>
-              render_reactable()
+              render_reactable(
+                columns = list(
+                  x = colDef(minWidth = 150),
+                  y = colDef(minWidth = 150)
+                )
+              )
           )
 
           mod_download_shapefile_server("downresplot", terra::vect(result_plot_summ), name = "plot_level_results")
@@ -1304,7 +1331,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
           })
 
 
-            print(result_plot)
           output$resultplottab <- reactable::renderReactable(
             result_plot |>
               sf::st_drop_geometry() |>
@@ -1478,15 +1504,15 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                result_individ_map = res$result_individ_map,
                map_plot = (basemap$map + mapshape$mapshape),
                map_individual = (basemap$map + mapindiv$mapindiv),
-               shapefile = shptemp$shapefile)
+               shapefile = shapefile[[input$activeshape]]$data)
         } else if(input$segmentplot){
           list(result_plot = res$result_plot,
                map_plot = (basemap$map + mapshape$mapshape),
-               shapefile = shptemp$shapefile)
+               shapefile = shapefile[[input$activeshape]]$data)
         } else{
           list(result_plot = res$result_plot,
                map_plot = (basemap$map + mapshape$mapshape),
-               shapefile = shptemp$shapefile)
+               shapefile = shapefile[[input$activeshape]]$data)
 
         }
       })
