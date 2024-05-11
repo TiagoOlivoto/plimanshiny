@@ -70,25 +70,28 @@ mod_dfupdate_ui <- function(id){
 mod_dfupdate_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    observeEvent(input$dforshape,{
+    observe({
       if(input$dforshape == "data.frame"){
         updatePickerInput(session, "dftoupdate",
-                          choices = names(dfs))
+                          choices = c("none", names(dfs)))
       } else{
         updatePickerInput(session, "dftoupdate",
-                          choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
+                          choices = c("none", setdiff(names(shapefile), c("shapefile", "shapefileplot"))))
       }
     })
 
     dfactive <- reactiveValues()
-    observe({
+    observeEvent(input$dftoupdate, {
       req(input$dftoupdate)
-      if(input$dforshape == "data.frame"){
-        dfactive$df <- dfs[[input$dftoupdate]]$data
-      } else{
-        dfactive$df <-  shapefile[[input$dftoupdate]]$data
+      if(input$dftoupdate != "none"){
+        if(input$dforshape == "data.frame"){
+          dfactive$df <- dfs[[input$dftoupdate]]$data |> convert_numeric_cols()
+        } else{
+          dfactive$df <- shapefile[[input$dftoupdate]]$data |> convert_numeric_cols()
+        }
       }
     })
+
 
     # Update data
     res_update <- reactiveValues()

@@ -122,6 +122,7 @@ mod_dfjoin_server <- function(id, dfs, shapefile){
                         selected = NA)
     })
 
+
     result <- reactiveValues()
     observe({
       if(input$dforshape == "data.frames"){

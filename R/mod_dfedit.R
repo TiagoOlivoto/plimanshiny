@@ -70,25 +70,25 @@ mod_dfedit_ui <- function(id){
 mod_dfedit_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    observeEvent(input$dforshape, {
+    observe({
       if(input$dforshape == "data.frame"){
         updatePickerInput(session, "dftoedit",
-                          choices = names(dfs))
+                          choices = c("none", names(dfs)))
       } else{
         updatePickerInput(session, "dftoedit",
-                          choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
+                          choices = c("none", setdiff(names(shapefile), c("shapefile", "shapefileplot"))))
       }
     })
 
     dfactive <- reactiveValues()
-    observe({
-      req(input$dftoedit)
-      if(input$dforshape == "data.frame"){
-        req(dfs[[input$dftoedit]]$data)
-        dfactive$df <- dfs[[input$dftoedit]]$data |> convert_numeric_cols()
-      } else{
-        req(shapefile[[input$dftoedit]]$data )
-        dfactive$df <-  shapefile[[input$dftoedit]]$data |> convert_numeric_cols()
+    observeEvent(input$dftoedit, {
+      req(input$dftofilter)
+      if(input$dftoedit != "none"){
+        if(input$dforshape == "data.frame"){
+          dfactive$df <- dfs[[input$dftoedit]]$data |> convert_numeric_cols()
+        } else{
+          dfactive$df <- shapefile[[input$dftoedit]]$data |> convert_numeric_cols()
+        }
       }
     })
 

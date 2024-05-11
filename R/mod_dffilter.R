@@ -71,26 +71,25 @@ mod_dffilter_server <- function(id, dfs, shapefile){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    observeEvent(input$dforshape,{
+    observe({
       if(input$dforshape == "data.frame"){
         updatePickerInput(session, "dftofilter",
-                          choices = names(dfs))
+                          choices = c("none", names(dfs)))
       } else{
         updatePickerInput(session, "dftofilter",
-                          choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
+                          choices = c("none", setdiff(names(shapefile), c("shapefile", "shapefileplot"))))
       }
     })
 
     dfactive <- reactiveValues()
-    observe({
+    observeEvent(input$dftofilter, {
       req(input$dftofilter)
-      if(input$dforshape == "data.frame"){
-        dfactive$df <- dfs[[input$dftofilter]]$data |> convert_numeric_cols()
-
-      } else{
-        req(input$dftofilter)
-        req(shapefile[[input$dftofilter]]$data)
-        dfactive$df <- shapefile[[input$dftofilter]]$data |> convert_numeric_cols()
+      if(input$dftofilter != "none"){
+        if(input$dforshape == "data.frame"){
+          dfactive$df <- dfs[[input$dftofilter]]$data |> convert_numeric_cols()
+        } else{
+          dfactive$df <- shapefile[[input$dftofilter]]$data |> convert_numeric_cols()
+        }
       }
     })
 
