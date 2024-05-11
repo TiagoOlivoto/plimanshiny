@@ -30,7 +30,7 @@ app_server <- function(input, output, session) {
 
   # time series
   mod_timeseriesinput_server("timeseriesinput_1", shapefile, mosaiclist, r, g, b, re, nir,  swir, tir,  basemap)
-  mod_timeseriesanalysis_server("timeseriesanalysis_1", shapefile, mosaiclist, r, g, b, re, nir, swir, tir, basemap)
+  mod_timeseriesanalysis_server("timeseriesanalysis_1", shapefile, mosaiclist, r, g, b, re, nir, swir, tir, basemap, dfs)
 
   # manipulation
   mod_crop_server("crop_1", mosaic_data, shapefile, r, g, b, basemap)

@@ -37,6 +37,11 @@ mod_timeseriesanalysis_ui <- function(id){
               )
             ),
             hl(),
+            selectInput(
+              ns("activeshape"),
+              label = "Shapefile",
+              choices = NULL
+            ),
             pickerInput(
               inputId = ns("imgbands"),
               label = "Image Bands",
@@ -502,7 +507,7 @@ mod_timeseriesanalysis_ui <- function(id){
 #' timeseriesanalysis Server Functions
 #'
 #' @noRd
-mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir, swir, tir, basemap){
+mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir, swir, tir, basemap, dfs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -545,12 +550,13 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
     })
     observe({
       updateSelectInput(session, "segmentindex", choices = finalindex())
+      updateSelectInput(session, "activeshape", choices = names(shapefile))
     })
 
     observeEvent(input$analyzemosaicts, {
       req(mosaiclist$mosaics$data)
-      req(shapefile$shape$data)
-      if(is.null(mosaiclist$mosaics$data) | is.null(shapefile$shape$data)){
+      req(shapefile[[input$activeshape]]$data)
+      if(is.null(mosaiclist$mosaics$data) | is.null(shapefile[[input$activeshape]]$data)){
         sendSweetAlert(
           session = session,
           title = "Did you skip any steps?",
@@ -608,6 +614,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         quantiles <- NULL
       }
 
+      #
       # Loop
       progressSweetAlert(
         session = session,
@@ -630,7 +637,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         res <-
           mosaic_analyze(
             mosaic = mosaiclist$mosaics$data[[i]],
-            shapefile = shapefile$shape$data,
+            shapefile = shapefile[[input$activeshape]]$data,
             basemap = bm,
             plot = FALSE,
             crop_to_shape_ext = input$croptoext,
@@ -776,6 +783,9 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           result_plot_summ <- res$result_plot_summ
         }
       }
+      if(input$segmentindividuals | input$segmentplot){
+        result_plot <- result_plot_summ
+      }
 
       ##### Show the results #######
       updateSelectInput(session, "plotattribute",
@@ -805,6 +815,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
                           choices = colnames(result_plot),
                           selected = "plot_id")
       })
+
       observe({
         req(input$groupingvar)
         levels <- sort(unique(result_plot[[input$groupingvar]]))
@@ -819,7 +830,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         updatePickerInput(session, "levelvarcp2",
                           choices = levels)
       })
-
 
       # level comparision
       output$timeseriecompare <- renderPlotly({
@@ -851,12 +861,12 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
 
       # plot evolution
       shp <- reactiveValues()
-      if(!"unique_id" %in% colnames(shapefile$shape$data)){
+      if(!"unique_id" %in% colnames(shapefile[[input$activeshape]]$data)){
         shp$shp <-
-          shapefile$shape$data |>
+          shapefile[[input$activeshape]]$data |>
           dplyr::mutate(unique_id = dplyr::row_number(), .before = 1)
       } else{
-        shp$shp <- shapefile$shape$data
+        shp$shp <- shapefile[[input$activeshape]]$data
       }
 
       # plot evolution
@@ -957,6 +967,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           terra::plotRGB(mc, stretch = "hist")
         } else{
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
+          tmp <-
           mosaic_index(
             mc,
             r = suppressWarnings(as.numeric(r$r)),
@@ -966,8 +977,11 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             nir = suppressWarnings(as.numeric(nir$nir)),
             swir = suppressWarnings(as.numeric(swir$swir)),
             tir = suppressWarnings(as.numeric(tir$tir)),
-            index = tmpind
+            index = tmpind,
+            plot = FALSE
           )
+          terra::plot(tmp, col = return_colors(input$palplot, reverse = input$palplotrev),
+                      smooth = TRUE)
         }
       })
 
@@ -984,6 +998,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           terra::plotRGB(mc, stretch = "hist")
         } else{
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
+          tmp <-
           mosaic_index(
             mc,
             r = suppressWarnings(as.numeric(r$r)),
@@ -995,6 +1010,8 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             tir = suppressWarnings(as.numeric(tir$tir)),
             index = tmpind
           )
+          terra::plot(tmp, col = return_colors(input$palplot, reverse = input$palplotrev),
+                      smooth = TRUE)
         }
       })
 
@@ -1065,6 +1082,31 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         )
       )
 
+      # Sent do datasets
+      report <- reactive({
+        req(res)
+        if(input$segmentindividuals){
+          list(result_plot = res$result_plot,
+               result_plot_summ = res$result_plot_summ,
+               result_individ = res$result_indiv)
+        } else if(input$segmentplot){
+          list(result_plot = res$result_plot)
+        } else{
+          list(result_plot = res$result_plot)
+
+        }
+      })
+
+      observe({
+        req(report())
+        dfs[["result_plot"]] <- create_reactval("result_plot", report()$result_plot |> sf::st_drop_geometry())
+        if(!is.null(report()$result_plot_summ)){
+          dfs[["result_plot_summ"]] <- create_reactval("result_plot_summ", report()$result_plot_summ|> sf::st_drop_geometry())
+        }
+        if(!is.null(report()$result_individ)){
+          dfs[["result_individ"]] <- create_reactval("result_individ", report()$result_individ|> sf::st_drop_geometry())
+        }
+      })
 
 
       mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")

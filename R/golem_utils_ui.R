@@ -319,77 +319,73 @@ divclass <- function(class, ...) {
 }
 
 
-pickerpalette <- function(id, inputid, ...){
+pickerpalette <- function(id, inputid, n = 50, ...){
   ns <- NS(id)
   palettePicker(
     inputId = ns(inputid),
     label = "Color palette",
     choices = list(
       "Viridis" = list(
-        "viridis" = scales::viridis_pal(option = "viridis")(10),
-        "magma" = scales::viridis_pal(option = "magma")(10),
-        "inferno" = scales::viridis_pal(option = "inferno")(10),
-        "plasma" = scales::viridis_pal(option = "plasma")(10),
-        "cividis" = scales::viridis_pal(option = "cividis")(10),
-        "set1" = grDevices::colorRampPalette(c("yellow", "#53CC67", "#009B95", "#00588B","#4B0055"))(10),
-        "set2" = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(10),
-        "set3" = rev(grDevices::terrain.colors(10))
+        "viridis" = scales::viridis_pal(option = "viridis")(n),
+        "magma" = scales::viridis_pal(option = "magma")(n),
+        "inferno" = scales::viridis_pal(option = "inferno")(n),
+        "plasma" = scales::viridis_pal(option = "plasma")(n),
+        "cividis" = scales::viridis_pal(option = "cividis")(n),
+        "set1" = grDevices::colorRampPalette(c("yellow", "#53CC67", "#009B95", "#00588B","#4B0055"))(n),
+        "set2" = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(n),
+        "set3" = rev(grDevices::terrain.colors(n))
       ),
       "Brewer" = list(
-        "Blues" = scales::brewer_pal(palette = "Blues")(8),
-        "Reds" = scales::brewer_pal(palette = "Reds")(8),
-        "Blues" = scales::brewer_pal(palette = "Blues")(8),
-        "Reds" = scales::brewer_pal(palette = "Reds")(8),
-        "Greens " = scales::brewer_pal(palette = "Greens")(8),
-        "Oranges" = scales::brewer_pal(palette = "Oranges")(8),
-        "Paired" = scales::brewer_pal(palette = "Paired")(8)
+        "Blues" = colorRampPalette(scales::brewer_pal(palette = "Blues")(8))(n),
+        "Reds" = colorRampPalette(scales::brewer_pal(palette = "Reds")(8))(n),
+        "Greens " = colorRampPalette(scales::brewer_pal(palette = "Greens")(8))(n),
+        "Oranges" = colorRampPalette(scales::brewer_pal(palette = "Oranges")(8))(n),
+        "Paired" = colorRampPalette(scales::brewer_pal(palette = "Paired")(8))(n)
       ),
       "Others" = list(
-        "SoilWater" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = 10),
-        "BrBG" = scales::brewer_pal(palette = "BrBG")(8),
-        "PiYG" = scales::brewer_pal(palette = "PiYG")(8),
-        "PRGn" = scales::brewer_pal(palette = "PRGn")(8),
-        "PuOr" = scales::brewer_pal(palette = "PuOr")(8),
-        "RdBu" = scales::brewer_pal(palette = "RdBu")(8),
-        "RdGy" = scales::brewer_pal(palette = "RdGy")(8),
-        "RdYlBu" = scales::brewer_pal(palette = "RdYlBu")(8),
-        "RdYlGn" = scales::brewer_pal(palette = "RdYlGn")(8),
-        "Spectral" = scales::brewer_pal(palette = "Spectral")(8)
+        "WaterSoil" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = n),
+        "BrBG" = colorRampPalette(scales::brewer_pal(palette = "BrBG")(8))(n),
+        "PiYG" = colorRampPalette(scales::brewer_pal(palette = "PiYG")(8))(n),
+        "PRGn" = colorRampPalette(scales::brewer_pal(palette = "PRGn")(8))(n),
+        "PuOr" = colorRampPalette(scales::brewer_pal(palette = "PuOr")(8))(n),
+        "RdBu" = colorRampPalette(scales::brewer_pal(palette = "RdBu")(8))(n),
+        "RdGy" = colorRampPalette(scales::brewer_pal(palette = "RdGy")(8))(n),
+        "RdYlBu" = colorRampPalette(scales::brewer_pal(palette = "RdYlBu")(8))(n),
+        "RdYlGn" =colorRampPalette(scales::brewer_pal(palette = "RdYlGn")(8))(n),
+        "Spectral" = colorRampPalette(scales::brewer_pal(palette = "Spectral")(8))(n)
       )
     ),
-    textColor = c(rep("white", 5), "black", "white", rep("black", 8), rep("white", 9)),
+    textColor = c(rep("white", 5), "black", "white", rep("black", 6), rep("white", 11)),
     ...
   )
 }
 
-return_colors <- function(pal, reverse = FALSE){
+return_colors <- function(pal, reverse = FALSE, n = 100){
   pals <-
     switch(pal,
-         "viridis" = scales::viridis_pal(option = "viridis")(10),
-         "magma" = scales::viridis_pal(option = "magma")(10),
-         "inferno" = scales::viridis_pal(option = "inferno")(10),
-         "plasma" = scales::viridis_pal(option = "plasma")(10),
-         "cividis" = scales::viridis_pal(option = "cividis")(10),
-         "set1" = grDevices::colorRampPalette(c("yellow", "#53CC67", "#009B95", "#00588B","#4B0055"))(10),
-         "set2" = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(3),
-         "set3" = rev(grDevices::terrain.colors(10)),
-         "Blues" = scales::brewer_pal(palette = "Blues")(8),
-         "Reds" = scales::brewer_pal(palette = "Reds")(8),
-         "Blues" = scales::brewer_pal(palette = "Blues")(8),
-         "Reds" = scales::brewer_pal(palette = "Reds")(8),
-         "Greens " = scales::brewer_pal(palette = "Greens")(8),
-         "Oranges" = scales::brewer_pal(palette = "Oranges")(8),
-         "Paired" = scales::brewer_pal(palette = "Paired")(8),
-         "BrBG" = scales::brewer_pal(palette = "BrBG")(8),
-         "PiYG" = scales::brewer_pal(palette = "PiYG")(8),
-         "PRGn" = scales::brewer_pal(palette = "PRGn")(8),
-         "PuOr" = scales::brewer_pal(palette = "PuOr")(8),
-         "RdBu" = scales::brewer_pal(palette = "RdBu")(8),
-         "RdGy" = scales::brewer_pal(palette = "RdGy")(8),
-         "RdYlBu" = scales::brewer_pal(palette = "RdYlBu")(8),
-         "RdYlGn" = scales::brewer_pal(palette = "RdYlGn")(8),
-         "Spectral" = scales::brewer_pal(palette = "Spectral")(8),
-         "SoilWater" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = 100),
+           "viridis" = scales::viridis_pal(option = "viridis")(n),
+           "magma" = scales::viridis_pal(option = "magma")(n),
+           "inferno" = scales::viridis_pal(option = "inferno")(n),
+           "plasma" = scales::viridis_pal(option = "plasma")(n),
+           "cividis" = scales::viridis_pal(option = "cividis")(n),
+           "set1" = grDevices::colorRampPalette(c("yellow", "#53CC67", "#009B95", "#00588B","#4B0055"))(n),
+           "set2" = grDevices::colorRampPalette(c("darkred", "yellow", "darkgreen"))(n),
+           "set3" = rev(grDevices::terrain.colors(n)),
+           "Blues" = colorRampPalette(scales::brewer_pal(palette = "Blues")(8))(n),
+           "Reds" = colorRampPalette(scales::brewer_pal(palette = "Reds")(8))(n),
+           "Greens " = colorRampPalette(scales::brewer_pal(palette = "Greens")(8))(n),
+           "Oranges" = colorRampPalette(scales::brewer_pal(palette = "Oranges")(8))(n),
+           "Paired" = colorRampPalette(scales::brewer_pal(palette = "Paired")(8))(n),
+           "WaterSoil" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = n),
+           "BrBG" = colorRampPalette(scales::brewer_pal(palette = "BrBG")(8))(n),
+           "PiYG" = colorRampPalette(scales::brewer_pal(palette = "PiYG")(8))(n),
+           "PRGn" = colorRampPalette(scales::brewer_pal(palette = "PRGn")(8))(n),
+           "PuOr" = colorRampPalette(scales::brewer_pal(palette = "PuOr")(8))(n),
+           "RdBu" = colorRampPalette(scales::brewer_pal(palette = "RdBu")(8))(n),
+           "RdGy" = colorRampPalette(scales::brewer_pal(palette = "RdGy")(8))(n),
+           "RdYlBu" = colorRampPalette(scales::brewer_pal(palette = "RdYlBu")(8))(n),
+           "RdYlGn" =colorRampPalette(scales::brewer_pal(palette = "RdYlGn")(8))(n),
+           "Spectral" = colorRampPalette(scales::brewer_pal(palette = "Spectral")(8))(n)
   )
   if(reverse){
     return(rev(pals))

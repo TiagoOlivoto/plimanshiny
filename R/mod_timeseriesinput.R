@@ -349,9 +349,10 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       )
     })
 
-    observe({
-      req(mosaiclist$mosaics$data[[1]])
 
+    observeEvent(input$mosaicinfomosaic, {
+      req(mosaiclist$mosaics$data[[1]])
+      mosaic_info(mosaiclist$mosaics$data[[1]])
     })
 
     observe({
@@ -385,14 +386,15 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
     #import the shapefile
     observeEvent(input$importshapefile, {
       req(pathshape$file$datapath[1])
-      shapefile[["shape"]] <- create_reactval("shape", shapefile_input(pathshape$file$datapath[1], info = FALSE))
+      req(input$shapefileimported)
+      shapefile[[input$shapefileimported]] <- create_reactval(input$shapefileimported, shapefile_input(pathshape$file$datapath[1], info = FALSE))
     })
 
     observe({
       if (input$croptoshape) {
-        req(shapefile$shape$data)
+        req(shapefile[[input$shapefileimported]]$data)
         crss <- sapply(mosaic_list$files, function(x) {
-          sf::st_crs(x) == sf::st_crs(shapefile$shape$data)
+          sf::st_crs(x) == sf::st_crs(shapefile[[input$shapefileimported]]$data)
         })
         if(any(isFALSE(crss))){
           sendSweetAlert(
@@ -409,7 +411,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
             ),
             color = "#228B227F"
           )
-          shpcrop <- shapefile$shape$data |>
+          shpcrop <- shapefile[[input$shapefileimported]]$data |>
             terra::vect() |>
             terra::buffer(5) |>
             terra::ext()
@@ -450,9 +452,10 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
           terra::plot(mosaiclist$mosaics$data[[input$mosaicslider]][[as.numeric(input$bandnumber)]])
         }
       }
-      if(!is.null(shapefile$shape$data)){
+      if(input$shapefileimported != ""){
         if(input$plotshape){
-          terra::plot(shapefile_input(shapefile$shape$data, as_sf = FALSE, info = FALSE), add = TRUE, col = "red")
+          req(shapefile[[input$shapefileimported]]$data)
+          terra::plot(shapefile_input(shapefile[[input$shapefileimported]]$data, as_sf = FALSE, info = FALSE), add = TRUE, col = "red")
         }
       }
     })
@@ -485,8 +488,8 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
     output$leafletmap <- renderLeaflet({
       req(basemap$map)  # Ensure mosaic_data$mosaic is not NULL
       if(input$plotshape){
-        if(!is.null(shapefile$shape$data)){
-          (basemap$map + shapefile_view(shapefile_input(shapefile$shape$data, as_sf = FALSE, info = FALSE)))@map
+        if(!is.null(shapefile[[input$shapefileimported]]$data)){
+          (basemap$map + shapefile_view(shapefile_input(shapefile[[input$shapefileimported]]$data, as_sf = FALSE, info = FALSE)))@map
         } else{
           basemap$map@map
         }
