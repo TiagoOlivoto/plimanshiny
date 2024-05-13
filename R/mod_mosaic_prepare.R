@@ -280,7 +280,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
             if (!is.null(input$confirmmosaicname)) {
               if (input$confirmmosaicname) {
                 for (i in 1:length(new_mosaic_name)) {
-                  mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input_file_selected$paths$datapath[[i]], info = FALSE))
+                  mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], terra::rast(input_file_selected$paths$datapath[[i]]))
                 }
               } else {
                 return()
@@ -290,7 +290,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
         } else {
           # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
           for (i in 1:length(new_mosaic_name)) {
-            mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], mosaic_input(input_file_selected$paths$datapath[[i]], info = FALSE))
+            mosaic_data[[new_mosaic_name[[i]]]] <- create_reactval(new_mosaic_name[[i]], terra::rast(input_file_selected$paths$datapath[[i]]))
           }
         }
 

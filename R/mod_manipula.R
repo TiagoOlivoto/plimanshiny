@@ -61,6 +61,11 @@ mod_manipula_ui <- function(id){
         mod_interpolate_ui("interpolate_1")
       ),
       tabPanel(
+        title = "Sentinel2",
+        icon = icon("satellite"),
+        mod_sentinel_ui("sentinel_1")
+      ),
+      tabPanel(
         title = "Geometry operations",
         icon = icon("map"),
         mod_spatjoin_ui("spatjoin_1")

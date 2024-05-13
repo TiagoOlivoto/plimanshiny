@@ -236,7 +236,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
                                shptemp <- shptocrop[i, ]
                                ncolid <- which(colnames(shptemp) == uniqueid)
                                shpname <- shptemp |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
-                               mosaictmp <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpclip.tif")), shptemp) |> terra::mask(shptemp)
+                               mosaictmp <- terra::crop(terra::rast(paste0(tmpterra, "/tmpclip.tif")), shptemp) |> terra::mask(shptemp)
                                terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, format), overwrite=TRUE)
                              }
           }

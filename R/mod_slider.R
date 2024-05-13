@@ -32,7 +32,6 @@ mod_slider_ui <- function(id){
         ),
         col_8(
           uiOutput(ns("slider"))
-
         )
       )
 

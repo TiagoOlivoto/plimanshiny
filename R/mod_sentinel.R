@@ -111,7 +111,7 @@ mod_sentinel_server <- function(id, mosaic_data){
             )
             waiter_hide()
             output$plotsentinel <- renderPlot({
-              mosaic <- mosaic_input(paste0(dirname(input_file_selected$datapath[[1]]), "/", input$outputfile), info = FALSE)
+              mosaic <- terra::rast(paste0(dirname(input_file_selected$datapath[[1]]), "/", input$outputfile))
               mosaic_data[[input$outputfile]] <- create_reactval(input$outputfile, mosaic)
               terra::plot(mosaic)
             })

@@ -127,8 +127,9 @@ mod_shapefile_prepare_ui <- function(id){
                      textInput(ns("shapenamebuild"),
                                label = "Shapefile Name",
                                value = "Shapefile Build"),
+                     hl(),
                      fluidRow(
-                       col_6(
+                       col_3(
                          selectInput(
                            ns("plotlayout"),
                            label = "Layout",
@@ -136,11 +137,23 @@ mod_shapefile_prepare_ui <- function(id){
                            selected = "lrtb",
                          )
                        ),
-                       col_6(
+                       col_5(
                          prettyCheckbox(
                            inputId = ns("serpentine"),
-                           label = "Serpentine layout?",
+                           label = "Serpentine?",
                            value = TRUE,
+                           status = "info",
+                           icon = icon("thumbs-up"),
+                           plain = TRUE,
+                           outline = TRUE,
+                           animation = "rotate"
+                         )
+                       ),
+                       col_4(
+                         prettyCheckbox(
+                           inputId = ns("buildblocks"),
+                           label = "Blocks?",
+                           value = FALSE,
                            status = "info",
                            icon = icon("thumbs-up"),
                            plain = TRUE,
@@ -149,29 +162,20 @@ mod_shapefile_prepare_ui <- function(id){
                          )
                        )
                      ),
-                     fluidRow(
-                       col_3(
-                         prettyCheckbox(
-                           inputId = ns("buildblocks"),
-                           label = "Blocks",
-                           value = FALSE,
-                           status = "info",
-                           icon = icon("thumbs-up"),
-                           plain = TRUE,
-                           outline = TRUE,
-                           animation = "rotate"
-                         )
-                       ),
-                       col_6(
-                         conditionalPanel(
-                           condition = "input.buildblocks == true", ns = ns,
+                     conditionalPanel(
+                       condition = "input.buildblocks == true", ns = ns,
+                       fluidRow(
+                         col_6(
                            actionBttn(
                              ns("doneblock"),
                              label = "Block built",
-                             icon = icon("check"),
+                             icon = icon("plus"),
                              color = "success",
                              style = "jelly"
                            )
+                         ),
+                         col_6(
+                           textOutput(ns("nblocksdone"))
                          )
                        )
                      ),
@@ -182,7 +186,7 @@ mod_shapefile_prepare_ui <- function(id){
                          actionBttn(
                            ns("createupdate"),
                            label = "Create/update",
-                           icon = icon("check"),
+                           icon = icon("arrows-rotate"),
                            color = "success",
                            style = "jelly"
                          )
@@ -228,13 +232,13 @@ mod_shapefile_prepare_ui <- function(id){
                        style = "margin-top: -10px;",
                        col_6(
                          textInput(ns("buffercol"),
-                                   label = "Column buffer",
+                                   label = "Plot buffer",
                                    value = 0)
                        ),
                        col_6(
-                         textInput(ns("bufferrow"),
-                                   label = "Row buffer",
-                                   value = 0)
+                         textInput(ns("numplots"),
+                                   label = "Number of plots",
+                                   value = "")
                        )
                      )
             ),
@@ -255,23 +259,29 @@ mod_shapefile_prepare_ui <- function(id){
                      conditionalPanel(
                        condition = "input.shapedone == true", ns = ns,
                        divclass("shapeimp3",
-                                materialSwitch(
-                                  inputId = ns("editplots"),
-                                  label = "Edit the drawn plots?",
-                                  value = FALSE,
-                                  status = "danger"
-                                ),
-                                conditionalPanel(
-                                  condition = "input.editplots == true", ns = ns,
-                                  prettyCheckbox(
-                                    inputId = ns("editdone"),
-                                    label = "Edition finished!",
-                                    value = FALSE,
-                                    status = "info",
-                                    icon = icon("thumbs-up"),
-                                    plain = TRUE,
-                                    outline = TRUE,
-                                    animation = "rotate"
+                                fluidRow(
+                                  col_6(
+                                    materialSwitch(
+                                      inputId = ns("editplots"),
+                                      label = "Edit plots?",
+                                      value = FALSE,
+                                      status = "danger"
+                                    ),
+                                  ),
+                                  col_6(
+                                    conditionalPanel(
+                                      condition = "input.editplots == true", ns = ns,
+                                      prettyCheckbox(
+                                        inputId = ns("editdone"),
+                                        label = "Edition finished!",
+                                        value = FALSE,
+                                        status = "info",
+                                        icon = icon("thumbs-up"),
+                                        plain = TRUE,
+                                        outline = TRUE,
+                                        animation = "rotate"
+                                      )
+                                    )
                                   )
                                 )
                        )
@@ -372,18 +382,18 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           id = "tabs",
           status = "success",
           width = 12,
-          height = "790px",
+          height = "760px",
           title = "Results",
           selected = "Control points",
           solidHeader = FALSE,
           type = "tabs",
           tabPanel(
             "Control points",
-            editModUI(ns("shapefile_build"), height = "700px") |> add_spinner()
+            editModUI(ns("shapefile_build"), height = "720px") |> add_spinner()
           ),
           tabPanel(
             "Built shapefile",
-            leafletOutput(ns("createdshapes"), height = "700px") |> add_spinner()
+            leafletOutput(ns("createdshapes"), height = "720px") |> add_spinner()
           )
         )
       } else if(input$shapetype == "Build" & input$shapedone & !input$editplots){
@@ -429,7 +439,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           color = "success",
           status = "success",
           maximizable = TRUE,
-          h3("Shapefile"),
           leafletOutput(ns("shapefile_mapview"), height = "700px") |> add_spinner()
         )
       } else if(input$shapetype == "Import" & input$editplotsimpo){
@@ -442,13 +451,11 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           maximizable = TRUE,
           fluidRow(
             col_6(
-              h3("Shapefile"),
               leafletOutput(ns("shapefile_mapview"), height = "700px") |> add_spinner()
             ),
             col_6(
               conditionalPanel(
                 condition = "input.editplotsimpo == true & input.editdoneimpo == false", ns = ns,
-                h3("Plot edition"),
                 editModUI(ns("ploteditimpo"), height = "700px") |> add_spinner()
               )
             )
@@ -471,7 +478,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
     createdshape <- reactiveValues()
     layout_params <- reactiveValues()
     tmpshape <- reactiveValues()
-
+    drawn <- reactiveValues()
     observe({
       # create a basemap if mosaic is not available
       if(is.null(activemosaic$name)){
@@ -484,61 +491,64 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
       req(basemap$map)
       if (input$shapetype == "Build") {
         cpoints <- callModule(editMod, "shapefile_build", basemap$map@map, editor = "leafpm")
-        observeEvent(c(cpoints()$finished,
-                       input$ncols,
-                       input$nrows,
-                       input$plot_width,
-                       input$plot_height), {
-                         if(!is.null(cpoints()$finished)){
-                           cpo <- cpoints()$edited %||% cpoints()$finished
-                           nr <- input$nrows |> chrv2numv()
-                           nc <- input$ncols |> chrv2numv()
-                           pw <- input$plot_width |> chrv2numv()
-                           ph <- input$plot_height |> chrv2numv()
-                           t1 <- nr == 1
-                           t2 <- nc == 1
-                           ps <- any(t2 & t1 == TRUE)
-                           if(length(ph) == 0 | ps){
-                             ph <- NULL
-                           }
-                           if(length(pw) == 0 | ps){
-                             pw <- NULL
-                           }
-                           layout_params$cpo <- cpo
-                           layout_params$nr <- nr
-                           layout_params$nc <- nc
-                           layout_params$pw <- pw
-                           layout_params$ph <- ph
-                           layout_params$cpo <- cpo
-                         }
-                       })
+        observeEvent(c(cpoints()$finished, cpoints()$edited), {
+          if(!is.null(cpoints()$finished)){
+            drawn$finished <- cpoints()$finished |> dplyr::slice_tail(n = 1)
+          }
+          if(!is.null(cpoints()$edited)){
+            idedit <- cpoints()$edited |> dplyr::slice_tail(n = 1) |> dplyr::pull(edit_id)
+            drawnedit <- cpoints()$finished |> dplyr::slice_tail(n = 1) |> dplyr::pull(edit_id)
+            if(idedit == drawnedit){
+              drawn$finished <- cpoints()$edited |> dplyr::slice_tail(n = 1)
+            }
+          }
+        })
 
         observeEvent(input$createupdate, {
           if(is.null(mosaic_data$mosaic)){
             mosaic_data$mosaic <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
           }
-          req(layout_params$cpo)
+          req(drawn$finished)
+          nr <- input$nrows |> chrv2numv()
+          nc <- input$ncols |> chrv2numv()
+          pw <- input$plot_width |> chrv2numv()
+          ph <- input$plot_height |> chrv2numv()
+          t1 <- nr == 1
+          t2 <- nc == 1
+          ps <- any(t2 & t1 == TRUE)
+          if(length(ph) == 0 | ps){
+            ph <- NULL
+          }
+          if(length(pw) == 0 | ps){
+            pw <- NULL
+          }
+
           shpt <- shapefile_build(
             mosaic_data$mosaic,
             basemap$map,
-            controlpoints = dplyr::slice_tail(layout_params$cpo, n = 1),
-            nrow = layout_params$nr,
-            ncol = layout_params$nc,
+            controlpoints = drawn$finished,
+            nrow = nr,
+            ncol = nc,
             layout = input$plotlayout,
             serpentine = input$serpentine,
             buffer_col = input$buffercol |> chrv2numv(),
-            buffer_row = input$bufferrow |> chrv2numv(),
-            plot_width = layout_params$pw,
-            plot_height = layout_params$ph,
+            buffer_row = input$buffercol |> chrv2numv(),
+            plot_width = pw,
+            plot_height = ph,
             verbose = FALSE
-          )
-          shapefile[["shapefileplot"]] <- shpt[[1]]
+          )[[1]]
+          if(input$numplots != ""){
+            shpt <-
+              shpt |>
+              dplyr::filter(plot_id %in% paste0("P", leading_zeros(1:chrv2numv(input$numplots), 4)))
+          }
+          shapefile[["shapefileplot"]] <- shpt
           tmpshape$tmp <- shpt
           output$createdshapes <- renderLeaflet({
             if(input$fillid == "none"){
               mapp <-
                 basemap$map + mapview::mapview(
-                  shpt[[1]] |> extract_number(block, plot_id),
+                  shpt |> extract_number(block, plot_id),
                   color = input$colorstroke,
                   col.regions = input$colorfill,
                   alpha.regions = input$alphacolorfill,
@@ -547,29 +557,34 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   layer.name = "shapes"
                 )
             } else{
+              nlv <- length(unique(shpt |> sf::st_drop_geometry() |> dplyr::pull(input$fillid)))
+              if(nlv > 8){
+                shpt <- shpt |> extract_number(block, plot_id)
+              }
               mapp <-
                 basemap$map + mapview::mapview(
-                  shpt[[1]] |> extract_number(block, plot_id),
+                  shpt |> extract_number(block, plot_id),
                   zcol = input$fillid,
-                  col.regions = return_colors(input$palplot),
+                  col.regions = return_colors(input$palplot, n = 10),
                   alpha.regions = input$alphacolorfill,
                   lwd = input$lwdt,
                   layer.name = "shapes"
                 )
             }
-
             mapp@map
           })
         })
-
 
         nblock <- reactiveVal(0)
         observe({
           if(input$buildblocks){
             observeEvent(input$doneblock, {
               nblock(nblock() + 1)
+              output$nblocksdone <- renderText({
+                glue::glue("Nº of built blocks: {nblock()}")
+              })
               block_name <- paste0("B", sprintf("%02d", nblock()))
-              createdshape[[block_name]] <- tmpshape$tmp[[1]]
+              createdshape[[block_name]] <- tmpshape$tmp
               sendSweetAlert(
                 session = session,
                 title = "Block built",
@@ -578,8 +593,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
               )
             })
           } else{
-            req(tmpshape$tmp[[1]])
-            createdshape[["B01"]] <- tmpshape$tmp[[1]]
+            req(tmpshape$tmp)
+            createdshape[["B01"]] <- tmpshape$tmp
           }
         })
 
@@ -615,7 +630,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                                    lwd = input$lwdt,
                                    layer.name = "shapes")
               } else{
-                if(length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$fillid))) > 7){
+                nlv <- length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$fillid)))
+                if(nlv > 7){
                   shptemp <- shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id)
                 } else{
                   shptemp <- shapefile[[input$shapefiletoanalyze]]$data
@@ -625,7 +641,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   basemap$map +
                   mapview::mapview(shptemp,
                                    zcol = input$fillid,
-                                   col.regions = return_colors(input$palplot),
+                                   col.regions = return_colors(input$palplot, n = 10),
                                    alpha.regions = input$alphacolorfill,
                                    lwd = input$lwdt,
                                    layer.name = "shapes")
@@ -791,7 +807,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                                            lwd = input$lwdt,
                                            layer.name = "shapes")
                 } else {
-                  if(length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$colorshapeimport))) > 7){
+                  nlv <- length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$colorshapeimport)))
+                  if(nlv > 8){
                     shptemp <- shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id)
                   } else{
                     shptemp <- shapefile[[input$shapefiletoanalyze]]$data
@@ -799,7 +816,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   mapp <-
                     mapview::mapview(shptemp,
                                      zcol = input$colorshapeimport,
-                                     col.regions = return_colors(input$palplot),
+                                     col.regions = return_colors(input$palplot, n = 10),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
@@ -816,7 +833,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
                 } else {
-                  if(length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$colorshapeimport))) > 7){
+                  nlv <- length(unique(shapefile[[input$shapefiletoanalyze]]$data |> sf::st_drop_geometry() |> dplyr::pull(input$colorshapeimport)))
+                  if(nlv > 8){
                     shptemp <- shapefile[[input$shapefiletoanalyze]]$data |> extract_number(block, plot_id)
                   } else{
                     shptemp <- shapefile[[input$shapefiletoanalyze]]$data
@@ -964,8 +982,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           } else{
             shapefile_plot(shpinfo, col =adjustcolor("salmon", 0.9))
           }
-          wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
-          hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
+          wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
+          hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
           if(npoints < 15){
             boxtext(x =  ncoors[, 1],
                     y =  ncoors[, 2],
@@ -1084,7 +1102,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
 
     })
 
-      mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefileplot))
+    mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefileplot))
 
 
 

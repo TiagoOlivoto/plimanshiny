@@ -82,7 +82,7 @@ mod_dfedit_server <- function(id, dfs, shapefile){
 
     dfactive <- reactiveValues()
     observeEvent(input$dftoedit, {
-      req(input$dftofilter)
+      req(input$dftoedit)
       if(input$dftoedit != "none"){
         if(input$dforshape == "data.frame"){
           dfactive$df <- dfs[[input$dftoedit]]$data |> convert_numeric_cols()
@@ -95,7 +95,6 @@ mod_dfedit_server <- function(id, dfs, shapefile){
     # Filter data
     res_edit <- reactiveValues()
     observe({
-      req(dfactive$df)
       res_edit$res <- edit_data_server(
         id = "editing",
         data_r = reactive(dfactive$df)

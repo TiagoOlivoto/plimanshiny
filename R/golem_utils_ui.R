@@ -353,14 +353,26 @@ pickerpalette <- function(id, inputid, n = 50, ...){
         "RdYlBu" = colorRampPalette(scales::brewer_pal(palette = "RdYlBu")(8))(n),
         "RdYlGn" =colorRampPalette(scales::brewer_pal(palette = "RdYlGn")(8))(n),
         "Spectral" = colorRampPalette(scales::brewer_pal(palette = "Spectral")(8))(n)
+      ),
+      "Qualitative" = list(
+        "ggplot2" = c("#F8766D", "#B79F00", "#00BA38", "#00BFC4", "#619CFF", "#F564E3"),
+        "Accent" = c("#7FC97F", "#BEAED4", "#FDC086", "#FFFF99", "#386CB0", "#F0027F"),
+        "Dark2" = c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02"),
+        "Paired" = c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C"),
+        "Pastel1" = c("#FBB4AE", "#B3CDE3", "#CCEBC5", "#DECBE4", "#FED9A6", "#FFFFCC"),
+        "Pastel2" = c("#B3E2CD", "#FDCDAC", "#CBD5E8", "#F4CAE4", "#E6F5C9", "#FFF2AE"),
+        "Brewer1" = c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33"),
+        "Brewer2" = c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F"),
+        "Brewer3" = c("#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462")
       )
     ),
-    textColor = c(rep("white", 5), "black", "white", rep("black", 6), rep("white", 11)),
+    textColor = c(rep("white", 5), "black", "white", rep("black", 6), rep("white", 10), rep("black", 10)),
     ...
   )
 }
 
-return_colors <- function(pal, reverse = FALSE, n = 100){
+
+return_colors <- function(pal, reverse = FALSE, n = 8){
   pals <-
     switch(pal,
            "viridis" = scales::viridis_pal(option = "viridis")(n),
@@ -385,7 +397,16 @@ return_colors <- function(pal, reverse = FALSE, n = 100){
            "RdGy" = colorRampPalette(scales::brewer_pal(palette = "RdGy")(8))(n),
            "RdYlBu" = colorRampPalette(scales::brewer_pal(palette = "RdYlBu")(8))(n),
            "RdYlGn" =colorRampPalette(scales::brewer_pal(palette = "RdYlGn")(8))(n),
-           "Spectral" = colorRampPalette(scales::brewer_pal(palette = "Spectral")(8))(n)
+           "Spectral" = colorRampPalette(scales::brewer_pal(palette = "Spectral")(8))(n),
+           "ggplot2" = sample(c("#F8766D", "#B79F00", "#00BA38", "#00BFC4", "#619CFF", "#F564E3"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Accent" = sample(c("#7FC97F", "#BEAED4", "#FDC086", "#FFFF99", "#386CB0", "#F0027F"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Dark2" = sample(c("#1B9E77", "#D95F02", "#7570B3", "#E7298A", "#66A61E", "#E6AB02"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Paired" = sample(c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Pastel1" = sample(c("#FBB4AE", "#B3CDE3", "#CCEBC5", "#DECBE4", "#FED9A6", "#FFFFCC"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Pastel2" = sample(c("#B3E2CD", "#FDCDAC", "#CBD5E8", "#F4CAE4", "#E6F5C9", "#FFF2AE"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Brewer1" = sample(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Brewer2" = sample(c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F"), n, replace = ifelse(n > 6, TRUE, FALSE)),
+           "Brewer3" = sample(c("#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462"),  n, replace = ifelse(n > 6, TRUE, FALSE))
   )
   if(reverse){
     return(rev(pals))

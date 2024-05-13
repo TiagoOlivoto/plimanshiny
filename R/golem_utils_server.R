@@ -167,7 +167,7 @@ import_shp_mod <- function(datapath, file, session){
 write_shp <- function(data, file){
   temp_shp <- tempdir()
   # write shp files
-  sf::stwri(data, paste0(temp_shp, "/my_shp.shp"), overwrite = TRUE)
+  terra::writeVector(data, paste0(temp_shp, "/my_shp.shp"), overwrite = TRUE)
   # zip all the shp files
   zip_file <- file.path(temp_shp, "vector_shp.zip")
   shp_files <- list.files(temp_shp,

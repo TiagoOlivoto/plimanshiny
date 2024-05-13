@@ -23,7 +23,7 @@ mod_indexes_ui <- function(id){
           tabPanel(
             title = "Build",
             fluidRow(
-              col_6(
+              col_4(
                 actionButton(
                   inputId = ns("guideindex"),
                   label = tagList(
@@ -33,7 +33,7 @@ mod_indexes_ui <- function(id){
                   class = "btn-danger"
                 )
               ),
-              col_6(
+              col_4(
                 actionButton(
                   inputId = ns("mosaicinfoindex"),
                   label = tagList(
@@ -56,11 +56,21 @@ mod_indexes_ui <- function(id){
               selected = "RGB",
               multiple = TRUE
             ),
-            pickerInput(
-              inputId = ns("plotindexes"),
-              label = "Vegetation indexes",
-              choices = "",
-              multiple = TRUE
+            fluidRow(
+              col_8(
+                pickerInput(
+                  inputId = ns("plotindexes"),
+                  label = "Vegetation indexes",
+                  choices = "",
+                  multiple = TRUE
+                ),
+              ),
+              col_4(
+                shiny::actionButton(inputId= ns("indexhelp"),
+                                    label="Indexes' equations",
+                                    icon = icon("square-root-variable"),
+                                    onclick ="window.open('https://tiagoolivoto.github.io/pliman/articles/indexes.html', '_blank')")
+              )
             ),
             textInput(ns("myindex"),
                       label = "My personalized index",
@@ -422,7 +432,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
         if(input$indextosync %in% names(magg$agg)){
           output$plotindex <- renderPlot({
             terra::plot(magg$agg[[input$indextosync]],
-                        col = return_colors(input$palplotindex, reverse = input$palplotindexrev),
+                        col = return_colors(input$palplotindex, reverse = input$palplotindexrev, n = 100),
                         smooth = TRUE
                         )
           })
@@ -439,7 +449,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
         truncated$trunc <- terra::mask(tt, maskk, maskvalues = FALSE)
         output$plotindextrunc <- renderPlot({
           terra::plot(truncated$trunc,
-                      col = return_colors(input$palplotindex, reverse = input$palplotindexrev),
+                      col = return_colors(input$palplotindex, reverse = input$palplotindexrev, n = 100),
                       smooth = TRUE)
         })
       }

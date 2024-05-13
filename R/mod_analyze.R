@@ -970,9 +970,9 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                 if(indexnull){
                   indexes <- NULL
                 } else{
-                  indexes <- terra::crop(mosaic_input(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext())
+                  indexes <- terra::crop(terra::rast(paste0(tmpterra, "/tmpindex.tif")), terra::vect(shp$geometry[[i]]) |> terra::ext())
                 }
-                mosaic_analyze(terra::crop(mosaic_input(pathmosaic), terra::vect(shp$geometry[[i]]) |> terra::ext()),
+                mosaic_analyze(terra::crop(terra::rast(pathmosaic), terra::vect(shp$geometry[[i]]) |> terra::ext()),
                                indexes = indexes,
                                mask = maskval$mask,
                                plot = FALSE,

@@ -49,11 +49,21 @@ mod_timeseriesanalysis_ui <- function(id){
               selected = "RGB",
               multiple = TRUE
             ),
-            pickerInput(
-              inputId = ns("plotindexes"),
-              label = "Vegetation indexes",
-              choices = "",
-              multiple = TRUE
+            fluidRow(
+              col_8(
+                pickerInput(
+                  inputId = ns("plotindexes"),
+                  label = "Vegetation indexes",
+                  choices = "",
+                  multiple = TRUE
+                ),
+              ),
+              col_4(
+                shiny::actionButton(inputId= ns("indexhelp"),
+                                    label="Indexes' equations",
+                                    icon = icon("square-root-variable"),
+                                    onclick ="window.open('https://tiagoolivoto.github.io/pliman/articles/indexes.html', '_blank')")
+              )
             ),
             textInput(ns("myindex"),
                       label = "My personalized index",
@@ -390,7 +400,9 @@ mod_timeseriesanalysis_ui <- function(id){
                   label = "Select up to six levels to compare:",
                   choices = NULL,
                   multiple = TRUE,
-                  options =  list(
+                  options = list(
+                    "actions-box" = TRUE,
+                    "live-search" = TRUE,
                     "max-options" = 6,
                     "max-options-text" = "No more levels allowed"
                   )
@@ -437,31 +449,56 @@ mod_timeseriesanalysis_ui <- function(id){
           ),
           tabPanel(
             title = "Compare plots",
-            pickerInput(
-              inputId = ns("rgborattribute2"),
-              label = "How to see the plot evolution",
-              choices = c("RGB", "plot attribute"),
-              multiple = FALSE
-            ),
             fluidRow(
-              col_6(
+              col_3(
+                pickerInput(
+                  inputId = ns("rgborattribute2"),
+                  label = "Show...",
+                  choices = c("RGB", "plot attribute"),
+                  multiple = FALSE
+                )
+              ),
+              col_3(
                 pickerInput(
                   inputId = ns("levelvarcp1"),
-                  label = "Select one level to compare:",
+                  label = "Left side:",
                   choices = NULL,
                   multiple = FALSE
-                ),
-                plotOutput(ns("compplot1"), height = "540px") |> add_spinner()
+                )
               ),
-              col_6(
+              col_3(
                 pickerInput(
                   inputId = ns("levelvarcp2"),
-                  label = "Select one level to compare:",
+                  label = "Right side:",
                   choices = NULL,
                   multiple = FALSE
-                ),
-                plotOutput(ns("compplot2"), height = "540px") |> add_spinner()
+                )
+              ),
+              col_3(
+                prettyCheckbox(
+                  inputId = ns("compslider"),
+                  label = "Slider?",
+                  value = FALSE,
+                  icon = icon("check"),
+                  status = "success",
+                  animation = "rotate"
+                )
               )
+            ),
+            conditionalPanel(
+              condition = "input.compslider == false", ns = ns,
+              fluidRow(
+                col_6(
+                  plotOutput(ns("compplot1"), height = "540px") |> add_spinner()
+                ),
+                col_6(
+                  plotOutput(ns("compplot2"), height = "540px") |> add_spinner()
+                )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.compslider == true", ns = ns,
+              uiOutput(ns("sliderout")) |> add_spinner()
             )
           ),
           tabPanel(
@@ -496,7 +533,7 @@ mod_timeseriesanalysis_ui <- function(id){
           ),
           tabPanel(
             title = "Raw results",
-            DT::dataTableOutput(ns("rawresults"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("rawresults"), height = "720px")  |> add_spinner()
           )
         )
       )
@@ -550,7 +587,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
     })
     observe({
       updateSelectInput(session, "segmentindex", choices = finalindex())
-      updateSelectInput(session, "activeshape", choices = names(shapefile))
+      updateSelectInput(session, "activeshape", choices = setdiff(names(shapefile), "shape"))
     })
 
     observeEvent(input$analyzemosaicts, {
@@ -954,66 +991,259 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         }
       })
 
-      output$compplot1 <- renderPlot({
+      tmpplot1 <- reactiveValues()
+      tmpplot2 <- reactiveValues()
+      minmax1 <- reactiveValues()
+      minmax2 <- reactiveValues()
+
+      observe({
         req(input$levelvarcp1)
         shapetmp <-
           result_plot |>
           dplyr::filter(unique_id == input$levelvarcp1)
 
         mosaic1 <- mosaiclist$mosaics$data[[which(names(mosaiclist$mosaics$data) == shapetmp$date)]]
-        mc <- terra::crop(mosaic1, terra::vect(shapetmp), mask = TRUE)
+        tmpc1 <- terra::crop(mosaic1, terra::vect(shapetmp), mask = TRUE)
 
-        if(input$rgborattribute2 == "RGB"){
-          terra::plotRGB(mc, stretch = "hist")
-        } else{
+        if(input$rgborattribute2 != "RGB"){
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
-          tmp <-
-          mosaic_index(
-            mc,
-            r = suppressWarnings(as.numeric(r$r)),
-            g = suppressWarnings(as.numeric(g$g)),
-            b = suppressWarnings(as.numeric(b$b)),
-            re = suppressWarnings(as.numeric(re$re)),
-            nir = suppressWarnings(as.numeric(nir$nir)),
-            swir = suppressWarnings(as.numeric(swir$swir)),
-            tir = suppressWarnings(as.numeric(tir$tir)),
-            index = tmpind,
-            plot = FALSE
-          )
-          terra::plot(tmp, col = return_colors(input$palplot, reverse = input$palplotrev),
-                      smooth = TRUE)
+          tmpc1 <-
+            mosaic_index(
+              tmpc1,
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              re = suppressWarnings(as.numeric(re$re)),
+              nir = suppressWarnings(as.numeric(nir$nir)),
+              swir = suppressWarnings(as.numeric(swir$swir)),
+              tir = suppressWarnings(as.numeric(tir$tir)),
+              index = tmpind,
+              plot = FALSE
+            )
+          minmax1$val <- terra::minmax(tmpc1)
         }
-      })
+        tmpplot1$plot <- tmpc1
 
-      output$compplot2 <- renderPlot({
         req(input$levelvarcp2)
         shapetmp <-
           result_plot |>
           dplyr::filter(unique_id == input$levelvarcp2)
 
         mosaic1 <- mosaiclist$mosaics$data[[which(names(mosaiclist$mosaics$data) == shapetmp$date)]]
-        mc <- terra::crop(mosaic1, terra::vect(shapetmp), mask = TRUE)
+        tmpc1 <- terra::crop(mosaic1, terra::vect(shapetmp), mask = TRUE)
 
-        if(input$rgborattribute2 == "RGB"){
-          terra::plotRGB(mc, stretch = "hist")
-        } else{
+        if(input$rgborattribute2 != "RGB"){
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
-          tmp <-
-          mosaic_index(
-            mc,
-            r = suppressWarnings(as.numeric(r$r)),
-            g = suppressWarnings(as.numeric(g$g)),
-            b = suppressWarnings(as.numeric(b$b)),
-            re = suppressWarnings(as.numeric(re$re)),
-            nir = suppressWarnings(as.numeric(nir$nir)),
-            swir = suppressWarnings(as.numeric(swir$swir)),
-            tir = suppressWarnings(as.numeric(tir$tir)),
-            index = tmpind
-          )
-          terra::plot(tmp, col = return_colors(input$palplot, reverse = input$palplotrev),
-                      smooth = TRUE)
+          tmpc1 <-
+            mosaic_index(
+              tmpc1,
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              re = suppressWarnings(as.numeric(re$re)),
+              nir = suppressWarnings(as.numeric(nir$nir)),
+              swir = suppressWarnings(as.numeric(swir$swir)),
+              tir = suppressWarnings(as.numeric(tir$tir)),
+              index = tmpind,
+              plot = FALSE
+            )
+          minmax2$val <- terra::minmax(tmpc1)
+        }
+        tmpplot2$plot <- tmpc1
+      })
+
+
+      observe({
+        if(!input$compslider){
+          output$compplot1 <- renderPlot({
+            req(tmpplot1$plot)
+            if(input$rgborattribute2 == "RGB"){
+              terra::plotRGB(tmpplot1$plot, stretch = "hist")
+            } else{
+              rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
+              terra::plot(tmpplot1$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
+                          smooth = TRUE,
+                          range = rang)
+            }
+          })
+          output$compplot2 <- renderPlot({
+            req(tmpplot2$plot)
+            if(input$rgborattribute2 == "RGB"){
+              terra::plotRGB(tmpplot2$plot, stretch = "hist")
+            } else{
+              rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
+              terra::plot(tmpplot2$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
+                          smooth = TRUE,
+                          range = rang)
+            }
+          })
+        } else{
+
+          pathslider1 <- reactiveValues(val=NULL)
+          pathslider2 <- reactiveValues(val=NULL)
+
+
+          # observeEvent(input$createslider, {
+          f1 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
+                           pattern = "beforeimg_")
+          f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
+                           pattern = "afterimg_")
+
+          tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
+          sapply(tmpimages, file.remove)
+          session$onSessionEnded(function() {
+            sapply(tmpimages, file.remove)
+          })
+
+          req(tmpplot1$plot)
+          req(tmpplot2$plot)
+
+          output$sliderout <- renderUI({
+            # image1
+
+            tfbef <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot1_{sample(1:1000, 1)}.jpg")
+            pathslider1$val <- tfbef
+            jpeg(tfbef, width = 920, height = 640)
+            if(input$rgborattribute2 == "RGB"){
+              terra::plotRGB(tmpplot1$plot, stretch = "hist")
+            } else{
+              rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
+              terra::plot(tmpplot1$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
+                          maxcell = 1e6,
+                          smooth = TRUE,
+                          axes = FALSE,
+                          range = rang)
+            }
+            dev.off()
+
+            # image2
+            tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot2_{sample(1:1000, 1)}.jpg")
+            pathslider2$val <- tfaft
+            jpeg(tfaft, width = 920, height = 640)
+            if(input$rgborattribute2 == "RGB"){
+              terra::plotRGB(tmpplot2$plot, stretch = "hist")
+            } else{
+              rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
+              terra::plot(tmpplot2$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
+                          maxcell = 1e6,
+                          smooth = TRUE,
+                          axes = FALSE,
+                          range = rang)
+            }
+            dev.off()
+
+            # Regex pattern to match everything after "app/"
+            pattern <- "app/(.*)"
+            # Extract the captured group
+            match1 <- regmatches(tfaft, regexec(pattern, tfaft))
+            match2 <- regmatches(tfbef, regexec(pattern, tfbef))
+            imgafter <- sub(match2, "\\1", match1[[1]][2])
+            imgabefo <- sub(match2, "\\1", match2[[1]][2])
+
+            HTML(
+              paste0(
+                '<div id="comparison">
+         <style>
+        div#comparison {
+            width: 50vw; /* Increased width */
+            height: 50vw; /* Increased height */
+            max-width: 920px; /* Increased maximum width */
+            max-height: 660px; /* Increased maximum height */
+            overflow: hidden;
+        }
+
+        div#comparison figure {
+            background-image: url(',imgafter,');
+            background-size: cover;
+            position: relative;
+            font-size: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        div#comparison figure > img {
+            position: relative;
+            width: 100%;
+        }
+
+        div#comparison figure div {
+            background-image: url(',imgabefo,');
+            background-size: cover;
+            position: absolute;
+            width: 50%;
+            box-shadow: 0 5px 10px -2px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            bottom: 0;
+            height: 100%;
+        }
+
+        input[type=range]{
+            -webkit-appearance:none;
+            -moz-appearance:none;
+            position: relative;
+            top: -2rem;
+            left: -2%;
+            background-color: rgba(25,255,25,0.2);
+            width: 102%;
+            }
+            input[type=range]:focus {
+            outline: none;
+            }
+            input[type=range]:active {
+            outline: none;
+            }
+
+            input[type=range]::-moz-range-track {
+            -moz-appearance:none;
+            height:45px;
+            width: 98%;
+            background-color: rgba(25,255,25,0.1);
+            position: relative;
+            outline: none;
+            }
+            input[type=range]::active {
+            border: none;
+            outline: none;
+            }
+            input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance:none;
+            width: 20px;
+            height: 15px;
+            border-radius: 5px;
+            background: rgba(25,255,25,0.8);
+            }
+            input[type=range]::-moz-range-thumb {
+            -moz-appearance: none;
+            width: 20px;
+            height: 15px;
+            background: #fff;
+            border-radius: 15;
+            }
+            input[type=range]:focus::-webkit-slider-thumb {
+            height: 25px;
+            border-radius: 5px;
+            background: rgba(0,255,70,1);
+            }
+            input[type=range]:focus::-moz-range-thumb {
+            height:45px;
+            background: rgba(25,255,25,0.05);
+            }
+    </style>
+         <figure>
+            <div id="divisor"></div>
+         </figure>
+         <input type="range" min="0" max="100" value="50" id="slider" oninput="moveDivisor()">
+       </div>'
+              )
+            )
+          })
         }
       })
+
+
+
+
 
 
       # single data
@@ -1063,48 +1293,44 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         (basemap$map +  mshp)@map
       })
 
-
       # raw results
-      output$rawresults <- DT::renderDataTable(
-        result_plot |>
-          as.data.frame() |>
-          dplyr::select(-geometry) |>
-          roundcols(),
-        extensions = 'Buttons',
-        rownames = FALSE,
-        options = list(
-          dom = 'Blrtip',
-          buttons = c('copy', 'excel'),
-          paging = FALSE,
-          scrollX = TRUE,
-          scrollY = "620px",
-          pageLength = 15
-        )
-      )
-
-      # Sent do datasets
-      report <- reactive({
-        req(res)
-        if(input$segmentindividuals){
-          list(result_plot = res$result_plot,
-               result_plot_summ = res$result_plot_summ,
-               result_individ = res$result_indiv)
-        } else if(input$segmentplot){
-          list(result_plot = res$result_plot)
-        } else{
-          list(result_plot = res$result_plot)
-
+      jsf <- JS("
+      function(cellInfo) {
+        var sum = 0;
+        var count = 0;
+        for (var i = 0; i < cellInfo.subRows.length; i++) {
+          var row = cellInfo.subRows[i];
+          var value = parseFloat(row[cellInfo.column.id]);
+          if (!isNaN(value)) {
+            sum += value;
+            count++;
+          }
         }
+        var mean = count > 0 ? sum / count : null;
+        return mean !== null ? mean.toFixed(2) : null;
+      }
+    ")
+      output$rawresults <- reactable::renderReactable({
+        render_reactable(
+          result_plot |>
+            sf::st_drop_geometry() |>
+            roundcols(digits = 3),
+          groupBy = "date",
+          columns = list(
+            date = colDef(minWidth = 150)
+          ),
+          defaultColDef = colDef(
+            aggregated = jsf
+          )
+        )
       })
 
+      # Sent do datasets
       observe({
-        req(report())
-        dfs[["result_plot"]] <- create_reactval("result_plot", report()$result_plot |> sf::st_drop_geometry())
-        if(!is.null(report()$result_plot_summ)){
-          dfs[["result_plot_summ"]] <- create_reactval("result_plot_summ", report()$result_plot_summ|> sf::st_drop_geometry())
-        }
-        if(!is.null(report()$result_individ)){
-          dfs[["result_individ"]] <- create_reactval("result_individ", report()$result_individ|> sf::st_drop_geometry())
+        req(result_plot)
+        dfs[["result_plot"]] <- create_reactval("result_plot", result_plot |> sf::st_drop_geometry())
+        if(!is.null(result_indiv)){
+          dfs[["result_indiv"]] <- create_reactval("result_indiv", result_indiv |> sf::st_drop_geometry())
         }
       })
 
@@ -1114,6 +1340,21 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       closeSweetAlert(session = session)
 
     })
+
+
+observe({
+  session$onSessionEnded(function() {
+    f1 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
+                     pattern = "beforeimg_")
+    f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
+                     pattern = "afterimg_")
+
+    tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
+    print(tmpimages)
+    a <- sapply(tmpimages, file.remove)
+  })
+})
+
   })
 }
 
