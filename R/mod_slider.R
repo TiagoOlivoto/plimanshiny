@@ -178,8 +178,10 @@ mod_slider_server <- function(id, imgdata){
                            pattern = "beforeimg_")
           f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
                            pattern = "afterimg_")
-          tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
-          sapply(tmpimages, file.remove)
+          if(any(c(length(f1), length(f2)) != 0)){
+            tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
+            a <- sapply(tmpimages, file.remove)
+          }
         })
       }
 

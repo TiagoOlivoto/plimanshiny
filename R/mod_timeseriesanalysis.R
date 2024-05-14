@@ -978,14 +978,16 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             tidyterra::geom_spatraster(data = list_mo,
                                        interpolate = TRUE,
                                        maxcell = 2.5e5) +
-            tidyterra::scale_fill_terrain_c() +
+            scale_fill_gradientn(colors = return_colors(input$palplot, reverse = input$palplotrev, n = 8),
+                                 na.value = "transparent") +
             facet_wrap(~lyr,
                        ncol =  input$ncols,
                        nrow = input$nrows) +
             theme_void() +
-            theme(legend.position = "bottom") +
+            theme(legend.position = "bottom",
+                  panel.spacing = unit(0, "cm")) +
             guides(fill = guide_colourbar(theme = theme(
-              legend.key.width = unit(350, "pt")
+              legend.key.width = unit(450, "pt")
             ))) +
             labs(fill = tmpind)
 
@@ -1383,7 +1385,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
                          pattern = "afterimg_")
         if(any(c(length(f1), length(f2)) != 0)){
           tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
-          print(tmpimages)
           a <- sapply(tmpimages, file.remove)
         }
       })
