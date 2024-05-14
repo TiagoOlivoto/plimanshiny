@@ -350,7 +350,7 @@ mod_timeseriesanalysis_ui <- function(id){
             fluidRow(
               col_4(
                 actionButton(
-                  inputId = ns("savetoglobalenv"),
+                  inputId = ns("savetoglobalenv2"),
                   label = "Assign",
                   icon = icon("share-from-square"),
                   status = "success",
@@ -362,7 +362,7 @@ mod_timeseriesanalysis_ui <- function(id){
               col_8(
                 textInput(ns("globalvarname"),
                           label = "Variable name",
-                          value = "plimanshiny_output")
+                          value = "time_serie_output")
               )
             )
           )
@@ -589,7 +589,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       updateSelectInput(session, "segmentindex", choices = finalindex())
       updateSelectInput(session, "activeshape", choices = setdiff(names(shapefile), "shape"))
     })
-
+    report <- reactiveVal()
     observeEvent(input$analyzemosaicts, {
       req(mosaiclist$mosaics$data)
       req(shapefile[[input$activeshape]]$data)
@@ -823,6 +823,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       if(input$segmentindividuals | input$segmentplot){
         result_plot <- result_plot_summ
       }
+      report(result_plot)
 
       ##### Show the results #######
       updateSelectInput(session, "plotattribute",
@@ -1334,26 +1335,59 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         }
       })
 
-
-      mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "plot_level_results")
+      mod_download_shapefile_server("downresplot", terra::vect(result_plot), name = "time_series_output")
 
       closeSweetAlert(session = session)
 
     })
 
+    # save to global env
+    observeEvent(input$savetoglobalenv2, {
+      if (exists(input$globalvarname, envir = globalenv())) {
+        sendSweetAlert(
+          session = session,
+          title = "Error",
+          text = paste0("The object '", input$globalvarname, "' already exists in the global environment. Please, change the name."),
+          type = "success"
+        )
+      } else {
+        # req(report$rep)
+        assign(input$globalvarname, report(), envir = globalenv())
+        ask_confirmation(
+          inputId = "myconfirmation",
+          type = "warning",
+          title = "Close the App?",
+          text = paste0("The object '", input$globalvarname, "' has been created in the Global environment. To access the created object, you need first to stop the App. Do you really want to close the app now?"),
+          btn_labels = c("Nope", "Yep"),
+          btn_colors = c("#FE642E", "#04B404")
+        )
+      }
 
-observe({
-  session$onSessionEnded(function() {
-    f1 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
-                     pattern = "beforeimg_")
-    f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
-                     pattern = "afterimg_")
-
-    tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
-    print(tmpimages)
-    a <- sapply(tmpimages, file.remove)
-  })
-})
+      observe({
+        if (!is.null(input$myconfirmation)) {
+          if (input$myconfirmation) {
+            stopApp()
+          } else {
+            # Do something else or simply return if the confirmation is false
+            return()
+          }
+        }
+      })
+    })
+    # remove temp images after session is ended
+    observe({
+      session$onSessionEnded(function() {
+        f1 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
+                         pattern = "beforeimg_")
+        f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
+                         pattern = "afterimg_")
+        if(any(c(length(f1), length(f2)) != 0)){
+          tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
+          print(tmpimages)
+          a <- sapply(tmpimages, file.remove)
+        }
+      })
+    })
 
   })
 }
