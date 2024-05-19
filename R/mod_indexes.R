@@ -23,7 +23,7 @@ mod_indexes_ui <- function(id){
           tabPanel(
             title = "Build",
             fluidRow(
-              col_4(
+              col_3(
                 actionButton(
                   inputId = ns("guideindex"),
                   label = tagList(
@@ -33,11 +33,20 @@ mod_indexes_ui <- function(id){
                   class = "btn-danger"
                 )
               ),
-              col_8(
+              col_4(
                 actionButton(
                   inputId = ns("mosaicinfoindex"),
                   label = tagList(
                     icon = icon("circle-info", verify_fa = FALSE), "Mosaic Info"
+                  ),
+                  status = "info"
+                )
+              ),
+              col_5(
+                actionButton(
+                  inputId = ns("availableindexes"),
+                  label = tagList(
+                    icon = icon("list-check", verify_fa = FALSE), "Available indexes"
                   ),
                   status = "info"
                 )
@@ -524,6 +533,58 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                           selected = names(index[[input$activeindex]]$data))
       })
       mod_download_mosaic_server("download_indexes", index[[input$activeindex]]$data[[input$indextodownload]], "indexes")
+    })
+
+
+    # available indexes
+    # Plot information
+    availind <- reactiveValues(ind = NULL)
+    observeEvent(input$availableindexes, {
+      # req(input$listofbands)
+
+      output$tabavailableind <- renderReactable({
+        render_reactable(pliman_indexes_ican_compute(input$listofbands),
+                         defaultPageSize = 10,
+                         columns = list(
+                           Index = colDef(maxWidth = 100),
+                           Equation = colDef(maxWidth = 850),
+                           Band = colDef(maxWidth = 100)
+                         ))
+      })
+      output$numindexes <- renderValueBox({
+        valueBox(
+          value = tags$p(nrow(pliman_indexes_ican_compute(input$listofbands)), style = "font-size: 200%;"),
+          subtitle = "Number of available indexes",
+          color = "success",
+          icon = icon("arrow-down-1-9")
+        )
+      })
+
+      showModal(
+        modalDialog(
+          title = "Search the built-in available indexes based on the available bands",
+          fluidRow(
+            col_6(
+              selectizeInput(
+                inputId = ns("listofbands"),
+                label = "Selected the available bands",
+                choices = c("R", "G", "B", "RE", "NIR", "SWIR", "TIR"),
+                multiple=TRUE,
+                options = list('plugins' = list('remove_button'),
+                               'create' = TRUE,
+                               'persist'= FALSE)
+              ),
+            ),
+            col_6(
+              valueBoxOutput(ns("numindexes"), width = 12),
+            )
+          ),
+          reactable::reactableOutput(ns("tabavailableind")),
+          footer = NULL,
+          easyClose = TRUE,
+          size = "xl"
+        )
+      )
     })
 
   })
