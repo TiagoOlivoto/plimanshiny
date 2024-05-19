@@ -86,8 +86,7 @@ mod_indexes_ui <- function(id){
               col_4(
                 shiny::actionButton(inputId= ns("indexhelp"),
                                     label="Indexes' equations",
-                                    icon = icon("square-root-variable"),
-                                    onclick ="window.open('https://tiagoolivoto.github.io/pliman/articles/indexes.html', '_blank')")
+                                    icon = icon("square-root-variable"))
               )
             ),
             textInput(ns("myindex"),
@@ -537,11 +536,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
 
 
     # available indexes
-    # Plot information
-    availind <- reactiveValues(ind = NULL)
     observeEvent(input$availableindexes, {
-      # req(input$listofbands)
-
       output$tabavailableind <- renderReactable({
         render_reactable(pliman_indexes_ican_compute(input$listofbands),
                          defaultPageSize = 10,
@@ -576,7 +571,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
               ),
             ),
             col_6(
-              valueBoxOutput(ns("numindexes"), width = 12),
+              valueBoxOutput(ns("numindexes"), width = 8),
             )
           ),
           reactable::reactableOutput(ns("tabavailableind")),
@@ -586,6 +581,35 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
         )
       )
     })
+
+    # index equation
+    observeEvent(input$indexhelp, {
+
+      output$tabavailableind <- renderReactable({
+        render_reactable(pliman_indexes_eq(),
+                         defaultPageSize = 10,
+                         columns = list(
+                           Index = colDef(maxWidth = 100),
+                           Equation = colDef(maxWidth = 850),
+                           Band = colDef(maxWidth = 100)
+                         ))
+      })
+
+      showModal(
+        modalDialog(
+          title = "The equations for the available built-in indexes",
+          shiny::actionButton(inputId= ns("equation"),
+                              label="References",
+                              icon = icon("lightbulb"),
+                              onclick ="window.open('https://tiagoolivoto.github.io/pliman/articles/indexes.html', '_blank')"),
+          reactable::reactableOutput(ns("tabavailableind")),
+          footer = NULL,
+          easyClose = TRUE,
+          size = "xl"
+        )
+      )
+    })
+
 
   })
 }

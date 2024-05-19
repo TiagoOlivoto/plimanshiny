@@ -39,20 +39,13 @@ mod_home_ui <- function(id){
           elevation = 3,
           href = "https://link.springer.com/article/10.1007/s40858-021-00487-5",
           icon = shiny::icon("braille")
+        ),
+        actionBttn(
+          inputId = ns("about"),
+          label = "About",
+          color = "success",
+          icon = icon("circle-info")
         )
-        # bs4Dash::userBox(
-        #   width = 12,
-        #   status = "success",
-        #   title = userDescription(
-        #     title = "Tiago Olivoto",
-        #     subtitle = "Developer",
-        #     type = 2,
-        #     image = "https://olivoto.netlify.app/authors/admin/avatar_hu34cb0b15d8f30e702e31c964be2e3330_3157592_270x270_fill_lanczos_center_2.png",
-        #   ),
-        #   "Departamento de Fitotecnia", br(),
-        #   "Centro de Ciencias Agrarias", br(),
-        #   "Universidade Federal de Santa Catarina", br()
-        # )
       )
     )
   )
