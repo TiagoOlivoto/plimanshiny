@@ -104,6 +104,7 @@ mod_bindlayer_server <- function(id, mosaic_data){
       }
     })
 
+    mod_download_mosaic_server("downloadmosaic", mosaic_data[[input$savebindto]]$data)
 
   })
 }

@@ -354,6 +354,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
             r = suppressWarnings(as.numeric(r$r)),
             g = suppressWarnings(as.numeric(g$g)),
             b = suppressWarnings(as.numeric(b$b)),
+            maxcell = 1e6,
             stretch = "hist"
           )
         }

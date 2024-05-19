@@ -21,8 +21,10 @@ app_server <- function(input, output, session) {
   pathmosaic <- reactiveValues(path = NULL)
   activemosaic <- reactiveValues(name = NULL)
   mod_mosaic_prepare_server("mosaic_prepare_1", mosaic_data, r, g, b, re, nir, swir, tir, basemap, pathmosaic, quantiles, maxpixel, activemosaic)
+
+  # shapefile
   shapefile <- reactiveValues()
-  mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile, activemosaic)
+  mod_shapefile_prepare_server("shapefile_prepare_1", mosaic_data, basemap, shapefile, activemosaic,  r, g, b)
   mod_indexes_server("indexes_1", mosaic_data, r, g, b, re, nir, swir, tir, basemap, index, shapefile)
   mod_analyze_server("analyze_1", mosaic_data, basemap, shapefile, index, pathmosaic, dfs)
   mosaiclist <- reactiveValues()

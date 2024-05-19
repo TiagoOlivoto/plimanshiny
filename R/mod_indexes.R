@@ -11,7 +11,7 @@ mod_indexes_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      col_3(
+      col_4(
         bs4TabCard(
           id = "tabsindex",
           width = 12,
@@ -33,7 +33,7 @@ mod_indexes_ui <- function(id){
                   class = "btn-danger"
                 )
               ),
-              col_4(
+              col_8(
                 actionButton(
                   inputId = ns("mosaicinfoindex"),
                   label = tagList(
@@ -46,9 +46,18 @@ mod_indexes_ui <- function(id){
             width = 12,
             status = "success",
             hl(),
-            selectInput(ns("rastertocompute"),
-                        label = "Raster to compute the index(s)",
-                        choices = NULL),
+            fluidRow(
+              col_6(
+                selectInput(ns("rastertocompute"),
+                            label = "Raster",
+                            choices = NULL)
+              ),
+              col_6(
+                selectInput(ns("shapefiletoplot"),
+                            label = "Shapefile",
+                            choices = NULL)
+              )
+            ),
             pickerInput(
               inputId = ns("imgbands"),
               label = "Image Bands",
@@ -103,18 +112,15 @@ mod_indexes_ui <- function(id){
               icon = icon("chart-simple")
             ),
             hl(),
-            selectInput(ns("activeindex"),
-                        label = "Active index",
-                        choices = NULL),
             fluidRow(
+              col_6(
+                selectInput(ns("activeindex"),
+                            label = "Active index",
+                            choices = NULL),
+              ),
               col_6(
                 selectInput(ns("indextosync"),
                             label = "Index to sync",
-                            choices = NULL)
-              ),
-              col_6(
-                selectInput(ns("shapefiletoplot"),
-                            label = "Shapefile",
                             choices = NULL)
               )
             )
@@ -132,7 +138,7 @@ mod_indexes_ui <- function(id){
           )
         )
       ),
-      col_9(
+      col_8(
         bs4TabCard(
           id = "tabsindex",
           width = 12,
@@ -245,9 +251,10 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                                            events = list("oncomplete"=I('alert("Hope it helped!")'))))
     mosaictmp <- reactiveValues(mosaic =NULL)
     observe({
+      nam <- setdiff(names(shapefile), c("shapefile", "shapefileplot"))
       updateSelectInput(session, "shapefiletoplot",
-                        choices = c("none", setdiff(names(shapefile), c("shapefile", "shapefileplot"))),
-                        selected = "none")
+                        choices = c("none", nam),
+                        selected = nam[1])
     })
     observe({
       req(mosaic_data)
@@ -434,7 +441,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
             terra::plot(magg$agg[[input$indextosync]],
                         col = return_colors(input$palplotindex, reverse = input$palplotindexrev, n = 100),
                         smooth = TRUE
-                        )
+            )
           })
         }
       }

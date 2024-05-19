@@ -70,6 +70,11 @@ mod_shapefile_prepare_ui <- function(id){
                                selected = "none",
                              ),
                              pickerpalette(id, "palplot", selected = "RdYlGn"),
+                             sliderInput(ns("ncolors"),
+                                         label = "Number of colors",
+                                         min = 0,
+                                         max = 100,
+                                         value = 4),
                              sliderInput(ns("alphacolorfill"),
                                          label = "Fill opacity",
                                          min = 0,
@@ -312,12 +317,12 @@ mod_shapefile_prepare_ui <- function(id){
                 )
               ),
               col_6(
-                actionButton(
-                  inputId = ns("plotinfo2"),
-                  label = tagList(
-                    icon = icon("question-circle", verify_fa = FALSE), "Plot info"
-                  ),
-                  class = "btn-info"
+                actionBttn(
+                  ns("plotinfo2"),
+                  label = "Plot info",
+                  icon = icon("info"),
+                  color = "success",
+                  style = "jelly"
                 )
               )
             ),
@@ -360,7 +365,7 @@ shapeimp <-
 #' shapefile_prepare Server Functions
 #'
 #' @noRd
-mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, activemosaic){
+mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, activemosaic, r, g, b){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     observeEvent(input$guideshape, introjs(session,
@@ -565,7 +570,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                 basemap$map + mapview::mapview(
                   shpt |> extract_number(block, plot_id),
                   zcol = input$fillid,
-                  col.regions = return_colors(input$palplot, n = 10),
+                  col.regions = return_colors(input$palplot, n = input$ncolors),
                   alpha.regions = input$alphacolorfill,
                   lwd = input$lwdt,
                   layer.name = "shapes"
@@ -641,7 +646,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   basemap$map +
                   mapview::mapview(shptemp,
                                    zcol = input$fillid,
-                                   col.regions = return_colors(input$palplot, n = 10),
+                                   col.regions = return_colors(input$palplot, n = input$ncolors),
                                    alpha.regions = input$alphacolorfill,
                                    lwd = input$lwdt,
                                    layer.name = "shapes")
@@ -816,7 +821,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   mapp <-
                     mapview::mapview(shptemp,
                                      zcol = input$colorshapeimport,
-                                     col.regions = return_colors(input$palplot, n = 10),
+                                     col.regions = return_colors(input$palplot, n = input$ncolors),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
@@ -843,7 +848,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                     basemap$map +
                     mapview::mapview(shptemp,
                                      zcol = input$colorshapeimport,
-                                     col.regions = return_colors(input$palplot),
+                                     col.regions = return_colors(input$palplot, n = input$ncolors),
                                      alpha.regions = input$alphacolorfill,
                                      lwd = input$lwdt,
                                      layer.name = "shapes")
@@ -954,7 +959,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           npoints <- sf::st_coordinates(shpinfo) |> nrow()
           coords <- sf::st_coordinates(shpinfo)[, 1:2]
           buff <- diff(range(coords[, 1])) * 0.15
-          dists <-  coords |> dist() |> as.matrix()
+          dists <-  suppressWarnings(as.matrix(sf::st_distance(sf::st_cast(shpinfo, "POINT")$geometry)))
           seq_dists <- c()
           for (i in 1:(ncol(dists) - 1)) {
             seq_dists <- c(seq_dists, dists[i, i + 1])
@@ -974,13 +979,20 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           if(!is.null(mos) & (nrow(mos) != 180) & (nrow(mos) != 360)){
             mcro <- terra::crop(mos, terra::vect(shpinfo) |> terra::buffer(buff))
             if(terra::nlyr(mcro) > 2){
-              terra::plotRGB(mcro, stretch = "hist")
+              terra::plotRGB(mcro,
+                             r = suppressWarnings(as.numeric(r$r)),
+                             g = suppressWarnings(as.numeric(g$g)),
+                             b = suppressWarnings(as.numeric(b$b)),
+                             stretch = "hist",
+                             maxcell=2e6)
             } else{
-              terra::plot(mcro[[1]])
+              terra::plot(mcro[[1]],
+                          smooth = TRUE,
+                          maxcell = 2e6)
             }
             shapefile_plot(shpinfo, add = TRUE, col = adjustcolor("salmon", 0.9))
           } else{
-            shapefile_plot(shpinfo, col =adjustcolor("salmon", 0.9))
+            shapefile_plot(shpinfo, col = adjustcolor("salmon", 0.9))
           }
           wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
           hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
