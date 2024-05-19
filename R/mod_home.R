@@ -58,6 +58,61 @@ mod_home_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
+    observeEvent(input$about, {
+
+      showModal(
+        modalDialog(
+          title = "About plimanshiny",
+          fluidRow(
+            col_7(
+              img(src = "www/help_logo.png", width = "100%", height = "100%"),
+            ),
+            col_5(
+              box(
+                width = 12,
+                headerBorder = FALSE,
+                collapsible = TRUE,
+                closable = TRUE,
+                h2("About"),
+                "{plimanshiny} provides an interactive Shiny-based graphical user interface for the pliman package,
+                facilitating user-friendly access to advanced plant image analysis tools without the need
+                for extensive programming knowledge. This package integrates a variety of functionalities
+                for high-throughput phenotyping, including but not limited to orthomosaic analysis from drone
+                and satellite imagery, shapefile creation and handling, time series analysis, image analysis,
+                and phytopathometry, into a cohesive and intuitive application.", br(),br(),
+                h2("Developer"),
+                a("Prof. Dr. Tiago Olivoto", href = "https://olivoto.netlify.app/", target = "_blank"), br(),
+                "Department of Plant Science", br(),
+                "Federal University of Santa Catarina", br(), br(),
+                h2("Contribution"),
+                a("Dr. Leonardo Volpato", href = "https://www.linkedin.com/in/leonardo-volpato/", target = "_blank"), br(),br(),br(),
+                fluidRow(
+                  col_6(
+                    shiny::actionButton(inputId= ns("gitpliman"),
+                                        label="pliman",
+                                        icon = icon("github"),
+                                        onclick ="window.open('https://github.com/TiagoOlivoto/pliman', '_blank')"),
+                  ),
+                  col_6(
+                    shiny::actionButton(inputId= ns("gitplimanshiny"),
+                                        label="plimanshiny",
+                                        icon = icon("github"),
+                                        onclick ="window.open('https://github.com/TiagoOlivoto/plimanshiny', '_blank')"),
+                  )
+                )
+              )
+            )
+          ),
+
+
+          footer = NULL,
+          easyClose = TRUE,
+          size = "xl"
+        )
+      )
+
+    })
+
   })
 }
 

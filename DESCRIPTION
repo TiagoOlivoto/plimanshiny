@@ -3,7 +3,14 @@ Title: A shiny app for the pliman package
 Version: 0.0.0.9000
 Authors@R: 
     person("Tiago", "Olivoto", , "tiagoolivoto@gmail.com", role = c("aut", "cre"))
-Description: Provides interactive tools for analyzing mosaics.
+Description: provides an interactive Shiny-based graphical user interface
+    for the pliman package, facilitating user-friendly access to advanced
+    plant image analysis tools without the need for extensive programming
+    knowledge. This package integrates a variety of functionalities for
+    high-throughput phenotyping, including but not limited to orthomosaic
+    analysis from drone and satellite imagery, shapefile creation and
+    handling, time series analysis, image analysis, and phytopathometry,
+    into a cohesive and intuitive application.
 License: MIT + file LICENSE
 Imports: 
     bs4Dash,

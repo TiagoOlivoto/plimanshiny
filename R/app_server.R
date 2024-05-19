@@ -5,6 +5,10 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
+  # Home
+  mod_home_server("home_1")
+
+  # Mosaic analysis
   mosaic_data <- reactiveValues()
   r <- reactiveValues(r = 1)
   g <- reactiveValues(g = 2)
@@ -67,6 +71,7 @@ app_server <- function(input, output, session) {
   mod_dfedit_server("dfedit_1", dfs, shapefile)
   mod_dfupdate_server("dfupdate_1", dfs, shapefile)
   mod_dfjoin_server("dfjoin_1", dfs, shapefile)
+
 }
 
 
