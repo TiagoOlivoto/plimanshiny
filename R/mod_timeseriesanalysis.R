@@ -1191,12 +1191,10 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
                            pattern = "beforeimg_")
           f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
                            pattern = "afterimg_")
-
-          tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
-          sapply(tmpimages, file.remove)
-          session$onSessionEnded(function() {
-            sapply(tmpimages, file.remove)
-          })
+          if(any(c(length(f1), length(f2)) != 0)){
+            tmpimages <- paste0(paste0(system.file("app", package = "plimanshiny" ), "/www/"), c(f1, f2))
+            a <- sapply(tmpimages, file.remove)
+          }
 
           req(tmpplot1$plot)
           req(tmpplot2$plot)
@@ -1204,22 +1202,22 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           output$sliderout <- renderUI({
             # image1
 
-            tfbef <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot1_{sample(1:1000, 1)}_{input$gammacorr}_{input$stretch}.jpg")
+            tfbef <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot1_{sample(1:1000000, 1)}{input$gammacorr2}{input$stretch2}.jpg")
             pathslider1$val <- tfbef
             jpeg(tfbef, width = 920, height = 640)
             if(input$rgborattribute2 == "RGB"){
               if(input$stretch == "none"){
-                terra::plotRGB(tmpplot1$plot ^input$gammacorr,
+                terra::plotRGB(tmpplot1$plot ^input$gammacorr2,
                                r = suppressWarnings(as.numeric(r$r)),
                                g = suppressWarnings(as.numeric(g$g)),
                                b = suppressWarnings(as.numeric(b$b)))
 
               } else{
-                terra::plotRGB(tmpplot1$plot ^ input$gammacorr,
+                terra::plotRGB(tmpplot1$plot ^ input$gammacorr2,
                                r = suppressWarnings(as.numeric(r$r)),
                                g = suppressWarnings(as.numeric(g$g)),
                                b = suppressWarnings(as.numeric(b$b)),
-                               stretch = input$stretch)
+                               stretch = input$stretch2)
               }
             } else{
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
@@ -1232,22 +1230,22 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             dev.off()
 
             # image2
-            tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot2_{sample(1:1000, 1)}_{input$gammacorr}_{input$stretch}.jpg")
+            tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot2_{sample(1:1000000, 1)}{input$gammacorr2}{input$stretch2}.jpg")
             pathslider2$val <- tfaft
             jpeg(tfaft, width = 920, height = 640)
             if(input$rgborattribute2 == "RGB"){
               if(input$stretch == "none"){
-                terra::plotRGB(tmpplot2$plot ^input$gammacorr,
+                terra::plotRGB(tmpplot2$plot ^input$gammacorr2,
                                r = suppressWarnings(as.numeric(r$r)),
                                g = suppressWarnings(as.numeric(g$g)),
                                b = suppressWarnings(as.numeric(b$b)))
 
               } else{
-                terra::plotRGB(tmpplot2$plot ^ input$gammacorr,
+                terra::plotRGB(tmpplot2$plot ^ input$gammacorr2,
                                r = suppressWarnings(as.numeric(r$r)),
                                g = suppressWarnings(as.numeric(g$g)),
                                b = suppressWarnings(as.numeric(b$b)),
-                               stretch = input$stretch)
+                               stretch = input$stretch2)
               }
             } else{
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
@@ -1498,7 +1496,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         }
       })
     })
-    # remove temp images after session is ended
+    # # remove temp images after session is ended
     observe({
       session$onSessionEnded(function() {
         f1 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
