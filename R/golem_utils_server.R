@@ -387,16 +387,7 @@ boxtext <- function(x, y, labels = NA, col.text = NULL, col.bg = NA,
   }
 }
 
-convert_numeric_cols <- function(data) {
-  can_convert_to_numeric <- function(x) {
-    is.vector(x) & all(!is.na(suppressWarnings(as.numeric(x))))
-  }
-  data %>%
-    dplyr::mutate(dplyr::across(
-      dplyr::where(can_convert_to_numeric),
-      as.numeric
-    ))
-}
+
 convert_numeric_cols <- function(data) {
   # Function to check if a column can be converted to numeric
   can_convert_to_numeric <- function(x) {
@@ -450,4 +441,17 @@ render_reactable <- function(df,
     ...
   )
 }
+color_alpha <- function(color, alpha) {
+  # Convert the color to RGB
+  rgb_vals <- col2rgb(color) / 255
 
+  # Check that alpha is between 0 and 1
+  if (alpha < 0 || alpha > 1) {
+    stop("Alpha value must be between 0 and 1")
+  }
+
+  # Create the color with the specified alpha
+  alpha_color <- rgb(rgb_vals[1], rgb_vals[2], rgb_vals[3], alpha)
+
+  return(alpha_color)
+}

@@ -61,8 +61,7 @@ mod_timeseriesanalysis_ui <- function(id){
               col_4(
                 shiny::actionButton(inputId= ns("indexhelp"),
                                     label="Indexes' equations",
-                                    icon = icon("square-root-variable"),
-                                    onclick ="window.open('https://tiagoolivoto.github.io/pliman/articles/indexes.html', '_blank')")
+                                    icon = icon("square-root-variable"))
               )
             ),
             textInput(ns("myindex"),
@@ -425,7 +424,7 @@ mod_timeseriesanalysis_ui <- function(id){
               col_4(
                 pickerInput(
                   inputId = ns("rgborattribute"),
-                  label = "How to see the plot evolution",
+                  label = "See as...",
                   choices = c("RGB", "plot attribute"),
                   multiple = FALSE
                 )
@@ -445,12 +444,35 @@ mod_timeseriesanalysis_ui <- function(id){
                 )
               )
             ),
+            conditionalPanel(
+              condition = "input.rgborattribute == 'RGB'", ns = ns,
+              fluidRow(
+                col_3(
+                  selectInput(
+                    ns("stretch"),
+                    label = "Stretch",
+                    choices = c("none", "lin", "hist")
+                  )
+                ),
+                col_9(
+                  sliderInput(
+                    ns("gammacorr"),
+                    label = "Gamma correction",
+                    min = -5,
+                    max = 5,
+                    value = 1,
+                    step = 0.1
+                  )
+                )
+              )
+            ),
+
             plotOutput(ns("evolutionplot"), height = "640px") |> add_spinner()
           ),
           tabPanel(
             title = "Compare plots",
             fluidRow(
-              col_3(
+              col_2(
                 pickerInput(
                   inputId = ns("rgborattribute2"),
                   label = "Show...",
@@ -458,23 +480,23 @@ mod_timeseriesanalysis_ui <- function(id){
                   multiple = FALSE
                 )
               ),
-              col_3(
+              col_2(
                 pickerInput(
                   inputId = ns("levelvarcp1"),
-                  label = "Left side:",
+                  label = "Left:",
                   choices = NULL,
                   multiple = FALSE
                 )
               ),
-              col_3(
+              col_2(
                 pickerInput(
                   inputId = ns("levelvarcp2"),
-                  label = "Right side:",
+                  label = "Right:",
                   choices = NULL,
                   multiple = FALSE
                 )
               ),
-              col_3(
+              col_2(
                 prettyCheckbox(
                   inputId = ns("compslider"),
                   label = "Slider?",
@@ -483,7 +505,25 @@ mod_timeseriesanalysis_ui <- function(id){
                   status = "success",
                   animation = "rotate"
                 )
+              ),
+              col_2(
+                selectInput(
+                  ns("stretch2"),
+                  label = "Stretch",
+                  choices = c("none", "lin", "hist")
+                )
+              ),
+              col_2(
+                sliderInput(
+                  ns("gammacorr2"),
+                  label = "Gamma correction",
+                  min = -5,
+                  max = 5,
+                  value = 1,
+                  step = 0.1
+                )
               )
+
             ),
             conditionalPanel(
               condition = "input.compslider == false", ns = ns,
@@ -832,12 +872,14 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           as.data.frame() |>
           dplyr::select(dplyr::all_of(c("date", input$plotattribute)))
         p <-
-          ggplot(plot_ind, aes(x = .data[["date"]], y = .data[[input$plotattribute]])) +
-          geom_boxplot(fill = "#28a745") +
-          geom_smooth() +
-          theme_bw() +
-          scale_x_date(date_labels = "%d/%m")
-        plotly::ggplotly(p, dynamicTicks = TRUE)
+          suppressWarnings(
+            ggplot(plot_ind, aes(x = .data[["date"]], y = .data[[input$plotattribute]], group = 1)) +
+              geom_boxplot(fill = "#28a745") +
+              geom_smooth(method = 'loess', formula = 'y ~ x') +
+              theme_bw() +
+              scale_x_date(date_labels = "%d/%m")
+          )
+        suppressWarnings(plotly::ggplotly(p, dynamicTicks = TRUE))
       })
 
       # evolution plot
@@ -879,17 +921,20 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
 
 
         p2 <-
-          ggplot(plot_ind, aes(x = .data[["date"]], y = .data[[input$plotattribute]],
-                               group = .data[[input$groupingvar]],
-                               color = .data[[input$groupingvar]])) +
-          geom_point() +
-          geom_smooth(se = FALSE,
-                      method = 'loess',
-                      formula = 'y ~ x') +
-          theme_bw() +
-          scale_x_date(date_labels = "%d/%m")
-        plotly::ggplotly(p2, dynamicTicks = TRUE)
+          suppressWarnings(
+            ggplot(plot_ind, aes(x = .data[["date"]], y = .data[[input$plotattribute]],
+                                 group = .data[[input$groupingvar]],
+                                 color = .data[[input$groupingvar]])) +
+              geom_point() +
+              geom_smooth(se = FALSE,
+                          method = 'loess',
+                          formula = 'y ~ x') +
+              theme_bw() +
+              scale_x_date(date_labels = "%d/%m")
+          )
+        suppressWarnings(plotly::ggplotly(p2, dynamicTicks = TRUE))
       })
+
 
       # plot evolution
       shp <- reactiveValues()
@@ -901,7 +946,8 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         shp$shp <- shapefile[[input$activeshape]]$data
       }
 
-      # plot evolution
+
+      # Plot evolution
       req(shp$shp)
       observe({
         levels <- sort(unique(shp$shp[["unique_id"]]))
@@ -935,7 +981,19 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           op <- par(mfrow = c(input$nrows, input$ncols))
           on.exit(par(op))
           for (i in seq_along(mosaiclist$mosaics$data)) {
-            terra::crop(mosaiclist$mosaics$data[[i]], shapetmp, mask = TRUE) |> terra::plotRGB(stretch = "hist")
+            if(input$stretch == "none"){
+              terra::plotRGB(terra::crop(mosaiclist$mosaics$data[[i]], shapetmp, mask = TRUE) ^input$gammacorr,
+                             r = suppressWarnings(as.numeric(r$r)),
+                             g = suppressWarnings(as.numeric(g$g)),
+                             b = suppressWarnings(as.numeric(b$b)))
+
+            } else{
+              terra::plotRGB(terra::crop(mosaiclist$mosaics$data[[i]], shapetmp, mask = TRUE) ^ input$gammacorr,
+                             r = suppressWarnings(as.numeric(r$r)),
+                             g = suppressWarnings(as.numeric(g$g)),
+                             b = suppressWarnings(as.numeric(b$b)),
+                             stretch = input$stretch)
+            }
           }
           par(mfrow = c(1, 1))
         } else{
@@ -944,50 +1002,57 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
 
           for (i in seq_along(mosaiclist$mosaics$data)) {
-            list_mo[[i]] <-
+            tind <- try(
               terra::crop(mosaiclist$mosaics$data[[i]], shapetmp, mask = TRUE) |>
-              mosaic_index(
-                r = suppressWarnings(as.numeric(r$r)),
-                g = suppressWarnings(as.numeric(g$g)),
-                b = suppressWarnings(as.numeric(b$b)),
-                re = suppressWarnings(as.numeric(re$re)),
-                nir = suppressWarnings(as.numeric(nir$nir)),
-                swir = suppressWarnings(as.numeric(swir$swir)),
-                tir = suppressWarnings(as.numeric(tir$tir)),
-                index = tmpind,
-                plot = FALSE
-              )
+                mosaic_index(
+                  r = suppressWarnings(as.numeric(r$r)),
+                  g = suppressWarnings(as.numeric(g$g)),
+                  b = suppressWarnings(as.numeric(b$b)),
+                  re = suppressWarnings(as.numeric(re$re)),
+                  nir = suppressWarnings(as.numeric(nir$nir)),
+                  swir = suppressWarnings(as.numeric(swir$swir)),
+                  tir = suppressWarnings(as.numeric(tir$tir)),
+                  index = tmpind,
+                  plot = FALSE
+                ),
+              silent = TRUE
+            )
+            if(!inherits(tind, "try-error")){
+              list_mo[[i]] <-tind
+            }
           }
-
-          list_mo <-
-            lapply(seq_along(list_mo), function(i){
-              terra::resample(list_mo[[i]], list_mo[[1]])
-            }) |>
-            terra::rast()
-
           req(list_mo)
-          names(list_mo) <- names(mosaiclist$mosaics$data)
+          if(length(list_mo) > 0){
+            list_mo <-
+              lapply(seq_along(list_mo), function(i){
+                terra::resample(list_mo[[i]], list_mo[[1]])
+              }) |>
+              terra::rast()
 
-          ggplot() +
-            tidyterra::geom_spatraster(data = list_mo,
-                                       interpolate = TRUE,
-                                       maxcell = 2.5e5) +
-            scale_fill_gradientn(colors = return_colors(input$palplot, reverse = input$palplotrev, n = 8),
-                                 na.value = "transparent") +
-            facet_wrap(~lyr,
-                       ncol =  input$ncols,
-                       nrow = input$nrows) +
-            theme_void() +
-            theme(legend.position = "bottom",
-                  panel.spacing = unit(0, "cm")) +
-            guides(fill = guide_colourbar(theme = theme(
-              legend.key.width = unit(450, "pt")
-            ))) +
-            labs(fill = tmpind)
+            names(list_mo) <- names(mosaiclist$mosaics$data)
 
+            ggplot() +
+              tidyterra::geom_spatraster(data = list_mo,
+                                         interpolate = TRUE,
+                                         maxcell = 2.5e5) +
+              scale_fill_gradientn(colors = return_colors(input$palplot, reverse = input$palplotrev, n = 8),
+                                   na.value = "transparent") +
+              facet_wrap(~lyr,
+                         ncol =  input$ncols,
+                         nrow = input$nrows) +
+              theme_void() +
+              theme(legend.position = "bottom",
+                    panel.spacing = unit(0, "cm")) +
+              guides(fill = guide_colourbar(theme = theme(
+                legend.key.width = unit(450, "pt")
+              ))) +
+              labs(fill = tmpind)
+
+          }
         }
       })
 
+      # Compare plots
       tmpplot1 <- reactiveValues()
       tmpplot2 <- reactiveValues()
       minmax1 <- reactiveValues()
@@ -1005,48 +1070,61 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         if(input$rgborattribute2 != "RGB"){
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
           tmpc1 <-
-            mosaic_index(
-              tmpc1,
-              r = suppressWarnings(as.numeric(r$r)),
-              g = suppressWarnings(as.numeric(g$g)),
-              b = suppressWarnings(as.numeric(b$b)),
-              re = suppressWarnings(as.numeric(re$re)),
-              nir = suppressWarnings(as.numeric(nir$nir)),
-              swir = suppressWarnings(as.numeric(swir$swir)),
-              tir = suppressWarnings(as.numeric(tir$tir)),
-              index = tmpind,
-              plot = FALSE
+            try(
+              mosaic_index(
+                tmpc1,
+                r = suppressWarnings(as.numeric(r$r)),
+                g = suppressWarnings(as.numeric(g$g)),
+                b = suppressWarnings(as.numeric(b$b)),
+                re = suppressWarnings(as.numeric(re$re)),
+                nir = suppressWarnings(as.numeric(nir$nir)),
+                swir = suppressWarnings(as.numeric(swir$swir)),
+                tir = suppressWarnings(as.numeric(tir$tir)),
+                index = tmpind,
+                plot = FALSE
+              )
             )
-          minmax1$val <- terra::minmax(tmpc1)
+          if(!inherits(tmpc1, "try-error")){
+            minmax1$val <- terra::minmax(tmpc1)
+            tmpplot1$plot <- tmpc1
+          }
+        } else{
+          tmpplot1$plot <- tmpc1
         }
-        tmpplot1$plot <- tmpc1
 
         req(input$levelvarcp2)
         shapetmp <-
           result_plot |>
           dplyr::filter(unique_id == input$levelvarcp2)
 
-        mosaic1 <- mosaiclist$mosaics$data[[which(names(mosaiclist$mosaics$data) == shapetmp$date)]]
-        tmpc1 <- terra::crop(mosaic1, terra::vect(shapetmp), mask = TRUE)
+        mosaic2 <- mosaiclist$mosaics$data[[which(names(mosaiclist$mosaics$data) == shapetmp$date)]]
+        tmpc2 <- terra::crop(mosaic2, terra::vect(shapetmp), mask = TRUE)
 
         if(input$rgborattribute2 != "RGB"){
           tmpind <- sub("^[^.]*\\.", "", input$plotattribute)
-          tmpc1 <-
-            mosaic_index(
-              tmpc1,
-              r = suppressWarnings(as.numeric(r$r)),
-              g = suppressWarnings(as.numeric(g$g)),
-              b = suppressWarnings(as.numeric(b$b)),
-              re = suppressWarnings(as.numeric(re$re)),
-              nir = suppressWarnings(as.numeric(nir$nir)),
-              swir = suppressWarnings(as.numeric(swir$swir)),
-              tir = suppressWarnings(as.numeric(tir$tir)),
-              index = tmpind,
-              plot = FALSE
+          tmpc2 <-
+            try(
+              mosaic_index(
+                tmpc2,
+                r = suppressWarnings(as.numeric(r$r)),
+                g = suppressWarnings(as.numeric(g$g)),
+                b = suppressWarnings(as.numeric(b$b)),
+                re = suppressWarnings(as.numeric(re$re)),
+                nir = suppressWarnings(as.numeric(nir$nir)),
+                swir = suppressWarnings(as.numeric(swir$swir)),
+                tir = suppressWarnings(as.numeric(tir$tir)),
+                index = tmpind,
+                plot = FALSE
+              )
             )
-          minmax2$val <- terra::minmax(tmpc1)
+          if(!inherits(tmpc2, "try-error")){
+            minmax2$val <- terra::minmax(tmpc2)
+            tmpplot2$plot <- tmpc2
+          }
+        } else{
+          tmpplot2$plot <- tmpc2
         }
-        tmpplot2$plot <- tmpc1
+
       })
 
 
@@ -1055,22 +1133,51 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           output$compplot1 <- renderPlot({
             req(tmpplot1$plot)
             if(input$rgborattribute2 == "RGB"){
-              terra::plotRGB(tmpplot1$plot, stretch = "hist")
+              if(input$stretch2 == "none"){
+                terra::plotRGB(tmpplot1$plot ^input$gammacorr2,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)))
+
+              } else{
+                terra::plotRGB(tmpplot1$plot ^ input$gammacorr2,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)),
+                               stretch = input$stretch2)
+              }
             } else{
+              print(tmpplot1$plot)
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
               terra::plot(tmpplot1$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
+                          maxcell = 1e6,
                           smooth = TRUE,
+                          axes = FALSE,
                           range = rang)
             }
           })
           output$compplot2 <- renderPlot({
             req(tmpplot2$plot)
             if(input$rgborattribute2 == "RGB"){
-              terra::plotRGB(tmpplot2$plot, stretch = "hist")
+              if(input$stretch2 == "none"){
+                terra::plotRGB(tmpplot2$plot ^input$gammacorr2,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)))
+
+              } else{
+                terra::plotRGB(tmpplot2$plot ^ input$gammacorr2,
+                               stretch = input$stretch2,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)))
+              }
             } else{
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
               terra::plot(tmpplot2$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
                           smooth = TRUE,
+                          maxcell = 1e6,
+                          axes = FALSE,
                           range = rang)
             }
           })
@@ -1080,7 +1187,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           pathslider2 <- reactiveValues(val=NULL)
 
 
-          # observeEvent(input$createslider, {
           f1 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
                            pattern = "beforeimg_")
           f2 <- list.files(path = paste0(system.file("app", package = "plimanshiny" ), "/www/"),
@@ -1098,11 +1204,23 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           output$sliderout <- renderUI({
             # image1
 
-            tfbef <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot1_{sample(1:1000, 1)}.jpg")
+            tfbef <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot1_{sample(1:1000, 1)}_{input$gammacorr}_{input$stretch}.jpg")
             pathslider1$val <- tfbef
             jpeg(tfbef, width = 920, height = 640)
             if(input$rgborattribute2 == "RGB"){
-              terra::plotRGB(tmpplot1$plot, stretch = "hist")
+              if(input$stretch == "none"){
+                terra::plotRGB(tmpplot1$plot ^input$gammacorr,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)))
+
+              } else{
+                terra::plotRGB(tmpplot1$plot ^ input$gammacorr,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)),
+                               stretch = input$stretch)
+              }
             } else{
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
               terra::plot(tmpplot1$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
@@ -1114,11 +1232,23 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             dev.off()
 
             # image2
-            tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot2_{sample(1:1000, 1)}.jpg")
+            tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/beforeimg_plot2_{sample(1:1000, 1)}_{input$gammacorr}_{input$stretch}.jpg")
             pathslider2$val <- tfaft
             jpeg(tfaft, width = 920, height = 640)
             if(input$rgborattribute2 == "RGB"){
-              terra::plotRGB(tmpplot2$plot, stretch = "hist")
+              if(input$stretch == "none"){
+                terra::plotRGB(tmpplot2$plot ^input$gammacorr,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)))
+
+              } else{
+                terra::plotRGB(tmpplot2$plot ^ input$gammacorr,
+                               r = suppressWarnings(as.numeric(r$r)),
+                               g = suppressWarnings(as.numeric(g$g)),
+                               b = suppressWarnings(as.numeric(b$b)),
+                               stretch = input$stretch)
+              }
             } else{
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
               terra::plot(tmpplot2$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
@@ -1145,7 +1275,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             width: 50vw; /* Increased width */
             height: 50vw; /* Increased height */
             max-width: 920px; /* Increased maximum width */
-            max-height: 660px; /* Increased maximum height */
+            max-height: 640px; /* Increased maximum height */
             overflow: hidden;
         }
 
@@ -1237,8 +1367,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           })
         }
       })
-
-
 
 
 
@@ -1382,6 +1510,34 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           a <- sapply(tmpimages, file.remove)
         }
       })
+    })
+
+    # index equation
+    observeEvent(input$indexhelp, {
+
+      output$tabavailableind <- renderReactable({
+        render_reactable(pliman_indexes_eq(),
+                         defaultPageSize = 10,
+                         columns = list(
+                           Index = colDef(maxWidth = 100),
+                           Equation = colDef(maxWidth = 850),
+                           Band = colDef(maxWidth = 100)
+                         ))
+      })
+
+      showModal(
+        modalDialog(
+          title = "The equations for the available built-in indexes",
+          shiny::actionButton(inputId= ns("equation"),
+                              label="References",
+                              icon = icon("lightbulb"),
+                              onclick ="window.open('https://tiagoolivoto.github.io/pliman/articles/indexes.html', '_blank')"),
+          reactable::reactableOutput(ns("tabavailableind")),
+          footer = NULL,
+          easyClose = TRUE,
+          size = "xl"
+        )
+      )
     })
 
   })

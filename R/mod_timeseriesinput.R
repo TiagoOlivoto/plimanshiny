@@ -157,7 +157,7 @@ mod_timeseriesinput_ui <- function(id){
                            'persist'= FALSE)
           ),
           fluidRow(
-            col_6(
+            col_4(
               awesomeRadio(
                 inputId = ns("showmosaic"),
                 label = "Show",
@@ -166,7 +166,7 @@ mod_timeseriesinput_ui <- function(id){
                 inline = TRUE
               )
             ),
-            col_6(
+            col_4(
               conditionalPanel(
                 condition = "input.showmosaic == 'bands'", ns = ns,
                 selectInput(
@@ -175,7 +175,22 @@ mod_timeseriesinput_ui <- function(id){
                   choices = NULL
                 )
               )
+            ),
+            col_4(
+              selectInput(
+                ns("stretch"),
+                label = "Stretch",
+                choices = c("none", "lin", "hist")
+              )
             )
+          ),
+          sliderInput(
+            ns("gammacorr"),
+            label = "Gamma correction",
+            min = -5,
+            max = 5,
+            value = 1,
+            step = 0.1
           ),
           hl(),
           h3("Shapefile"),
@@ -447,7 +462,13 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       req(mosaiclist$mosaics$data)
       if(inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")){
         if(input$showmosaic == "rgb"){
-          terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]], stretch = "hist")
+          if(input$stretch == "none"){
+            terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^input$gammacorr)
+
+          } else{
+            terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^ input$gammacorr,
+                           stretch = input$stretch)
+          }
         } else{
           terra::plot(mosaiclist$mosaics$data[[input$mosaicslider]][[as.numeric(input$bandnumber)]])
         }
@@ -455,34 +476,40 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       if(input$shapefileimported != ""){
         if(input$plotshape){
           req(shapefile[[input$shapefileimported]]$data)
-          terra::plot(shapefile_input(shapefile[[input$shapefileimported]]$data, as_sf = FALSE, info = FALSE), add = TRUE, col = "red")
+          terra::plot(shapefile_input(shapefile[[input$shapefileimported]]$data, as_sf = FALSE, info = FALSE),
+                      add = TRUE,
+                      col = color_alpha("red", 0.5))
         }
       }
     })
 
     # interactive visualization
+    # Ensure that observer runs after the plot
     observe({
       req(mosaiclist$mosaics$data)
       req(input$showmosaic)
-      if(inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")){
-        if(input$showmosaic == "rgb"){
-          bmtmp <- mosaic_view(
-            mosaiclist$mosaics$data[[input$mosaicslider]],
-            r = suppressWarnings(as.numeric(r$r)),
-            g = suppressWarnings(as.numeric(g$g)),
-            b = suppressWarnings(as.numeric(b$b)),
-            max_pixels = input$maxpixels
-          )
-        } else{
-          bmtmp <-
-            mosaic_view(mosaiclist$mosaics$data[[input$mosaicslider]][[as.numeric(input$bandnumber)]],
-                        show = "index",
-                        color_regions  = scales::brewer_pal(palette = "RdYlGn")(8),
-                        max_pixels = input$maxpixels,
-                        na.color = "transparent")
+      isolate({
+        if (inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")) {
+          if (input$showmosaic == "rgb") {
+            bmtmp <- mosaic_view(
+              mosaiclist$mosaics$data[[input$mosaicslider]],
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              max_pixels = input$maxpixels
+            )
+          } else {
+            bmtmp <- mosaic_view(
+              mosaiclist$mosaics$data[[input$mosaicslider]][[as.numeric(input$bandnumber)]],
+              show = "index",
+              color_regions = scales::brewer_pal(palette = "RdYlGn")(8),
+              max_pixels = input$maxpixels,
+              na.color = "transparent"
+            )
+          }
+          basemap$map <- bmtmp
         }
-        basemap$map <- bmtmp
-      }
+      })
     })
 
     output$leafletmap <- renderLeaflet({
