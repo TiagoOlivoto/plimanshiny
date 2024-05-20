@@ -710,7 +710,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           )
         bind[[names(mosaiclist$mosaics$data[i])]] <- res
       }
-      req(bind)
 
 
       if(is.null(bind[[1]]$result_individ_map)){
@@ -758,7 +757,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         dplyr::mutate(unique_id = dplyr::row_number()) |>
         dplyr::relocate(unique_id, date, .before = block) |>
         sf::st_as_sf()
-
 
       if("data" %in% colnames(res$result_plot)){
         if(input$segmentindividuals){
@@ -820,10 +818,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           result_plot_summ <- res$result_plot_summ
         }
       }
-      if(input$segmentindividuals | input$segmentplot){
-        result_plot <- result_plot_summ
-      }
-      report(result_plot)
 
       ##### Show the results #######
       updateSelectInput(session, "plotattribute",
