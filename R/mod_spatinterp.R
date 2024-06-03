@@ -238,14 +238,14 @@ mod_spatinterp_server <- function(id, dfs, shapefile){
       }
 
       output$interpplot <- renderPlot({
-        surface(fitted$mod,
-                asp = 1,
-                type=ifelse(input$contours, "C", "I"),
-                nx = input$resx,
-                ny = input$resy,
-                xlab = "Longitute (UTM)",
-                ylab = "Latitude (UTM)",
-                col = return_colors(input$colorpalette, reverse = input$revert, n = input$colnumber))
+        fields::surface(fitted$mod,
+                        asp = 1,
+                        type=ifelse(input$contours, "C", "I"),
+                        nx = input$resx,
+                        ny = input$resy,
+                        xlab = "Longitute (UTM)",
+                        ylab = "Latitude (UTM)",
+                        col = return_colors(input$colorpalette, reverse = input$revert, n = input$colnumber))
 
       })
 
