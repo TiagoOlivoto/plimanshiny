@@ -463,10 +463,16 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       if(inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")){
         if(input$showmosaic == "rgb"){
           if(input$stretch == "none"){
-            terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^input$gammacorr)
+            terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^input$gammacorr,
+                           r = suppressWarnings(as.numeric(r$r)),
+                           g = suppressWarnings(as.numeric(g$g)),
+                           b = suppressWarnings(as.numeric(b$b)))
 
           } else{
             terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^ input$gammacorr,
+                           r = suppressWarnings(as.numeric(r$r)),
+                           g = suppressWarnings(as.numeric(g$g)),
+                           b = suppressWarnings(as.numeric(b$b)),
                            stretch = input$stretch)
           }
         } else{

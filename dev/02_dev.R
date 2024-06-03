@@ -57,6 +57,7 @@ golem::add_module(name = "dfedit")
 golem::add_module(name = "dfupdate")
 golem::add_module(name = "dfjoin")
 golem::add_module(name = "spatjoin")
+golem::add_module(name = "spatinterp")
 
 ## Add packages
 usethis::use_package("shiny")

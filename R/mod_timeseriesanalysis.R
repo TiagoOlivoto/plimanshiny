@@ -172,77 +172,72 @@ mod_timeseriesanalysis_ui <- function(id){
                     )
                   ),
                   col_6(
-                    divclass("anal7",
-                             prettyCheckbox(
-                               inputId = ns("croptoext"),
-                               label = "Crop to Extend",
-                               value = TRUE,
-                               icon = icon("check"),
-                               status = "success",
-                               animation = "rotate"
-                             )
+                    prettyCheckbox(
+                      inputId = ns("croptoext"),
+                      label = "Crop to Extend",
+                      value = TRUE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
                     ),
-                    divclass("anal7",
-                             prettyCheckbox(
-                               inputId = ns("simplify"),
-                               label = "Simplify",
-                               value = FALSE,
-                               icon = icon("check"),
-                               status = "success",
-                               animation = "rotate"
-                             )
+                    prettyCheckbox(
+                      inputId = ns("simplify"),
+                      label = "Simplify",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
                     ),
-                    divclass("anal8",
-                             prettyCheckbox(
-                               inputId = ns("invertindex"),
-                               label = "Invert",
-                               value = FALSE,
-                               icon = icon("check"),
-                               status = "success",
-                               animation = "rotate"
-                             )
+                    dropdown(
+                      label = "Invert",
+                      tags$h3("Invert the segmentation"),
+                      "By default, pixels above the threshold are selected. To select pixels below the threshold for a given date, check the proper box.",
+                      uiOutput(ns("invertindex")),
+                      circle = FALSE,
+                      status = "success",
+                      style = "unite",
+                      width = "720px",
+                      icon = icon("gear"),
+                      animate = animateOptions(enter = "fadeInLeft", exit = "fadeOutRight", duration = 1),
+                      tooltip = tooltipOptions(title = "Invert selection settings")
                     ),
-                    divclass("anal9",
-                             prettyCheckbox(
-                               inputId = ns("watershed"),
-                               label = "Watershed",
-                               value = TRUE,
-                               icon = icon("check"),
-                               status = "success",
-                               animation = "rotate"
-                             ),
-                             conditionalPanel(
-                               condition = "input.watershed == true", ns = ns,
-                               fluidRow(
-                                 col_6(
-                                   numericInput(ns("tolerance"),
-                                                label = "Tolerance",
-                                                value = 1)
-                                 ),
-                                 col_6(
-                                   numericInput(ns("extension"),
-                                                label = "Extension",
-                                                value = 1)
+                    prettyCheckbox(
+                      inputId = ns("watershed"),
+                      label = "Watershed",
+                      value = TRUE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    conditionalPanel(
+                      condition = "input.watershed == true", ns = ns,
+                      fluidRow(
+                        col_6(
+                          numericInput(ns("tolerance"),
+                                       label = "Tolerance",
+                                       value = 1)
+                        ),
+                        col_6(
+                          numericInput(ns("extension"),
+                                       label = "Extension",
+                                       value = 1)
 
-                                 )
-                               )
-                             )
+                        )
+                      )
                     ),
-                    divclass("anal10",
-                             prettyCheckbox(
-                               inputId = ns("mapindividuals"),
-                               label = "Map individuals",
-                               value = FALSE,
-                               icon = icon("check"),
-                               status = "success",
-                               animation = "rotate"
-                             ),
-                             conditionalPanel(
-                               condition = "input.mapindividuals == true", ns = ns,
-                               selectInput(ns("mapdirection"),
-                                           label = "Direction for mapping",
-                                           choices = c("horizontal", "vertical")),
-                             )
+                    prettyCheckbox(
+                      inputId = ns("mapindividuals"),
+                      label = "Map individuals",
+                      value = FALSE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    ),
+                    conditionalPanel(
+                      condition = "input.mapindividuals == true", ns = ns,
+                      selectInput(ns("mapdirection"),
+                                  label = "Direction for mapping",
+                                  choices = c("horizontal", "vertical")),
                     )
                   )
                 ),
@@ -629,7 +624,25 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       updateSelectInput(session, "segmentindex", choices = finalindex())
       updateSelectInput(session, "activeshape", choices = setdiff(names(shapefile), "shape"))
     })
+
     report <- reactiveVal()
+    output$invertindex <- renderUI({
+      req(mosaiclist$mosaics$data)
+      awesomeCheckboxGroup(
+        inputId = ns("invertin"),
+        label = "",
+        choices = names(mosaiclist$mosaics$data),
+        inline = TRUE,
+        status = "danger"
+      )
+    })
+
+    # create a vector of invert (TRUE/FALSE)
+    inversions <- reactiveValues(inv = NULL)
+    observe({
+      inversions$inv <- names(mosaiclist$mosaics$data) %in% input$invertin
+    })
+
     observeEvent(input$analyzemosaicts, {
       req(mosaiclist$mosaics$data)
       req(shapefile[[input$activeshape]]$data)
@@ -701,6 +714,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         value = 0,
         total = length(mosaiclist$mosaics$data)
       )
+
       bind <- list()
 
       for (i in seq_along(mosaiclist$mosaics$data)) {
@@ -733,7 +747,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             watershed = input$watershed,
             tolerance = input$tolerance,
             extension = input$extension,
-            invert = input$invertindex,
+            invert = inversions$inv[[i]],
             summarize_fun = summf,
             summarize_quantiles = quantiles,
             include_if = input$includeif,
@@ -1147,7 +1161,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
                                stretch = input$stretch2)
               }
             } else{
-              print(tmpplot1$plot)
               rang <- c(min(c(minmax1$val, minmax2$val)), max(c(minmax1$val, minmax2$val)))
               terra::plot(tmpplot1$plot, col = return_colors(input$palplot, reverse = input$palplotrev, n = 100),
                           maxcell = 1e6,

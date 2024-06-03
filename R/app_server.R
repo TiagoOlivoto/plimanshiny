@@ -72,6 +72,9 @@ app_server <- function(input, output, session) {
   mod_dfupdate_server("dfupdate_1", dfs, shapefile)
   mod_dfjoin_server("dfjoin_1", dfs, shapefile)
 
+  # Geostatistics
+  mod_spatinterp_server("spatinterp_1", dfs, shapefile)
+
 }
 
 

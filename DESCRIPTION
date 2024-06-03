@@ -21,6 +21,7 @@ Imports:
     DT,
     esquisse,
     exactextractr,
+    fields,
     foreach,
     future,
     ggplot2,

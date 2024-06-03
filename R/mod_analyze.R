@@ -857,6 +857,19 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                            map_individuals = input$mapindividuals,
                            map_direction = input$mapdirection,
                            verbose = FALSE)
+          centr <-
+            suppressWarnings(
+              res$result_plot |>
+                sf::st_centroid() |>
+                sf::st_coordinates() |>
+                as.data.frame() |>
+                setNames(c("x", "y"))
+            )
+          res$result_plot <- res$result_plot |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id)
+          if(!is.null(res$result_plot_summ)){
+            res$result_plot_summ <- res$result_plot_summ |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id)
+          }
+
         } else{
           if(!input$parallelanalysis){
             shp <- do.call(rbind,
@@ -1046,9 +1059,18 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             dplyr::relocate(plot_id, .after = block) |>
             sf::st_as_sf()
 
+          centr <-
+            suppressWarnings(
+              res$result_plot |>
+                sf::st_centroid() |>
+                sf::st_coordinates() |>
+                as.data.frame() |>
+                setNames(c("x", "y"))
+            )
+
           res <-
-            list(result_plot = result_plot,
-                 result_plot_summ = result_plot_summ,
+            list(result_plot = result_plot |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id),
+                 result_plot_summ = result_plot_summ |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id),
                  result_indiv = result_indiv,
                  result_individ_map = NULL,
                  map_plot = NULL,
@@ -1404,7 +1426,6 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
         bmshape <- reactiveValues(bmshape = NULL)
         mapindiv <- reactiveValues(mapindiv = NULL)
 
-        # if(!is.null(summf)){
         observe({
           req(input$plotattribute)
           req(input$indivattribute)

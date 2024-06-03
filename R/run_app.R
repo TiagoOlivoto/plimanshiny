@@ -17,6 +17,7 @@
 #' @import shinyWidgets mapview leaflet mapedit sf rintrojs leafsync esquisse waiter shinycssloaders ggplot2 shinyFiles foreach histoslider tidyterra datamods reactable
 #' @rawNamespace import(bs4Dash, except = c(progressBar, insertTab, actionButton, updateTabsetPanel, column, tabsetPanel, tabPanel, navbarMenu))
 #' @rawNamespace import(terra, except = c(panel, shift, distance))
+#' @rawNamespace import(fields, except = c(addLegend, describe))
 #' @rawNamespace import(leaflet.extras2, except = c(menuItem, addSpinner))
 #' @rawNamespace import(pliman, except = c(`%>%`))
 run_app <- function(upload_size = 10000,
@@ -29,6 +30,7 @@ run_app <- function(upload_size = 10000,
       server = app_server,
       options = list(launch.browser = TRUE)
     ),
+    print = TRUE,
     golem_opts = list(...)
   )
 }

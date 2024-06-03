@@ -15,7 +15,6 @@ mod_home_ui <- function(id){
         width = 10,
         bs4Card(
           width = 12,
-          # status = "success",
           solidHeader = FALSE,
           img(src = "www/plimanshiny.png", width = "100%", height = "80%")
         )
@@ -45,6 +44,12 @@ mod_home_ui <- function(id){
           label = "About",
           color = "success",
           icon = icon("circle-info")
+        ),
+        actionBttn(
+          inputId = ns("similartools"),
+          label = "Similar tools",
+          color = "success",
+          icon = icon("screwdriver-wrench")
         )
       )
     )
@@ -59,7 +64,6 @@ mod_home_server <- function(id){
     ns <- session$ns
 
     observeEvent(input$about, {
-
       showModal(
         modalDialog(
           title = "About plimanshiny",
@@ -111,6 +115,43 @@ mod_home_server <- function(id){
         )
       )
 
+    })
+
+    observeEvent(input$similartools, {
+      showModal(
+        modalDialog(
+          title = "Similar tools",
+          fluidRow(
+            col_2(
+              img(src = "www/fire.png", width = "100%", height = "100%"),
+            ),
+            col_10(
+              "Package with new tools to support FIELDimageR software on evaluating GIS images from agriculture field trials.",br(),
+              shiny::actionButton(inputId= ns("gitfire"),
+                                  label="FIELDimageR.Extra",
+                                  icon = icon("github"),
+                                  onclick ="window.open('https://github.com/filipematias23/FIELDimageR.Extra', '_blank')"),
+            )
+
+          ),
+          fluidRow(
+            col_2(
+              img(src = "www/firqgis.png", width = "100%", height = "100%"),
+            ),
+            col_10(
+              "A compilation of functions made in R to analyze orthomosaic images from research field trials from agriculture or plant breeding experiments using QGIS", br(),
+              shiny::actionButton(inputId= ns("gitplimanshiny"),
+                                  label="FIELDimageR-QGIS",
+                                  icon = icon("github"),
+                                  onclick ="window.open('https://github.com/filipematias23/FIELDimageR-QGIS', '_blank')"),
+            )
+
+          ),
+          footer = NULL,
+          easyClose = TRUE,
+          size = "xl"
+        )
+      )
     })
 
   })

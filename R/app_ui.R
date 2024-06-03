@@ -145,7 +145,7 @@ app_ui <- function(request) {
               icon = shiny::icon("chart-line")
             )
           ),
-### to be included ###
+          ### to be included ###
           bs4SidebarMenuItem(
             "Analyze Surface Elevation",
             icon = shiny::icon("mountain-sun"),
@@ -197,8 +197,19 @@ app_ui <- function(request) {
               tabName = "matanalyze",
               icon = shiny::icon("calendar-check")
             )
-
           ),
+          # Geostatistics
+          bs4SidebarMenuItem(
+            "Geostatistics",
+            icon = shiny::icon("globe"),
+            startExpanded = FALSE,
+            bs4SidebarMenuSubItem(
+              text = "Spatial interpolation",
+              tabName = "spatinterpolate",
+              icon = shiny::icon("chart-line")
+            )
+          ),
+          # Phytopathometry
           bs4SidebarMenuItem(
             "Phytopathometry",
             icon = shiny::icon("leaf"),
@@ -261,7 +272,7 @@ app_ui <- function(request) {
             )
 
           )
-####
+          ####
 
         )
       ),
@@ -324,7 +335,11 @@ app_ui <- function(request) {
             tabName = "analyzeseries",
             mod_timeseriesanalysis_ui("timeseriesanalysis_1")
           ),
-
+          # Geostatistics
+          bs4TabItem(
+            tabName = "spatinterpolate",
+            mod_spatinterp_ui("spatinterp_1")
+          ),
 
           # Phytopathometry
           bs4TabItem(
