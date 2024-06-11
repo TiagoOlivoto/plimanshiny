@@ -299,7 +299,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
     observe({
       shinyFileChoose(input, "filemosaic",
                       root = getVolumes()(),
-                      filetypes = c('tif', 'jp2', 'tiff', 'jpeg'),
+                      filetypes = c('tif', 'jp2', 'tiff', 'jpeg', "dat"),
                       session = session)
       if(!is.null(input$filemosaic)){
         input_file_selected$paths <- parseFilePaths(getVolumes()(), input$filemosaic)
@@ -307,13 +307,13 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
           filenames <- file_name(input_file_selected$paths$datapath)
           filedir$dir <- file_dir(input_file_selected$paths$datapath)
 
-          dates <- gsub(".*([0-9]{2}-[0-9]{2}-[0-9]{4}).*", "\\1", filenames)
-          dates <- try(as.Date(dates, tryFormats = c("%d-%m-%Y", "%m-%d-%Y")))
+          dates <- gsub(".*(([0-9]{2}-[0-9]{2}-[0-9]{4})|([0-9]{4}-[0-9]{2}-[0-9]{2})).*", "\\1", filenames)
+          dates <- try(as.Date(dates, tryFormats = c("%d-%m-%Y", "%m-%d-%Y", "%Y-%d-%m")))
           if(inherits(dates, "try-error")){
             sendSweetAlert(
               session = session,
               title = "Ops, invalid file name",
-              text = "It was not possible to extract the data information for all files. Please, ensure that all the rasterfiles have a data pattern 'mm-dd-yyyy' in the name.",
+              text = "It was not possible to extract the data information for all files. Please, ensure that all the rasterfiles have one of the following pattern names: 1) 'mm-dd-yyyy'; 2) 'dd-mm-yyyy'; or 3) 'yyyy-dd-mm'",
               type = "error"
             )
           } else{

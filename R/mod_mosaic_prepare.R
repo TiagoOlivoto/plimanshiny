@@ -91,7 +91,8 @@ mod_mosaic_prepare_ui <- function(id){
                                   label = "Quantiles",
                                   min = 0,
                                   max = 1,
-                                  value = c(0, 1))
+                                  value = c(0, 1),
+                                  step = 0.001)
                   ),
                   div(class = "prep3",
                       numericInput(ns("maxpixels"),
@@ -164,28 +165,48 @@ mod_mosaic_prepare_ui <- function(id){
                         choices = NULL)
         ),
         hl(),
-        div(class = "prep6",
+        fluidRow(
+          col_6(
             awesomeRadio(
               inputId = ns("showmosaic"),
               label = "Show",
               choices = c("rgb", "bands", "hist"),
               selected = "rgb",
-              inline = TRUE
-            ),
-            prettyCheckbox(
-              inputId = ns("intmap"),
-              label = "Create an interative base map?",
-              value = TRUE,
-              icon = icon("check"),
-              status = "success",
-              animation = "rotate"
-            ),
-            conditionalPanel(
-              condition = "input.intmap == true", ns = ns,
-              selectInput(ns("howtoplot"),
-                          label = "How to plot",
-                          choices = NULL)
+              inline = FALSE
             )
+          ),
+          col_6(
+            selectInput(
+              ns("stretch"),
+              label = "Stretch",
+              choices = c("none", "lin", "hist")
+            )
+          )
+        ),
+        prettyCheckbox(
+          inputId = ns("intmap"),
+          label = "Create an interative base map?",
+          value = TRUE,
+          icon = icon("check"),
+          status = "success",
+          animation = "rotate"
+        ),
+        conditionalPanel(
+          condition = "input.intmap == true", ns = ns,
+          selectInput(ns("howtoplot"),
+                      label = "How to plot",
+                      choices = NULL)
+        ),
+        conditionalPanel(
+          condition = "input.intmap == false", ns = ns,
+          sliderInput(
+            ns("gammacorr"),
+            label = "Gamma correction",
+            min = -5,
+            max = 5,
+            value = 1,
+            step = 0.1
+          )
         ),
         hl(),
         div(class = "prep7",
@@ -250,7 +271,7 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
     observe({
       shinyFileChoose(input, "filemosaic",
                       root = getVolumes()(),
-                      filetypes = c('tif', 'jp2', 'tiff', 'jpeg'),
+                      filetypes = c('tif', 'jp2', 'tiff', 'jpeg', "dat"),
                       session = session)
       if(!is.null(input$filemosaic)){
         input_file_selected$paths <- parseFilePaths(getVolumes()(), input$filemosaic)
@@ -349,14 +370,25 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
                      type = "warning")
           terra::plot(mosaic_data[[input$mosaictoanalyze]]$data)
         } else{
-          terra::plotRGB(
-            mosaic_data[[input$mosaictoanalyze]]$data,
-            r = suppressWarnings(as.numeric(r$r)),
-            g = suppressWarnings(as.numeric(g$g)),
-            b = suppressWarnings(as.numeric(b$b)),
-            maxcell = 1e6,
-            stretch = "hist"
-          )
+          if(input$stretch == "none"){
+            terra::plotRGB(
+              mosaic_data[[input$mosaictoanalyze]]$data ^input$gammacorr,
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              maxcell = 1e6
+            )
+
+          } else{
+            terra::plotRGB(
+              mosaic_data[[input$mosaictoanalyze]]$data ^ input$gammacorr,
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              stretch = input$stretch,
+              maxcell = 1e6
+            )
+          }
         }
       }
       if (input$showmosaic == "bands") {

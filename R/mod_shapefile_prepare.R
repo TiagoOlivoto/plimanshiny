@@ -500,7 +500,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           if(!is.null(cpoints()$finished)){
             drawn$finished <- cpoints()$finished |> dplyr::slice_tail(n = 1)
           }
-          if(!is.null(cpoints()$edited)){
+          if(!is.null(cpoints()$edited) & !is.null(cpoints()$finished)){
             idedit <- cpoints()$edited |> dplyr::slice_tail(n = 1) |> dplyr::pull(edit_id)
             drawnedit <- cpoints()$finished |> dplyr::slice_tail(n = 1) |> dplyr::pull(edit_id)
             if(idedit == drawnedit){
@@ -994,8 +994,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           } else{
             shapefile_plot(shpinfo, col = adjustcolor("salmon", 0.9))
           }
-          wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
-          hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
+          wid$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[2], 3), " m"))
+          hei$val <- ifelse(npoints > 5, "-", paste0(round(seq_dists[1], 3), " m"))
           if(npoints < 15){
             boxtext(x =  ncoors[, 1],
                     y =  ncoors[, 2],
