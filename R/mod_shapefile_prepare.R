@@ -492,6 +492,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
         mosaic_data$mosaic <- mosaic_data[[activemosaic$name]]$data
       }
     })
+
+
     observeEvent(c(basemap$map, mosaic_data$mosaic), {
       req(basemap$map)
       if (input$shapetype == "Build") {
@@ -540,6 +542,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
             buffer_row = input$buffercol |> chrv2numv(),
             plot_width = pw,
             plot_height = ph,
+            crop_to_shape_ext = FALSE,
             verbose = FALSE
           )[[1]]
           if(input$numplots != ""){
@@ -616,7 +619,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
             shapefile[[input$shapenamebuild]] <- create_reactval(input$shapenamebuild, shptemp)
 
             observe({
-              shapefilenames <- setdiff(names(shapefile), c("shapefile", "shapefileplot"))
+              shapefilenames <- setdiff(c("none", names(shapefile)), c("shapefile", "shapefileplot"))
               # Update selectInput choices
               updateSelectInput(session, "shapefiletoanalyze",
                                 choices = shapefilenames,
@@ -715,8 +718,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
 
 
 
-
-
     # Import a shapefile
     observeEvent(input$import_shapefile, {
       observeEvent(input$shapetype, {
@@ -738,16 +739,28 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
               if (!is.null(input$confirmashpname)) {
                 if (input$confirmashpname) {
                   if("shp" %in% file_extension(input$import_shapefile$datapath)){
-                    shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
-                      create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
-                                                                                                 input$import_shapefile,
-                                                                                                 session))|> convert_numeric_cols()
+                    shpimp <- import_shp_mod(input$import_shapefile$datapath,
+                                             input$import_shapefile,
+                                             session) |> convert_numeric_cols()
+                    if(!"block" %in% colnames(shpimp)){
+                      shpimp <- shpimp |> dplyr::mutate(block = "B01")
+                    }
+                    if(!"plot_id" %in% colnames(shpimp)){
+                      shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
+                    }
+                    shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <- create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), shpimp)
                   } else{
                     for (i in 1:length(newshpname)) {
-                      shapefile[[newshpname[[i]]]] <-
-                        create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
-                                                                        input$import_shapefile[[i]],
-                                                                        session))|> convert_numeric_cols()
+                      shpimp <- import_shp_mod(input$import_shapefile$datapath[[i]],
+                                     input$import_shapefile[[i]],
+                                     session) |> convert_numeric_cols()
+                      if(!"block" %in% colnames(shpimp)){
+                        shpimp <- shpimp |> dplyr::mutate(block = "B01")
+                      }
+                      if(!"plot_id" %in% colnames(shpimp)){
+                        shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
+                      }
+                      shapefile[[newshpname[[i]]]] <- create_reactval(newshpname[[i]], shpimp)
                     }
                   }
                 } else {
@@ -758,22 +771,35 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           } else {
             # If it doesn't exist, create a new reactiveValues and add it to mosaic_data
             if("shp" %in% file_extension(input$import_shapefile$datapath)){
-              shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <-
-                create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), import_shp_mod(input$import_shapefile$datapath,
-                                                                                           input$import_shapefile,
-                                                                                           session))
+              shpimp <- import_shp_mod(input$import_shapefile$datapath,
+                                       input$import_shapefile,
+                                       session) |> convert_numeric_cols()
+              if(!"block" %in% colnames(shpimp)){
+                shpimp <- shpimp |> dplyr::mutate(block = "B01")
+              }
+              if(!"plot_id" %in% colnames(shpimp)){
+                shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
+              }
+
+              shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <- create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), shpimp)
             } else{
               for (i in 1:length(newshpname)) {
-                shapefile[[newshpname[[i]]]] <-
-                  create_reactval(newshpname[[i]], import_shp_mod(input$import_shapefile$datapath[[i]],
-                                                                  input$import_shapefile[[i]],
-                                                                  session))
+                shpimp <- import_shp_mod(input$import_shapefile$datapath[[i]],
+                                         input$import_shapefile[[i]],
+                                         session) |> convert_numeric_cols()
+                if(!"block" %in% colnames(shpimp)){
+                  shpimp <- shpimp |> dplyr::mutate(block = "B01")
+                }
+                if(!"plot_id" %in% colnames(shpimp)){
+                  shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
+                }
+                shapefile[[newshpname[[i]]]] <- create_reactval(newshpname[[i]], shpimp)
               }
             }
           }
 
           observe({
-            shapefilenames <-  setdiff(names(shapefile), c("shapefile", "shapefileplot"))
+            shapefilenames <- setdiff(c("none", names(shapefile)), c("shapefile", "shapefileplot"))
             # Update selectInput choices
             updateSelectInput(session, "shapefiletoanalyze",
                               choices = shapefilenames,
@@ -787,14 +813,14 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
             updateSelectInput(session, "colorshapeimport", choices = c("none", names(shapefile[[input$shapefiletoanalyze]]$data)))
             updateSelectInput(session, "fillid", choices = c("none", names(shapefile[[input$shapefiletoanalyze]]$data)))
 
-            if(!is.null(mosaic_data$mosaic)){
+            if(!is.null(mosaic_data$mosaic) & input$shapefiletoanalyze != "none"){
               if(sf::st_crs(shapefile[[input$shapefiletoanalyze]]$data) != sf::st_crs(mosaic_data$mosaic)){
                 sendSweetAlert(
                   session = session,
                   title = "Invalid CRS",
                   text = "The Coordinate Reference System (CRS) of the shapefile does
             not match the input mosaic. Trying to set the shapefile's CRS to match the mosaic one.",
-            type = "warning"
+                  type = "warning"
                 )
                 shp <- shapefile[[input$shapefiletoanalyze]]$data |> sf::st_transform(crs = sf::st_crs(mosaic_data$mosaic))
                 shapefile[[input$shapefiletoanalyze]] <- create_reactval(input$shapefiletoanalyze, shp)
@@ -939,7 +965,6 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
     # Plot information
     observeEvent(c(input$plotinfo, input$plotinfo2), {
       if(is.null(activemosaic$name)){
-        # basemap$map <- mapview::mapview(map.types = c("Esri.WorldImagery", "OpenStreetMap", "CartoDB.Positron"))
         mos <- rast(nrows=180, ncols=360, nlyrs=3, crs = "EPSG:3857")
       } else{
         mos <- mosaic_data$mosaic
@@ -979,12 +1004,25 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
           if(!is.null(mos) & (nrow(mos) != 180) & (nrow(mos) != 360)){
             mcro <- terra::crop(mos, terra::vect(shpinfo) |> terra::buffer(buff))
             if(terra::nlyr(mcro) > 2){
-              terra::plotRGB(mcro,
-                             r = suppressWarnings(as.numeric(r$r)),
-                             g = suppressWarnings(as.numeric(g$g)),
-                             b = suppressWarnings(as.numeric(b$b)),
-                             stretch = "hist",
-                             maxcell=2e6)
+              if(input$stretch == "none"){
+                terra::plotRGB(
+                  mcro ^ input$gammacorr,
+                  r = suppressWarnings(as.numeric(r$r)),
+                  g = suppressWarnings(as.numeric(g$g)),
+                  b = suppressWarnings(as.numeric(b$b)),
+                  maxcell = 1e6
+                )
+
+              } else{
+                terra::plotRGB(
+                  mcro ^ input$gammacorr,
+                  r = suppressWarnings(as.numeric(r$r)),
+                  g = suppressWarnings(as.numeric(g$g)),
+                  b = suppressWarnings(as.numeric(b$b)),
+                  stretch = input$stretch,
+                  maxcell = 1e6
+                )
+              }
             } else{
               terra::plot(mcro[[1]],
                           smooth = TRUE,
@@ -1093,10 +1131,30 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                 )
               ),
               col_7(
-                selectInput(ns("uniqueidinfo"),
-                            label = "Unique id",
-                            choices = NULL,
-                            width = "100%"),
+                fluidRow(
+                  col_8(
+                    selectInput(ns("uniqueidinfo"),
+                                label = "Unique id",
+                                choices = NULL,
+                                width = "100%")
+                  ),
+                  col_4(
+                    selectInput(
+                      ns("stretch"),
+                      label = "Stretch",
+                      choices = c("none", "lin", "hist")
+                    )
+                  )
+                ),
+                sliderInput(
+                  ns("gammacorr"),
+                  label = "Gamma correction",
+                  min = -5,
+                  max = 5,
+                  value = 1,
+                  step = 0.1,
+                  width = "100%"
+                ),
                 plotOutput(ns("plotinfop"), height = "600px")
               )
             ),
@@ -1110,8 +1168,11 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
 
     observe({
       req(input$shapefiletoanalyze)
-      shapefile[["shapefileplot"]] <- shapefile[[input$shapefiletoanalyze]]$data
-
+      if(input$shapefiletoanalyze == "none"){
+        shapefile[["shapefileplot"]] <- NULL
+      } else{
+        shapefile[["shapefileplot"]] <- shapefile[[input$shapefiletoanalyze]]$data
+      }
     })
 
     mod_download_shapefile_server("downloadshapefile", terra::vect(shapefile$shapefileplot))
