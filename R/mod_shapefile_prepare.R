@@ -693,8 +693,12 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
             observeEvent(input$editdone,{
               if(input$editdone == TRUE){
                 if(!is.null(editedpoints()$all)){
-                  centplot <- sf::st_centroid(shapes)
-                  shapefile[[input$shapenamebuild]]$data <- editedpoints()$all |> sf::st_transform(sf::st_crs(mosaic_data$mosaic))
+                  editeshp <- editedpoints()$all |>
+                    sf::st_transform(sf::st_crs(mosaic_data$mosaic)) |>
+                    dplyr::select(geometry)
+
+                  shapefile[[input$shapenamebuild]]$data <- editeshp |> check_cols_shpinp()
+
                   output$plotshapedone <- renderLeaflet({
                     mapp <-
                       basemap$map +
@@ -741,25 +745,17 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   if("shp" %in% file_extension(input$import_shapefile$datapath)){
                     shpimp <- import_shp_mod(input$import_shapefile$datapath,
                                              input$import_shapefile,
-                                             session) |> convert_numeric_cols()
-                    if(!"block" %in% colnames(shpimp)){
-                      shpimp <- shpimp |> dplyr::mutate(block = "B01")
-                    }
-                    if(!"plot_id" %in% colnames(shpimp)){
-                      shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
-                    }
+                                             session) |>
+                      convert_numeric_cols() |>
+                      check_cols_shpinp()
                     shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <- create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), shpimp)
                   } else{
                     for (i in 1:length(newshpname)) {
                       shpimp <- import_shp_mod(input$import_shapefile$datapath[[i]],
                                      input$import_shapefile[[i]],
-                                     session) |> convert_numeric_cols()
-                      if(!"block" %in% colnames(shpimp)){
-                        shpimp <- shpimp |> dplyr::mutate(block = "B01")
-                      }
-                      if(!"plot_id" %in% colnames(shpimp)){
-                        shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
-                      }
+                                     session) |>
+                        convert_numeric_cols() |>
+                        check_cols_shpinp()
                       shapefile[[newshpname[[i]]]] <- create_reactval(newshpname[[i]], shpimp)
                     }
                   }
@@ -773,26 +769,18 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
             if("shp" %in% file_extension(input$import_shapefile$datapath)){
               shpimp <- import_shp_mod(input$import_shapefile$datapath,
                                        input$import_shapefile,
-                                       session) |> convert_numeric_cols()
-              if(!"block" %in% colnames(shpimp)){
-                shpimp <- shpimp |> dplyr::mutate(block = "B01")
-              }
-              if(!"plot_id" %in% colnames(shpimp)){
-                shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
-              }
+                                       session) |>
+                convert_numeric_cols() |>
+                check_cols_shpinp()
 
               shapefile[[paste0(file_name(newshpname[[1]]), ".shp")]] <- create_reactval(paste0(file_name(newshpname[[1]]), ".shp"), shpimp)
             } else{
               for (i in 1:length(newshpname)) {
                 shpimp <- import_shp_mod(input$import_shapefile$datapath[[i]],
                                          input$import_shapefile[[i]],
-                                         session) |> convert_numeric_cols()
-                if(!"block" %in% colnames(shpimp)){
-                  shpimp <- shpimp |> dplyr::mutate(block = "B01")
-                }
-                if(!"plot_id" %in% colnames(shpimp)){
-                  shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
-                }
+                                         session) |>
+                  convert_numeric_cols() |>
+                  check_cols_shpinp()
                 shapefile[[newshpname[[i]]]] <- create_reactval(newshpname[[i]], shpimp)
               }
             }
