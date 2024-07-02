@@ -882,6 +882,7 @@ mod_imageanal_server <- function(id, imgdata){
         } else{
           myobjectind <- NULL
         }
+
         for (i in seq_along(imglist)) {
           updateProgressBar(
             session = session,

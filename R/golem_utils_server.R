@@ -235,12 +235,9 @@ chrv2numv <- function(chr){
 }
 
 overlaps <- function(mosaic, shape){
-  mosaic_extent <- terra::ext(mosaic)
-  shape_coord <- terra::ext(shape)
-  mosaic_coords <- c(mosaic_extent[1], mosaic_extent[2], mosaic_extent[3], mosaic_extent[4])
-  shape_coords <- c(shape_coord[1], shape_coord[2], shape_coord[3], shape_coord[4])
-  any(mosaic_coords[1:2] < shape_coords[3:4] & mosaic_coords[3:4] > shape_coords[1:2])
+  !is.null(terra::intersect(terra::ext(shape), terra::ext(mosaic)))
 }
+
 
 extract_number <- function(.data,
                            ...,
@@ -454,4 +451,47 @@ color_alpha <- function(color, alpha) {
   alpha_color <- rgb(rgb_vals[1], rgb_vals[2], rgb_vals[3], alpha)
 
   return(alpha_color)
+}
+
+# Function to reformat dates to YYYY-MM-DD
+reformat_date <- function(date_string) {
+  # Handle YYYYMMDD
+  if (grepl("^\\d{8}$", date_string)) {
+    return(sub("^(\\d{4})(\\d{2})(\\d{2})$", "\\1-\\2-\\3", date_string))
+  }
+  # Handle DD-MM-YYYY or MM-DD-YYYY
+  if (grepl("^\\d{2}-\\d{2}-\\d{4}$", date_string)) {
+    parts <- unlist(strsplit(date_string, "-"))
+    if (as.numeric(parts[1]) > 12) {
+      # Assume DD-MM-YYYY
+      return(paste(parts[3], parts[2], parts[1], sep="-"))
+    } else {
+      # Assume MM-DD-YYYY
+      return(paste(parts[3], parts[1], parts[2], sep="-"))
+    }
+  }
+  # Handle YYYY-MM-DD
+  if (grepl("^\\d{4}-\\d{2}-\\d{2}$", date_string)) {
+    return(date_string)
+  }
+  return(NA)  # Return NA if no known format is found
+}
+
+check_cols_shpinp <- function(shpimp){
+  if(!"unique_id" %in% colnames(shpimp)){
+    shpimp <- shpimp |> dplyr::mutate(unique_id = dplyr::row_number())
+  }
+  if(!"block" %in% colnames(shpimp)){
+    shpimp <- shpimp |> dplyr::mutate(block = "B01")
+  }
+  if(!"plot_id" %in% colnames(shpimp)){
+    shpimp <- shpimp |> dplyr::mutate(plot_id = paste0("P", leading_zeros(1:nrow(shpimp), 3)))
+  }
+  if(!"row" %in% colnames(shpimp)){
+    shpimp <- shpimp |> dplyr::mutate(row = 1)
+  }
+  if(!"column" %in% colnames(shpimp)){
+    shpimp <- shpimp |> dplyr::mutate(column = 1)
+  }
+  shpimp |> dplyr::relocate(geometry, .after = dplyr::last_col())
 }

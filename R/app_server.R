@@ -35,7 +35,7 @@ app_server <- function(input, output, session) {
   mod_cropbatch_server("cropbatch_1", shapefile, mosaiclist)
 
   # time series
-  mod_timeseriesinput_server("timeseriesinput_1", shapefile, mosaiclist, r, g, b, re, nir,  swir, tir,  basemap)
+  mod_timeseriesinput_server("timeseriesinput_1", shapefile, mosaiclist, r, g, b, re, nir,  swir, tir,  basemap, quantiles)
   mod_timeseriesanalysis_server("timeseriesanalysis_1", shapefile, mosaiclist, r, g, b, re, nir, swir, tir, basemap, dfs)
 
   # manipulation
@@ -74,6 +74,9 @@ app_server <- function(input, output, session) {
 
   # Geostatistics
   mod_spatinterp_server("spatinterp_1", dfs, shapefile)
+
+  # Drone traits
+  mod_matanalyze_server("matanalyze_1", dfs, shapefile, basemap)
 
 }
 

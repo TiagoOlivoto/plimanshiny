@@ -657,7 +657,6 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
 
       if(is.null(basemap$map)){
         bm <- mosaic_view(mosaiclist$mosaics$data[[1]])
-
       } else{
         bm <- basemap$map
       }
@@ -781,8 +780,9 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         ) |>
           dplyr::mutate(date = as.Date(date)) |>
           dplyr::arrange(date, block, plot_id) |>
-          dplyr::mutate(unique_id = dplyr::row_number()) |>
-          dplyr::relocate(unique_id, date, .before = block) |>
+          dplyr::mutate(unique_id = dplyr::row_number(),
+                        unique_plot = paste0(block, "_", plot_id)) |>
+          dplyr::relocate(unique_id, unique_plot, date, .before = block) |>
           sf::st_as_sf()
 
         result_plot_summ <- dplyr::bind_rows(
@@ -794,8 +794,9 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         ) |>
           dplyr::mutate(date = as.Date(date)) |>
           dplyr::arrange(date, block, plot_id) |>
-          dplyr::mutate(unique_id = dplyr::row_number()) |>
-          dplyr::relocate(unique_id, date, .before = block) |>
+          dplyr::mutate(unique_id = dplyr::row_number(),
+                        unique_plot = paste0(block, "_", plot_id)) |>
+          dplyr::relocate(unique_id, unique_plot, date, .before = block) |>
           sf::st_as_sf()
       }
 
@@ -808,8 +809,9 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       ) |>
         dplyr::mutate(date = as.Date(date)) |>
         dplyr::arrange(date, block, plot_id) |>
-        dplyr::mutate(unique_id = dplyr::row_number()) |>
-        dplyr::relocate(unique_id, date, .before = block) |>
+        dplyr::mutate(unique_id = dplyr::row_number(),
+                      unique_plot = paste0(block, "_", plot_id)) |>
+        dplyr::relocate(unique_id, unique_plot, date, .before = block) |>
         sf::st_as_sf()
 
       if("data" %in% colnames(res$result_plot)){
@@ -817,31 +819,34 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           unndata <-
             res$result_indiv |>
             dplyr::arrange(date, block, plot_id, individual) |>
-            dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
+            dplyr::mutate(unique_id = dplyr::row_number(),
+                          unique_plot = paste0(block, "_", plot_id)) |>
             sf::st_drop_geometry() |>
-            dplyr::select(unique_id, date, block, plot_id, individual, data) |>
+            dplyr::select(unique_id, unique_plot, date, block, plot_id, individual, data) |>
             tidyr::unnest(cols = data) |>
-            dplyr::group_by(unique_id, date, block, plot_id, individual) |>
+            dplyr::group_by(unique_id, unique_plot, date, block, plot_id, individual) |>
             dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
 
-          result_indiv <- dplyr::left_join(res$result_indiv |> dplyr::select(-data), unndata, by = dplyr::join_by(unique_id, date, block, plot_id, individual))
+          result_indiv <- dplyr::left_join(res$result_indiv |> dplyr::select(-data), unndata, by = dplyr::join_by(unique_id, unique_plot, date, block, plot_id, individual))
           unndata <-
             res$result_plot |>
             dplyr::arrange(date, block, plot_id) |>
-            dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
+            dplyr::mutate(unique_id = dplyr::row_number(),
+                          unique_plot = paste0(block, "_", plot_id)) |>
             sf::st_drop_geometry() |>
             tidyr::unnest(cols = data) |>
-            dplyr::group_by(unique_id, date, block, plot_id) |>
+            dplyr::group_by(unique_id, unique_plot, date, block, plot_id) |>
             dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
             sf::st_drop_geometry()
-          result_plot_summ<- dplyr::left_join(res$result_plot_summ, unndata, by = dplyr::join_by(unique_id, date, block, plot_id))
+          result_plot_summ<- dplyr::left_join(res$result_plot_summ, unndata, by = dplyr::join_by(unique_id, unique_plot, date, block, plot_id))
 
           result_plot <-
             res$result_plot |>
             dplyr::arrange(date, block, plot_id) |>
-            dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
+            dplyr::mutate(unique_id = dplyr::row_number(),
+                          unique_plot = paste0(block, "_", plot_id)) |>
             tidyr::unnest(cols = data) |>
-            dplyr::group_by(unique_id, date, block, plot_id) |>
+            dplyr::group_by(unique_id, unique_plot, date, block, plot_id) |>
             dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
         }
 
@@ -849,14 +854,15 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           unndata <-
             res$result_plot |>
             dplyr::arrange(date, block, plot_id) |>
-            dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
+            dplyr::mutate(unique_id = dplyr::row_number(),
+                          unique_plot = paste0(block, "_", plot_id)) |>
             sf::st_drop_geometry() |>
             tidyr::unnest(cols = data) |>
-            dplyr::group_by(unique_id, date, block, plot_id) |>
+            dplyr::group_by(unique_id, unique_plot, date, block, plot_id) |>
             dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop") |>
             sf::st_drop_geometry() |>
             dplyr::select(-c(3:5))
-          result_plot <- dplyr::left_join(res$result_plot |> dplyr::select(-data), unndata, by = dplyr::join_by(unique_id, date, block, plot_id))
+          result_plot <- dplyr::left_join(res$result_plot |> dplyr::select(-data), unndata, by = dplyr::join_by(unique_id, unique_plot, date, block, plot_id))
           result_indiv <- res$result_indiv
           result_plot_summ <- res$result_plot_summ
         }
@@ -864,9 +870,10 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           result_plot <-
             res$result_plot |>
             dplyr::arrange(date, block, plot_id) |>
-            dplyr::mutate(unique_id = dplyr::row_number(), .before = 1) |>
+            dplyr::mutate(unique_id = dplyr::row_number(),
+                          unique_plot = paste0(block, "_", plot_id)) |>
             tidyr::unnest(cols = data) |>
-            dplyr::group_by(unique_id, date, block, plot_id) |>
+            dplyr::group_by(unique_id, unique_plot, date, block, plot_id) |>
             dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x){mean(x, na.rm = TRUE)}), .groups = "drop")
           result_indiv <- res$result_indiv
           result_plot_summ <- res$result_plot_summ
@@ -936,7 +943,8 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
 
         p2 <-
           suppressWarnings(
-            ggplot(plot_ind, aes(x = .data[["date"]], y = .data[[input$plotattribute]],
+            ggplot(plot_ind, aes(x = .data[["date"]],
+                                 y = .data[[input$plotattribute]],
                                  group = .data[[input$groupingvar]],
                                  color = .data[[input$groupingvar]])) +
               geom_point() +
@@ -956,6 +964,10 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         shp$shp <-
           shapefile[[input$activeshape]]$data |>
           dplyr::mutate(unique_id = dplyr::row_number(), .before = 1)
+      } else if(!"unique_plot" %in% colnames(shapefile[[input$activeshape]]$data)){
+          shp$shp <-
+            shapefile[[input$activeshape]]$data |>
+            dplyr::mutate(unique_plot = paste0(block, "_", plot_id))
       } else{
         shp$shp <- shapefile[[input$activeshape]]$data
       }
@@ -964,7 +976,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       # Plot evolution
       req(shp$shp)
       observe({
-        levels <- sort(unique(shp$shp[["unique_id"]]))
+        levels <- sort(unique(shp$shp[["unique_plot"]]))
         updatePickerInput(session, "plottoshow",
                           choices = levels)
       })
@@ -986,7 +998,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
         req(input$plottoshow)
         shapetmp <-
           shp$shp |>
-          dplyr::filter(unique_id == input$plottoshow) |>
+          dplyr::filter(unique_plot == input$plottoshow) |>
           shapefile_input(as_sf = FALSE, info = FALSE)
 
 
@@ -1465,8 +1477,10 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       observe({
         req(result_plot)
         dfs[["result_plot"]] <- create_reactval("result_plot", result_plot |> sf::st_drop_geometry())
+        shapefile[["result_plot"]] <- create_reactval("result_plot", result_plot)
         if(!is.null(result_indiv)){
           dfs[["result_indiv"]] <- create_reactval("result_indiv", result_indiv |> sf::st_drop_geometry())
+          shapefile[["result_indiv"]] <- create_reactval("result_indiv", result_indiv)
         }
       })
 

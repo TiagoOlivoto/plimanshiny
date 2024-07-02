@@ -147,7 +147,7 @@ app_ui <- function(request) {
           ),
           ### to be included ###
           bs4SidebarMenuItem(
-            "Analyze Surface Elevation",
+            "Surface Elevation",
             icon = shiny::icon("mountain-sun"),
             startExpanded = F,
             bs4SidebarMenuSubItem(
@@ -173,6 +173,11 @@ app_ui <- function(request) {
             icon = shiny::icon("chart-line"),
             startExpanded = F,
             bs4SidebarMenuSubItem(
+              text = "Plant Maturity",
+              tabName = "matanalyzemod",
+              icon = shiny::icon("calendar-check")
+            ),
+            bs4SidebarMenuSubItem(
               text = "Plant Height",
               tabName = "phanalyze",
               icon = shiny::icon("ruler-combined")
@@ -191,11 +196,6 @@ app_ui <- function(request) {
               text = "Plant Count",
               tabName = "plcountanalyze",
               icon = shiny::icon("leaf")
-            ),
-            bs4SidebarMenuSubItem(
-              text = "Plant Maturity",
-              tabName = "matanalyze",
-              icon = shiny::icon("calendar-check")
             )
           ),
           # Geostatistics
@@ -334,6 +334,11 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "analyzeseries",
             mod_timeseriesanalysis_ui("timeseriesanalysis_1")
+          ),
+          # Drone traits
+          bs4TabItem(
+            tabName = "matanalyzemod",
+            mod_matanalyze_ui("matanalyze_1")
           ),
           # Geostatistics
           bs4TabItem(
