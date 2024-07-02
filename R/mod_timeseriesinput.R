@@ -77,6 +77,12 @@ mod_timeseriesinput_ui <- function(id){
                           )
                         )
                       ),
+                      sliderInput(ns("quantileplot"),
+                                  label = "Quantiles",
+                                  min = 0,
+                                  max = 1,
+                                  value = c(0, 1),
+                                  step = 0.001),
                       actionBttn(
                         ns("donebands"),
                         label = "Done",
@@ -277,7 +283,7 @@ mod_timeseriesinput_ui <- function(id){
 #' timeseriesinput Server Functions
 #'
 #' @noRd
-mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir,  swir, tir,  basemap){
+mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, nir,  swir, tir,  basemap, quantiles){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -290,6 +296,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       nir$nir <- input$nir_band
       swir$swir <- input$swir_band
       tir$tir <- input$tir_band
+      quantiles$q <- input$quantileplot
     })
 
     input_file_selected <- reactiveValues(paths = NULL)
@@ -306,9 +313,10 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
         if(length(input_file_selected$paths$datapath) != 0){
           filenames <- file_name(input_file_selected$paths$datapath)
           filedir$dir <- file_dir(input_file_selected$paths$datapath)
+          date_match <- regmatches(filenames, regexpr("(\\d{8})|((\\d{2}-\\d{2}-\\d{4})|(\\d{4}-\\d{2}-\\d{2}))", filenames))
+          formatted_date <- as.character(sapply(date_match, reformat_date))
+          dates <- try(as.Date(formatted_date, tryFormats = c("%Y-%m-%d")))
 
-          dates <- gsub(".*(([0-9]{2}-[0-9]{2}-[0-9]{4})|([0-9]{4}-[0-9]{2}-[0-9]{2})).*", "\\1", filenames)
-          dates <- try(as.Date(dates, tryFormats = c("%d-%m-%Y", "%m-%d-%Y", "%Y-%d-%m")))
           if(inherits(dates, "try-error")){
             sendSweetAlert(
               session = session,
@@ -502,7 +510,8 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
               r = suppressWarnings(as.numeric(r$r)),
               g = suppressWarnings(as.numeric(g$g)),
               b = suppressWarnings(as.numeric(b$b)),
-              max_pixels = input$maxpixels
+              max_pixels = input$maxpixels,
+              quantiles = quantiles$q
             )
           } else {
             bmtmp <- mosaic_view(
