@@ -558,26 +558,31 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
 
               nlyrs <- terra::nlyr(mosaictmp$mosaic)
               polygons <- drawn$finished$geometry
-              polygons_spv <- sf::st_transform(polygons, crs = sf::st_crs(mosaictmp$mosaic))
-              polygons_ext <- terra::vect(polygons_spv)
-              ext <- terra::buffer(polygons_ext, input$buffer) |> terra::ext()
-              polygons_ext <- terra::buffer(polygons_ext, input$bufferline)
-              mosaiccr <- terra::crop(mosaictmp$mosaic, ext)
-              indexccr <- terra::crop(index[[input$activeindex]]$data, ext)
+              polygons_spv <-
+                sf::st_transform(polygons, crs = sf::st_crs(mosaictmp$mosaic))
 
 
               if(inherits(polygons, "sfc_LINESTRING")){
-                vals <-
-                  terra::extract(x = indexccr,
-                                 y = polygons_ext)
-                coords <- as.matrix(polygons_spv[[1]])
-                n <- nrow(coords)
+                coords <-
+                  polygons_spv |>
+                  sf::st_coordinates()
+                coordsext <- terra::vect(coords[, 1:2], "lines")
+                exts <-
+                  terra::vect(sf::st_transform(polygons, crs = sf::st_crs(mosaictmp$mosaic))) |>
+                  terra::buffer(input$buffer) |>
+                  terra::ext()
+                mosaiccr <- terra::crop(mosaictmp$mosaic, exts)
+                indexccr <- terra::crop(index[[input$activeindex]]$data, exts)
+                polygons_ext <-  terra::vect(polygons_spv)
+                vals <- terra::extractAlong(indexccr, coordsext, xy = TRUE)
+                coordsdist <- as.matrix(polygons_spv |> sf::st_coordinates())
+                n <- nrow(coordsdist)
                 distances <- NULL
                 for (j in 1:(n - 1)) {
-                  x1 <- coords[j, 1]
-                  y1 <- coords[j, 2]
-                  x2 <- coords[j + 1, 1]
-                  y2 <- coords[j + 1, 2]
+                  x1 <- coordsdist[j, 1]
+                  y1 <- coordsdist[j, 2]
+                  x2 <- coordsdist[j + 1, 1]
+                  y2 <- coordsdist[j + 1, 2]
                   distance <- sqrt((x2 - x1)^2 + (y2 - y1)^2)
                   distances[j] <- distance
                 }
@@ -615,8 +620,8 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                     )
                   }
                   terra::plot(polygons_ext, add = TRUE, col = "red")
-                  text(coords[1, 1], coords[1, 2], "End", cex = 1.5, col = "white")
-                  text(coords[n, 1], coords[n, 2], "Start", cex = 1.5, col = "white")
+                  text(coords[1, 1], coords[1, 2], "Start", cex = 1.5, col = "white")
+                  text(coords[n, 1], coords[n, 2], "End", cex = 1.5, col = "white")
 
                   terra::plot(indexccr[[input$indextosync]],
                               axes = FALSE,
@@ -625,15 +630,25 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                               col = return_colors(input$plaindex, reverse = input$revindex, n = 100),
                               smooth=TRUE)
                   terra::plot(polygons_ext, add = TRUE, col = "red")
-                  text(coords[1, 1], coords[1, 2], round(max(dist), 2), cex = 1.5)
-                  text(coords[n, 1], coords[n, 2], 0, cex = 1.5)
+                  text(coords[1, 1], coords[1, 2], 0, cex = 1.5)
+                  text(coords[n, 1], coords[n, 2], round(max(dist), 2), cex = 1.5)
 
                   # Transform the data to long format
                   req(input$indextoprofile)
                   data_long <-
                     data.frame(x = seq(0, dist, length.out = nrow(vals))) |>
-                    dplyr::bind_cols(vals |> dplyr::select(dplyr::all_of(input$indextoprofile))) |>
-                    dplyr::mutate(dplyr::across(2:length(input$indextoprofile), smooth))
+                    dplyr::bind_cols(vals |> dplyr::select(dplyr::all_of(input$indextoprofile)))
+
+                  if(input$smooth){
+                    data_long <-
+                      data_long |>
+                      dplyr::mutate(dplyr::across(2:length(input$indextoprofile), ~ {
+                        fit <- smooth.spline(data_long$x, .x)
+                        predict(fit, data_long$x)$y
+                      }))
+                  }
+
+
                   colorslin <- random_color(length(input$indextoprofile))
                   matplot(data_long[, 1],
                           data_long[, -1],
@@ -668,8 +683,17 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                   req(input$indextoprofile)
                   data_long <-
                     data.frame(x = seq(0, dist, length.out = nrow(vals))) |>
-                    dplyr::bind_cols(vals |> dplyr::select(dplyr::all_of(input$indextoprofile))) |>
-                    dplyr::mutate(dplyr::across(2:length(input$indextoprofile), smooth))
+                    dplyr::bind_cols(vals |> dplyr::select(dplyr::all_of(input$indextoprofile)))
+
+                  if(input$smooth){
+                    data_long <-
+                      data_long |>
+                      dplyr::mutate(dplyr::across(2:length(input$indextoprofile), ~ {
+                        fit <- smooth.spline(data_long$x, .x)
+                        predict(fit, data_long$x)$y
+                      }))
+                  }
+
                   colorslin <- random_color(length(input$indextoprofile))
                   matplot(data_long[, 1],
                           data_long[, -1],
@@ -727,10 +751,10 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                       selected = "lin"
                     )
                   ),
-                  col_2(
+                  col_4(
                     pickerpalette(id, "plaindex", selected = "RdYlGn"),
                   ),
-                  col_2(
+                  col_1(
                     prettyCheckbox(
                       inputId = ns("revindex"),
                       label = "Reverse",
@@ -740,16 +764,20 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                       animation = "rotate"
                     )
                   ),
+                  col_1(
+                    prettyCheckbox(
+                      inputId = ns("smooth"),
+                      label = "Smooth",
+                      value = TRUE,
+                      icon = icon("check"),
+                      status = "success",
+                      animation = "rotate"
+                    )
+                  ),
                   col_2(
                     numericInput(ns("buffer"),
                                  label = "Buffer (area)",
                                  value = 20)
-                  ),
-                  col_2(
-                    numericInput(ns("bufferline"),
-                                 label = "Buffer (line)",
-                                 value = 1,
-                                 min = 0.001)
                   )
                 ),
                 fluidRow(
