@@ -42,9 +42,7 @@ mod_matanalyze_ui <- function(id){
             label = "Method for prediction",
             choices = c("Logistic Model L3",
                         "Logistic Model L4",
-                        "Logistic Model L5",
-                        "Logistic Ensamble",
-                        "Segmented Regression")
+                        "Logistic Model L5")
           ),
           textInput(
             ns("saveto"),
@@ -83,7 +81,6 @@ mod_matanalyze_ui <- function(id){
               inputId = ns("fittedmodel"),
               label = "Select a unique_id to plot the model:",
               choices = NULL,
-              multiple = TRUE,
               options = list(
                 "actions-box" = TRUE,
                 "live-search" = TRUE,
@@ -100,13 +97,13 @@ mod_matanalyze_ui <- function(id){
               selected = "Fitted curve",
               solidHeader = FALSE,
               tabPanel("Fitted curve",
-                       plotOutput(ns("fittedplot"), height = "520px") |> add_spinner()
+                       plotOutput(ns("fittedplot"), height = "550px") |> add_spinner()
               ),
               tabPanel("First derivative",
-                       plotOutput(ns("fderivate"), height = "520px") |> add_spinner()
+                       plotOutput(ns("fderivate"), height = "550px") |> add_spinner()
               ),
               tabPanel("Second derivative",
-                       plotOutput(ns("sderivate"), height = "520px") |> add_spinner()
+                       plotOutput(ns("sderivate"), height = "550px") |> add_spinner()
               )
             )
           ),
@@ -122,7 +119,7 @@ mod_matanalyze_ui <- function(id){
               choices = NULL,
               multiple = TRUE
             ),
-            plotlyOutput(ns("histograms"), height = "720px")  |> add_spinner()
+            plotlyOutput(ns("histograms"), height = "680px")  |> add_spinner()
           ),
 
           tabPanel(
@@ -203,6 +200,9 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
       updatePickerInput(session, "shapefiletoexplore",
                         choices = setdiff(names(shapefile), c("shapefile", "shapefileplot")))
     })
+
+
+
 
     output$overview <- renderPlotly({
       req(dfactive$df)
@@ -292,17 +292,22 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
         plotly::ggplotly(p)
       })
 
-      # Plot the fitted models
       observe({
         levels <- sort(unique(dfactive$df[["unique_plot"]]))
         updatePickerInput(session, "fittedmodel",
                           choices = levels)
+      })
 
+      # Plot the fitted models
+      observe({
         req(input$fittedmodel)
         dfplot <-
           dfactive$df |>
           dplyr::select(dplyr::all_of(c("unique_plot", input$flightdate, input$vegetindex))) |>
+          setNames(c("unique_plot", "doy", "vindex")) |>
+          dplyr::mutate(doy = as.POSIXlt(doy)$yday + 1 -  (as.POSIXlt(input$sowing)$yday + 1)) |>
           dplyr::filter(!!dplyr::sym("unique_plot") %in% input$fittedmodel)
+
 
         dfpars <-
           modl |>
@@ -311,23 +316,24 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
         output$fittedplot <- renderPlot({
 
           df_int <-
-            dplyr::tibble(x = seq(dfpars$parms[[1]][[1]]$xmin, dfpars$parms[[1]][[1]]$xmax, length.out = 1000),
-                          y = dfpars$parms[[1]][[1]]$model(x, dfpars$parms[[1]][[1]]$b0, dfpars$parms[[1]][[1]]$b1, dfpars$parms[[1]][[1]]$b2),
-                          class = ifelse(x < dfpars$heading, "Vegetative", "Reproductive"))
-
+            dplyr::tibble(flights = seq(dfpars$parms[[1]][[1]]$xmin, dfpars$parms[[1]][[1]]$xmax, length.out = 1000),
+                          class = ifelse(flights < dfpars$heading, "Vegetative", "Reproductive")) |>
+            as.data.frame()
+          # print(df_int)
+          ypred <- predict(dfpars$parms[[1]][[1]]$modeladj, newdata = df_int)
+          # print(ypred)
+          df_int <- dplyr::bind_cols(df_int, data.frame(y = ypred))
 
 
           pmod <-
             ggplot() +
-            geom_point(aes(x = lubridate::yday(.data[[input$flightdate]]), y = .data[[input$vegetindex]]),
+            geom_point(aes(x = doy, y = vindex),
                        data = dfplot) +
             stat_function(fun = dfpars$parms[[1]][[1]]$model,
                           xlim = c(dfpars$parms[[1]][[1]]$xmin, dfpars$parms[[1]][[1]]$xmax),
-                          args = list(b0 = dfpars$parms[[1]][[1]]$b0,
-                                      b1 = dfpars$parms[[1]][[1]]$b1,
-                                      b2 = dfpars$parms[[1]][[1]]$b2)) +
+                          args = dfpars$parms[[1]][[1]]$coefs) +
             geom_ribbon(data = df_int,
-                        aes(x = x,
+                        aes(x = flights,
                             ymin = min(y),
                             ymax =  y,
                             fill = class),
@@ -335,6 +341,7 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
             geom_vline(aes(xintercept = dfpars$heading), color = "red") +
             geom_vline(xintercept = dfpars$maturity, color = "salmon") +
             labs(x = "Days after sowing",
+                 y = input$vegetindex,
                  fill = "Phase") +
             theme_bw(base_size = 18) +
             theme(panel.grid.minor = element_blank(),
@@ -344,9 +351,7 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
             ggplot() +
             stat_function(fun = dfpars$parms[[1]][[1]]$fd,
                           xlim = c(dfpars$parms[[1]][[1]]$xmin, dfpars$parms[[1]][[1]]$xmax),
-                          args = list(b0 = dfpars$parms[[1]][[1]]$b0,
-                                      b1 = dfpars$parms[[1]][[1]]$b1,
-                                      b2 = dfpars$parms[[1]][[1]]$b2)) +
+                          args = dfpars$parms[[1]][[1]]$coefs) +
             labs(x = "Days after sowing",
                  y = "First derivative") +
             geom_vline(aes(xintercept = dfpars$heading), color = "red") +
@@ -358,9 +363,7 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
             ggplot() +
             stat_function(fun = dfpars$parms[[1]][[1]]$sd,
                           xlim = c(dfpars$parms[[1]][[1]]$xmin, dfpars$parms[[1]][[1]]$xmax),
-                          args = list(b0 = dfpars$parms[[1]][[1]]$b0,
-                                      b1 = dfpars$parms[[1]][[1]]$b1,
-                                      b2 = dfpars$parms[[1]][[1]]$b2)) +
+                          args = dfpars$parms[[1]][[1]]$coefs) +
             labs(x =  "Days after sowing",
                  y = "First derivative") +
             geom_vline(aes(xintercept = dfpars$heading), color = "red") +
@@ -388,10 +391,12 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
       # Plot the results
       output$tabresult <- reactable::renderReactable({
         modl |>
+          dplyr::select(-parms) |>
           roundcols(digits = 3) |>
           render_reactable()
 
       })
+
 
       dfs[[input$saveto]] <- create_reactval(input$saveto, modl)
 

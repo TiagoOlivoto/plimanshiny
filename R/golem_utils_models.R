@@ -79,11 +79,14 @@ mod_L3 <-  function(data, flight_date = "date", predictor = "median.NDVI", sowin
                     auc_vege_period = int3$value,
                     auc_repr_period = int2$value,
                     parms = list(model = modfun,
+                                 modeladj = model,
                                  fd = fdfun,
                                  sd = sdfun,
-                                 b0 = b0,
-                                 b1 = b1,
-                                 b2 = b2,
+                                 coefs = list(
+                                   b0 = b0,
+                                   b1 = b1,
+                                   b2 = b2
+                                 ),
                                  xmin = fflight,
                                  xmax = lflight))
     })) %>%
@@ -93,6 +96,7 @@ mod_L3 <-  function(data, flight_date = "date", predictor = "median.NDVI", sowin
     tidyr::nest(parms = parms)
   return(results)
 }
+
 
 
 
@@ -206,19 +210,32 @@ mod_L4 <-  function(data, flight_date = "date", predictor = "median.NDVI", sowin
       int2 <- integrate(modfun, lower = head, upper = maturation, b0 = b0, b1 = b1, b2 = b2, b3 = b3)
 
 
-      data.frame(b0 = b0,
-                 b1 = b1,
-                 b2 = b2,
-                 inflection = b3,
-                 heading = head,
-                 maturity = maturation,
-                 repr_period = maturation - head,
-                 auc = int1$value,
-                 auc_repr_period = int2$value)
+      tibble::tibble(b0 = b0,
+                     b1 = b1,
+                     b2 = b2,
+                     inflection = b3,
+                     heading = head,
+                     maturity = maturation,
+                     repr_period = maturation - head,
+                     auc = int1$value,
+                     auc_repr_period = int2$value,
+                     parms = list(model = modfun,
+                                  modeladj = model,
+                                  fd = fdfun,
+                                  sd = sdfun,
+                                  coefs = list(
+                                    b0 = b0,
+                                    b1 = b1,
+                                    b2 = b2,
+                                    b3 = b3
+                                  ),
+                                  xmin = fflight,
+                                  xmax = lflight))
     })) %>%
     unnest(cols = c(model_results)) |>
     dplyr::select(-data) |>
-    tidyr::separate_wider_delim(unique_plot, names = c("block", "plot_id"), delim = "_", cols_remove = FALSE)
+    tidyr::separate_wider_delim(unique_plot, names = c("block", "plot_id"), delim = "_", cols_remove = FALSE) |>
+    tidyr::nest(parms = parms)
 
   return(results)
 }
@@ -344,25 +361,35 @@ mod_L5 <-  function(data, flight_date = "date", predictor = "median.NDVI", sowin
       int2 <- integrate(modfun, lower = head, upper = maturation, b0 = b0, b1 = b1, b2 = b2, b3 = b3, b4 = b4)
 
 
-      data.frame(b0 = b0,
-                 b1 = b1,
-                 b2 = b2,
-                 b3 = b3,
-                 b4 = b4,
-                 inflection = inflec$minimum,
-                 heading = head,
-                 maturity = maturation,
-                 repr_period = maturation - head,
-                 auc = int1$value,
-                 auc_repr_period = int2$value)
+      tibble::tibble(b0 = b0,
+                     b1 = b1,
+                     b2 = b2,
+                     b3 = b3,
+                     b4 = b4,
+                     inflection = inflec$minimum,
+                     heading = head,
+                     maturity = maturation,
+                     repr_period = maturation - head,
+                     auc = int1$value,
+                     auc_repr_period = int2$value,
+                     parms = list(model = modfun,
+                                  modeladj = model,
+                                  fd = fdfun,
+                                  sd = sdfun,
+                                  coefs = list(
+                                    b0 = b0,
+                                    b1 = b1,
+                                    b2 = b2,
+                                    b3 = b3,
+                                    b4 = b4
+                                  ),
+                                  xmin = fflight,
+                                  xmax = lflight))
     })) %>%
     unnest(cols = c(model_results)) |>
     dplyr::select(-data) |>
-    tidyr::separate_wider_delim(unique_plot, names = c("block", "plot_id"), delim = "_", cols_remove = FALSE)
+    tidyr::separate_wider_delim(unique_plot, names = c("block", "plot_id"), delim = "_", cols_remove = FALSE) |>
+    tidyr::nest(parms = parms)
 
   return(results)
 }
-
-
-
-
