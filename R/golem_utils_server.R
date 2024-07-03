@@ -396,7 +396,7 @@ convert_numeric_cols <- function(data) {
 
   # Convert only those columns to numeric
   data <- data  |>
-    dplyr::mutate(across(all_of(numeric_col_names), as.numeric))
+    dplyr::mutate(dplyr::across(dplyr::all_of(numeric_col_names), as.numeric))
 
   return(data)
 }

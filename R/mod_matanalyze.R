@@ -274,9 +274,9 @@ mod_matanalyze_server <- function(id, dfs, shapefile, basemap){
 
         dfhist <-
           modl |>
-          dplyr::select(all_of(input$histotraits)) |>
+          dplyr::select(dplyr::all_of(input$histotraits)) |>
           dplyr::ungroup() |>
-          tidyr::pivot_longer(all_of(input$histotraits))
+          tidyr::pivot_longer(dplyr::all_of(input$histotraits))
 
 
         p <-
