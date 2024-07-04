@@ -547,11 +547,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
           }
         }
         observeEvent(input$createprofile, {
-          observe({
-            updatePickerInput(session, "indextoprofile",
-                              choices = names(index[[input$activeindex]]$data),
-                              selected = names(index[[input$activeindex]]$data)[1])
-          })
+
           on.exit(layout(1))
           if(!is.null(drawn$finished)){
             output$plotinfop <- renderPlot({
@@ -575,6 +571,13 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                 indexccr <- terra::crop(index[[input$activeindex]]$data, exts)
                 polygons_ext <-  terra::vect(polygons_spv)
                 vals <- terra::extractAlong(indexccr, coordsext, xy = TRUE)
+
+                observe({
+                  updatePickerInput(session, "indextoprofile",
+                                    choices = names(vals)[4:ncol(vals)],
+                                    selected = names(vals)[4:ncol(vals)][1])
+                })
+
                 coordsdist <- as.matrix(polygons_spv |> sf::st_coordinates())
                 n <- nrow(coordsdist)
                 distances <- NULL
@@ -667,7 +670,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
 
                 } else{
                   layout(
-                    matrix(plot_layout, nrow = 2, byrow = TRUE),
+                    matrix(c(1, 2), nrow = 2, byrow = TRUE),
                     heights = c(3, 3)
                   )
                   terra::plot(indexccr[[input$indextosync]],
@@ -777,7 +780,7 @@ mod_indexes_server <- function(id, mosaic_data, r, g, b, re, nir, swir, tir, bas
                   col_2(
                     numericInput(ns("buffer"),
                                  label = "Buffer (area)",
-                                 value = 20)
+                                 value = 2)
                   )
                 ),
                 fluidRow(

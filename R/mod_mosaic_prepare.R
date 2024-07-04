@@ -405,20 +405,33 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
         req(input$mosaictoanalyze)
         req(input$howtoplot)
         if(input$howtoplot == "RGB"){
-          bmtmp <- mosaic_view(
-            mosaic_data[[input$mosaictoanalyze]]$data,
-            r = suppressWarnings(as.numeric(r$r)),
-            g = suppressWarnings(as.numeric(g$g)),
-            b = suppressWarnings(as.numeric(b$b)),
-            quantiles = quantiles$q,
-            max_pixels = maxpixel$mp
-          )
+          if(nlyr(mosaic_data[[input$mosaictoanalyze]]$data) >= 3){
+            bmtmp <- mosaic_view(
+              mosaic_data[[input$mosaictoanalyze]]$data,
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              quantiles = quantiles$q,
+              max_pixels = maxpixel$mp
+            )
+          } else{
+            show_alert("Ops, too few bands",
+                       text = "The current mosaic has too few bands and an RGB image cannot be rendered. Plotting the first layer of the raster image. Change `Show` to `bands` to choose which band to plot.",
+                       type = "warning")
+            bmtmp <- mosaic_view(
+              mosaic_data[[input$mosaictoanalyze]]$data[[1]],
+              color_regions  = scales::brewer_pal(palette = "RdYlGn")(8),
+              max_pixels = maxpixel$mp,
+              na.color = "transparent"
+            )
+          }
+
         } else{
           bmtmp <-
             mosaic_view(mosaic_data[[input$mosaictoanalyze]]$data[input$howtoplot],
                         show = "index",
                         color_regions  = scales::brewer_pal(palette = "RdYlGn")(8),
-                        max_pixels = input$maxpixels,
+                        max_pixels = maxpixel$mp,
                         na.color = "transparent")
         }
 
