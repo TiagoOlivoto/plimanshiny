@@ -344,6 +344,7 @@ pickerpalette <- function(id, inputid, n = 50, ...){
       ),
       "Others" = list(
         "WaterSoil" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = n),
+        "PlantSoil" = custom_palette(c("forestgreen", "#B2DF8A", "#8B4513"), n = n),
         "BrBG" = colorRampPalette(scales::brewer_pal(palette = "BrBG")(8))(n),
         "PiYG" = colorRampPalette(scales::brewer_pal(palette = "PiYG")(8))(n),
         "PRGn" = colorRampPalette(scales::brewer_pal(palette = "PRGn")(8))(n),
@@ -389,6 +390,7 @@ return_colors <- function(pal, reverse = FALSE, n = 8){
            "Oranges" = colorRampPalette(scales::brewer_pal(palette = "Oranges")(8))(n),
            "Paired" = colorRampPalette(scales::brewer_pal(palette = "Paired")(8))(n),
            "WaterSoil" = custom_palette(c("#00008B", "#D2B48C", "#8B4513"), n = n),
+           "PlantSoil" = custom_palette(c("forestgreen", "#B2DF8A", "#8B4513"), n = n),
            "BrBG" = colorRampPalette(scales::brewer_pal(palette = "BrBG")(8))(n),
            "PiYG" = colorRampPalette(scales::brewer_pal(palette = "PiYG")(8))(n),
            "PRGn" = colorRampPalette(scales::brewer_pal(palette = "PRGn")(8))(n),

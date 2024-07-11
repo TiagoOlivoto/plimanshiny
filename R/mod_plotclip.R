@@ -205,7 +205,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
               )
               shptemp <- shptocrop[i, ]
               ncolid <- which(colnames(shptemp) == input$uniqueid)
-              shpname <- shptemp |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
+              shpname <- shptemp |> as.data.frame() |> dplyr::pull(ncolid)
               mosaictmp <- terra::crop(mosaictocrop, shptemp) |> terra::mask(shptemp)
               terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, input$clipformat), overwrite=TRUE)
 
@@ -235,7 +235,7 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
             foreach::foreach(i = 1:nrow(shptocrop)) %dofut%{
                                shptemp <- shptocrop[i, ]
                                ncolid <- which(colnames(shptemp) == uniqueid)
-                               shpname <- shptemp |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
+                               shpname <- shptemp |> as.data.frame()  |> dplyr::pull(ncolid)
                                mosaictmp <- terra::crop(terra::rast(paste0(tmpterra, "/tmpclip.tif")), shptemp) |> terra::mask(shptemp)
                                terra::writeRaster(mosaictmp, paste0(diroutput, "/", shpname, format), overwrite=TRUE)
                              }
@@ -260,9 +260,12 @@ mod_plotclip_server <- function(id, mosaic_data, shapefile, r, g, b, basemap){
       observe({
         if(input$seeaclippedplot){
           ncolid <- which(colnames(shptocrop) == input$uniqueid)
-          plots <- shptocrop |> as.data.frame() |>  dplyr::select(ncolid) |> dplyr::pull()
+          plots <- shptocrop |> as.data.frame() |> dplyr::pull(ncolid)
 
-          updateSelectInput(session, "myclippedplot", choices = plots)
+          updateSelectInput(session, "myclippedplot",
+                            options = list(maxOptions = 10000),
+                            server = TRUE,
+                            choices = plots)
           req(input$myclippedplot)
           shptoplot <- shptocrop[which(plots == input$myclippedplot), ]
           motemp <- terra::crop(mosaictocrop, shptoplot) |> terra::mask(shptoplot)

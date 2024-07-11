@@ -100,6 +100,16 @@ app_ui <- function(request) {
             )
           ),
           bs4SidebarMenuItem(
+            text = "Raster file(s)",
+            tabName = "mosaicimport",
+            icon = shiny::icon("file-upload", verify_fa = FALSE)
+          ),
+          bs4SidebarMenuItem(
+            text = "Shapefile",
+            tabName = "shapefileimport",
+            icon = shiny::icon("draw-polygon")
+          ),
+          bs4SidebarMenuItem(
             text = "Manipulate",
             tabName = "mosaicmanipula",
             icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
@@ -108,16 +118,6 @@ app_ui <- function(request) {
             "Single orthomosaic",
             icon = shiny::icon("camera"),
             startExpanded = F,
-            bs4SidebarMenuSubItem(
-              text = "Mosaic",
-              tabName = "mosaicimport",
-              icon = shiny::icon("file-upload", verify_fa = FALSE)
-            ),
-            bs4SidebarMenuSubItem(
-              text = "Shapefile",
-              tabName = "shapefileimport",
-              icon = shiny::icon("draw-polygon")
-            ),
             bs4SidebarMenuSubItem(
               text = "Index",
               tabName = "mosaicindex",
@@ -178,7 +178,7 @@ app_ui <- function(request) {
               icon = shiny::icon("calendar-check")
             ),
             bs4SidebarMenuSubItem(
-              text = "Plant Height",
+              text = "Plant Measures",
               tabName = "phanalyze",
               icon = shiny::icon("ruler-combined")
             ),
@@ -339,6 +339,10 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "matanalyzemod",
             mod_matanalyze_ui("matanalyze_1")
+          ),
+          bs4TabItem(
+            tabName = "phanalyze",
+            mod_phanalyze_ui("phanalyze_1")
           ),
           # Geostatistics
           bs4TabItem(

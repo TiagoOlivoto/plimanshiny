@@ -77,6 +77,7 @@ app_server <- function(input, output, session) {
 
   # Drone traits
   mod_matanalyze_server("matanalyze_1", dfs, shapefile, basemap)
+  mod_phanalyze_server("phanalyze_1", mosaic_data, shapefile, basemap, dfs)
 
 }
 
