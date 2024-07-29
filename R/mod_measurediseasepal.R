@@ -362,7 +362,7 @@ mod_measurediseasepal_server <- function(id, imgdata){
           ),
           tabPanel(
             title = "Results (raw)",
-            DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
           )
         )
       } else{
@@ -392,7 +392,7 @@ mod_measurediseasepal_server <- function(id, imgdata){
           ),
           tabPanel(
             title = "Results (raw)",
-            DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
           )
         )
       }
@@ -623,22 +623,21 @@ mod_measurediseasepal_server <- function(id, imgdata){
           plotly::ggplotly(p1)
         })
 
-        output$resultsindivtab <- DT::renderDataTable(
-          sev$severity,
-          extensions = 'Buttons',
-          rownames = FALSE,
-          options = list(
-            dom = 'Blrtip',
-            buttons = c('copy', 'excel'),
-            paging = FALSE,
-            scrollX = TRUE,
-            scrollY = "620px",
-            pageLength = 15
-          )
+        output$resultsindivtab <- reactable::renderReactable(
+          sevsad$sev$severity |>
+            roundcols(digits = 3) |>
+            render_reactable()
         )
 
       }
     })
+
+    observe({
+      req(sevsad$sev$severity)
+      dfs[["phytopathometry_results_pal"]] <- create_reactval("phytopathometry_results", sevsad$sev$severity)
+    })
+
+
 
   })
 }
