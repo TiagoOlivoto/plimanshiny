@@ -415,9 +415,9 @@ render_reactable <- function(df,
                              defaultColDef = colDef(
                                maxWidth = 400,
                                footer = function(values) {
-                               if (!is.numeric(values)) return()
-                               sparkline::sparkline(values, type = "box", width = 100, height = 30)
-                             }),
+                                 if (!is.numeric(values)) return()
+                                 sparkline::sparkline(values, type = "box", width = 100, height = 30)
+                               }),
                              theme = reactableTheme(
                                cellPadding = "8px 10px",
                                style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
@@ -453,28 +453,46 @@ color_alpha <- function(color, alpha) {
   return(alpha_color)
 }
 
-# Function to reformat dates to YYYY-MM-DD
-reformat_date <- function(date_string) {
-  # Handle YYYYMMDD
-  if (grepl("^\\d{8}$", date_string)) {
-    return(sub("^(\\d{4})(\\d{2})(\\d{2})$", "\\1-\\2-\\3", date_string))
+
+date_format <- function(date_vector) {
+  possible_formats <- c("%Y%m%d", "%d-%m-%Y", "%m-%d-%Y", "%Y-%m-%d")
+
+  # Helper function to check if a date matches a given format
+  matches_format <- function(date_string, format) {
+    if (format == "%Y%m%d") {
+      return(grepl("^\\d{8}$", date_string))
+    }
+    if (format == "%d-%m-%Y") {
+      if (grepl("^\\d{2}-\\d{2}-\\d{4}$", date_string)) {
+        parts <- unlist(strsplit(date_string, "-"))
+        if (as.numeric(parts[1]) <= 31 && as.numeric(parts[2]) <= 12) {
+          return(TRUE)
+        }
+      }
+    }
+    if (format == "%m-%d-%Y") {
+      if (grepl("^\\d{2}-\\d{2}-\\d{4}$", date_string)) {
+        parts <- unlist(strsplit(date_string, "-"))
+        if (as.numeric(parts[1]) <= 12 && as.numeric(parts[2]) <= 31) {
+          return(TRUE)
+        }
+      }
+    }
+    if (format == "%Y-%m-%d") {
+      return(grepl("^\\d{4}-\\d{2}-\\d{2}$", date_string))
+    }
+    return(FALSE)
   }
-  # Handle DD-MM-YYYY or MM-DD-YYYY
-  if (grepl("^\\d{2}-\\d{2}-\\d{4}$", date_string)) {
-    parts <- unlist(strsplit(date_string, "-"))
-    if (as.numeric(parts[1]) > 12) {
-      # Assume DD-MM-YYYY
-      return(paste(parts[3], parts[2], parts[1], sep="-"))
-    } else {
-      # Assume MM-DD-YYYY
-      return(paste(parts[3], parts[1], parts[2], sep="-"))
+
+  # Check all dates for each format
+  valid_formats <- list()
+  for (format in possible_formats) {
+    if (all(sapply(date_vector, matches_format, format = format))) {
+      valid_formats <- c(valid_formats, format)
     }
   }
-  # Handle YYYY-MM-DD
-  if (grepl("^\\d{4}-\\d{2}-\\d{2}$", date_string)) {
-    return(date_string)
-  }
-  return(NA)  # Return NA if no known format is found
+
+  return(valid_formats)
 }
 
 check_cols_shpinp <- function(shpimp){
@@ -494,4 +512,25 @@ check_cols_shpinp <- function(shpimp){
     shpimp <- shpimp |> dplyr::mutate(column = 1)
   }
   shpimp |> dplyr::relocate(geometry, .after = dplyr::last_col())
+}
+# Function to calculate the UTM zone based on longitude
+get_utm_zone <- function(lon) {
+  return(floor((lon + 180) / 6) + 1)
+}
+
+# Function to get the bounds of the UTM zone
+get_utm_bounds <- function(zone) {
+  lon_min <- (zone - 1) * 6 - 180
+  lon_max <- zone * 6 - 180
+  return(list(lon_min = lon_min, lon_max = lon_max, lat_min = -80, lat_max = 84))
+}
+epsg <- function(lat, lon) {
+  utm_zone <- floor((lon + 180) / 6) + 1
+  hemisphere <- ifelse(lat >= 0, "N", "S")
+  epsg_code <- if (hemisphere == "N") {
+    32600 + utm_zone
+  } else {
+    32700 + utm_zone
+  }
+  return(paste0("EPSG:", epsg_code))
 }
