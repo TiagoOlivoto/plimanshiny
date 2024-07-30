@@ -431,102 +431,205 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
     output$uiresults <- renderUI({
       if(input$segmentindividuals){
-        bs4TabCard(
-          id = "tabs",
-          status = "success",
-          width = 12,
-          height = "790px",
-          title = "Results",
-          selected = "Segmentation",
-          solidHeader = FALSE,
-          type = "tabs",
-          tabPanel(
-            title = "Segmentation",
-            fluidRow(
-              col_6(
-                plotOutput(ns("previousdensity"), height = "720px") |> add_spinner()
-              ),
-              col_6(
-                plotOutput(ns("previoussegment"), height = "720px") |> add_spinner()
+        if(input$mapindividuals){
+          bs4TabCard(
+            id = "tabs",
+            status = "success",
+            width = 12,
+            height = "790px",
+            title = "Results",
+            selected = "Segmentation",
+            solidHeader = FALSE,
+            type = "tabs",
+            tabPanel(
+              title = "Segmentation",
+              fluidRow(
+                col_6(
+                  plotOutput(ns("previousdensity"), height = "720px") |> add_spinner()
+                ),
+                col_6(
+                  plotOutput(ns("previoussegment"), height = "720px") |> add_spinner()
+                )
               )
-            )
-          ),
-          tabPanel(
-            title = "Mosaic and shapefile",
-            uiOutput(ns("baseshapeindex")) |> add_spinner()
-          ),
-          tabPanel(
-            title = "Summary",
-            fluidRow(
-              valueBoxOutput(ns("vbnplots")),
-              valueBoxOutput(ns("vbnindiv")),
-              valueBoxOutput(ns("vbnindivplotmean")),
-              valueBoxOutput(ns("vbcoverage")),
-              valueBoxOutput(ns("largerindiv")),
-              valueBoxOutput(ns("smallerindiv"))
             ),
-            fluidRow(
-              col_6(
-                h4("Index (plot)"),
-                plotlyOutput(ns("boxresults"), height = "420px") |> add_spinner()
+            tabPanel(
+              title = "Mosaic and shapefile",
+              uiOutput(ns("baseshapeindex")) |> add_spinner()
+            ),
+            tabPanel(
+              title = "Summary",
+              fluidRow(
+                valueBoxOutput(ns("vbnplots")),
+                valueBoxOutput(ns("vbnindiv")),
+                valueBoxOutput(ns("vbnindivplotmean")),
+                valueBoxOutput(ns("vbcoverage")),
+                valueBoxOutput(ns("largerindiv")),
+                valueBoxOutput(ns("smallerindiv"))
               ),
-              col_3(
-                h4("Attribute (plot)"),
-                plotlyOutput(ns("plotatribres"), height = "420px") |> add_spinner()
-              ),
-              col_3(
-                h4("Attribute (individual)"),
-                plotlyOutput(ns("indivatribres"), height = "420px") |> add_spinner()
+              fluidRow(
+                col_6(
+                  h4("Index (plot)"),
+                  plotlyOutput(ns("boxresults"), height = "420px") |> add_spinner()
+                ),
+                col_3(
+                  h4("Attribute (plot)"),
+                  plotlyOutput(ns("plotatribres"), height = "420px") |> add_spinner()
+                ),
+                col_3(
+                  h4("Attribute (individual)"),
+                  plotlyOutput(ns("indivatribres"), height = "420px") |> add_spinner()
+                )
               )
-            )
-          ),
-          tabPanel(
-            title = "Map plot",
-            fluidRow(
-              col_4(
-                materialSwitch(
-                  inputId = ns("compareslidermap"),
-                  label = "Comparison slider?",
-                  value = FALSE,
-                  status = "success"
+            ),
+            tabPanel(
+              title = "Map plot",
+              fluidRow(
+                col_4(
+                  materialSwitch(
+                    inputId = ns("compareslidermap"),
+                    label = "Comparison slider?",
+                    value = FALSE,
+                    status = "success"
+                  )
+                ),
+                col_8(
+                  downloadBttn(ns("downloadplotmap"),
+                               label = "Take a shot",
+                               style = "pill")
                 )
               ),
-              col_8(
-                downloadBttn(ns("downloadplotmap"),
-                             label = "Take a shot",
-                             style = "pill")
-              )
+              leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
             ),
-            leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
-          ),
-          tabPanel(
-            title = "Results plot",
-            reactable::reactableOutput(ns("resultplottab"), height = "700px")  |> add_spinner()
-          ),
-          tabPanel(
-            title = "Map individuals",
-            fluidRow(
-              col_4(
-                materialSwitch(
-                  inputId = ns("compareslidermapind"),
-                  label = "Comparison slider?",
-                  value = FALSE,
-                  status = "success"
+            tabPanel(
+              title = "Results plot",
+              reactable::reactableOutput(ns("resultplottab"), height = "700px")  |> add_spinner()
+            ),
+            tabPanel(
+              title = "Map individuals",
+              fluidRow(
+                col_4(
+                  materialSwitch(
+                    inputId = ns("compareslidermapind"),
+                    label = "Comparison slider?",
+                    value = FALSE,
+                    status = "success"
+                  )
+                ),
+                col_8(
+                  downloadBttn(ns("downloadindividmap"),
+                               label = "Take a shot",
+                               style = "pill")
                 )
               ),
-              col_8(
-                downloadBttn(ns("downloadindividmap"),
-                             label = "Take a shot",
-                             style = "pill")
-              )
+              leafletOutput(ns("resultsindivmap"), height = "720px")  |> add_spinner()
             ),
-            leafletOutput(ns("resultsindivmap"), height = "720px")  |> add_spinner()
-          ),
-          tabPanel(
-            title = "Results individuals",
-            reactable::reactableOutput(ns("resultsindivtab"), height = "700px")  |> add_spinner()
+            tabPanel(
+              title = "Results individuals",
+              reactable::reactableOutput(ns("resultsindivtab"), height = "700px")  |> add_spinner()
+            ),
+            tabPanel(
+              title = "Distances",
+              reactable::reactableOutput(ns("resultdist"), height = "700px")  |> add_spinner()
+            )
           )
-        )
+        } else{
+          bs4TabCard(
+            id = "tabs",
+            status = "success",
+            width = 12,
+            height = "790px",
+            title = "Results",
+            selected = "Segmentation",
+            solidHeader = FALSE,
+            type = "tabs",
+            tabPanel(
+              title = "Segmentation",
+              fluidRow(
+                col_6(
+                  plotOutput(ns("previousdensity"), height = "720px") |> add_spinner()
+                ),
+                col_6(
+                  plotOutput(ns("previoussegment"), height = "720px") |> add_spinner()
+                )
+              )
+            ),
+            tabPanel(
+              title = "Mosaic and shapefile",
+              uiOutput(ns("baseshapeindex")) |> add_spinner()
+            ),
+            tabPanel(
+              title = "Summary",
+              fluidRow(
+                valueBoxOutput(ns("vbnplots")),
+                valueBoxOutput(ns("vbnindiv")),
+                valueBoxOutput(ns("vbnindivplotmean")),
+                valueBoxOutput(ns("vbcoverage")),
+                valueBoxOutput(ns("largerindiv")),
+                valueBoxOutput(ns("smallerindiv"))
+              ),
+              fluidRow(
+                col_6(
+                  h4("Index (plot)"),
+                  plotlyOutput(ns("boxresults"), height = "420px") |> add_spinner()
+                ),
+                col_3(
+                  h4("Attribute (plot)"),
+                  plotlyOutput(ns("plotatribres"), height = "420px") |> add_spinner()
+                ),
+                col_3(
+                  h4("Attribute (individual)"),
+                  plotlyOutput(ns("indivatribres"), height = "420px") |> add_spinner()
+                )
+              )
+            ),
+            tabPanel(
+              title = "Map plot",
+              fluidRow(
+                col_4(
+                  materialSwitch(
+                    inputId = ns("compareslidermap"),
+                    label = "Comparison slider?",
+                    value = FALSE,
+                    status = "success"
+                  )
+                ),
+                col_8(
+                  downloadBttn(ns("downloadplotmap"),
+                               label = "Take a shot",
+                               style = "pill")
+                )
+              ),
+              leafletOutput(ns("resultsplotmap"), height = "680px")  |> add_spinner()
+            ),
+            tabPanel(
+              title = "Results plot",
+              reactable::reactableOutput(ns("resultplottab"), height = "700px")  |> add_spinner()
+            ),
+            tabPanel(
+              title = "Map individuals",
+              fluidRow(
+                col_4(
+                  materialSwitch(
+                    inputId = ns("compareslidermapind"),
+                    label = "Comparison slider?",
+                    value = FALSE,
+                    status = "success"
+                  )
+                ),
+                col_8(
+                  downloadBttn(ns("downloadindividmap"),
+                               label = "Take a shot",
+                               style = "pill")
+                )
+              ),
+              leafletOutput(ns("resultsindivmap"), height = "720px")  |> add_spinner()
+            ),
+            tabPanel(
+              title = "Results individuals",
+              reactable::reactableOutput(ns("resultsindivtab"), height = "700px")  |> add_spinner()
+            )
+          )
+        }
       } else if(input$segmentplot){
         bs4TabCard(
           id = "tabs",
@@ -857,6 +960,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                            map_individuals = input$mapindividuals,
                            map_direction = input$mapdirection,
                            verbose = FALSE)
+          # assign("resulttt", res, envir = globalenv())
           centr <-
             suppressWarnings(
               res$result_plot |>
@@ -865,9 +969,10 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                 as.data.frame() |>
                 setNames(c("x", "y"))
             )
-          res$result_plot <- res$result_plot |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id)
+          centr <- centr |> dplyr::bind_cols(res$result_plot |> sf::st_drop_geometry() |> dplyr::select(block, plot_id))
+          res$result_plot <- res$result_plot |> dplyr::left_join(centr, by = dplyr::join_by(block, plot_id)) |> dplyr::relocate(x, y, .after = plot_id)
           if(!is.null(res$result_plot_summ)){
-            res$result_plot_summ <- res$result_plot_summ |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id)
+            res$result_plot_summ <- res$result_plot_summ |> dplyr::left_join(centr, by = dplyr::join_by(block, plot_id)) |> dplyr::relocate(x, y, .after = plot_id)
           }
 
         } else{
@@ -1069,8 +1174,8 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
             )
 
           res <-
-            list(result_plot = result_plot |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id),
-                 result_plot_summ = result_plot_summ |> dplyr::bind_cols(centr) |> dplyr::relocate(x, y, .after = plot_id),
+            list(result_plot = result_plot |> dplyr::left_join(centr, by = dplyr::join_by(block, plot_id)) |> dplyr::relocate(x, y, .after = plot_id),
+                 result_plot_summ = result_plot_summ |> dplyr::left_join(centr, by = dplyr::join_by(block, plot_id)) |> dplyr::relocate(x, y, .after = plot_id),
                  result_indiv = result_indiv,
                  result_individ_map = NULL,
                  map_plot = NULL,
@@ -1078,6 +1183,7 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
 
           closeSweetAlert(session = session)
         }
+
 
         req(res)
         if("data" %in% colnames(res$result_plot)){
@@ -1284,6 +1390,27 @@ mod_analyze_server <- function(id, mosaic_data, basemap, shapefile, index, pathm
                 )
               )
           )
+          if(input$mapindividuals){
+            dists <- purrr::map_dfr(res[["result_individ_map"]][["distances"]], data.frame,
+                                    .id = "plot_id")
+            means <- data.frame(res[["result_individ_map"]][["means"]])
+            means <- data.frame(plot_id = rownames(means),
+                                mean_dist = means[, 1])
+            cvs <- data.frame(res[["result_individ_map"]][["cvs"]])
+            cvs <- data.frame(plot_id = rownames(cvs),
+                              cv = cvs[, 1])
+            dfdists <-
+              purrr::reduce(list(dists, means, cvs), dplyr::left_join,  by = dplyr::join_by(plot_id)) |>
+              tidyr::separate_wider_delim(plot_id, delim = "_", names = c("block", "plot_id")) |>
+              setNames(c("block", "plot_id", "dist", "mean_dist", "cv"))
+            # send to datasets
+            dfs[["result_individ_map"]] <- create_reactval("result_individ_map", dfdists)
+            # render the table
+            output$resultdist <- reactable::renderReactable({
+              dfdists |> render_reactable()
+            })
+          }
+
 
           mod_download_shapefile_server("downresplot", terra::vect(result_plot_summ), name = "plot_level_results")
           mod_download_shapefile_server("downresindiv", terra::vect(result_indiv), name = "individual_results")

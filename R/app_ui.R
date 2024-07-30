@@ -21,7 +21,7 @@ app_ui <- function(request) {
           href = "https://olivoto.netlify.app/",
           target = "_blank", "@Olivoto"
         ),
-        right = "2023"
+        right = "2024"
       ),
       controlbar = dashboardControlbar(
         skinSelector()
@@ -271,6 +271,16 @@ app_ui <- function(request) {
               icon = shiny::icon("magnifying-glass-chart", verify_fa = FALSE)
             )
 
+          ),
+          bs4SidebarMenuItem(
+            "Toolbox",
+            icon = shiny::icon("toolbox"),
+            startExpanded = F,
+            bs4SidebarMenuSubItem(
+              text = "UTM zone selector",
+              tabName = "utmzonesel",
+              icon = shiny::icon("earth-americas", verify_fa = FALSE)
+            )
           )
           ####
 
@@ -394,7 +404,14 @@ app_ui <- function(request) {
           bs4TabItem(
             tabName = "slider",
             mod_slider_ui("slider_1")
+          ),
+
+          # Tools
+          bs4TabItem(
+            tabName = "utmzonesel",
+            mod_utmzonesel_ui("utmzonesel_1")
           )
+
         )
       )
     )
