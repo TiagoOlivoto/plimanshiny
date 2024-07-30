@@ -355,7 +355,17 @@ mod_mosaic_prepare_server <- function(id, mosaic_data, r, g, b, re, nir, swir, t
       updateSelectInput(session, "howtoplot",
                         choices = c("RGB", names(mosaic_data[[input$mosaictoanalyze]]$data)))
     })
-
+    observe({
+      req(input$mosaictoanalyze)
+      crsmo <- terra::crs(mosaic_data[[input$mosaictoanalyze]]$data) != ""
+      if(crsmo && terra::is.lonlat(mosaic_data[[input$mosaictoanalyze]]$data)){
+        eps <- mosaic_epsg(mosaic_data[[input$mosaictoanalyze]]$data)
+        text <- paste0("The current raster is in the lat/lon coordinate system, which may result in processing errors when trying to segment individuals in the `mosaic_analyze()` function. It is highly suggested to reproject the raster using mosaic_project() with ", eps)
+        show_alert("CRS is on Lon/Lat format.",
+                   text = text,
+                   type = "warning")
+      }
+    })
     observeEvent(input$mosaicinfomosaic, {
       req(mosaic_data[[input$mosaictoanalyze]]$data)
       mosaic_info(mosaic_data[[input$mosaictoanalyze]]$data)
