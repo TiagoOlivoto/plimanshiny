@@ -965,9 +965,9 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
           shapefile[[input$activeshape]]$data |>
           dplyr::mutate(unique_id = dplyr::row_number(), .before = 1)
       } else if(!"unique_plot" %in% colnames(shapefile[[input$activeshape]]$data)){
-          shp$shp <-
-            shapefile[[input$activeshape]]$data |>
-            dplyr::mutate(unique_plot = paste0(block, "_", plot_id))
+        shp$shp <-
+          shapefile[[input$activeshape]]$data |>
+          dplyr::mutate(unique_plot = paste0(block, "_", plot_id))
       } else{
         shp$shp <- shapefile[[input$activeshape]]$data
       }
@@ -1231,7 +1231,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             pathslider1$val <- tfbef
             jpeg(tfbef, width = 920, height = 640)
             if(input$rgborattribute2 == "RGB"){
-              if(input$stretch == "none"){
+              if(input$stretch2 == "none"){
                 terra::plotRGB(tmpplot1$plot ^input$gammacorr2,
                                r = suppressWarnings(as.numeric(r$r)),
                                g = suppressWarnings(as.numeric(g$g)),
@@ -1259,7 +1259,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
             pathslider2$val <- tfaft
             jpeg(tfaft, width = 920, height = 640)
             if(input$rgborattribute2 == "RGB"){
-              if(input$stretch == "none"){
+              if(input$stretch2 == "none"){
                 terra::plotRGB(tmpplot2$plot ^input$gammacorr2,
                                r = suppressWarnings(as.numeric(r$r)),
                                g = suppressWarnings(as.numeric(g$g)),

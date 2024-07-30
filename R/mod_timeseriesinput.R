@@ -271,6 +271,61 @@ mod_timeseriesinput_ui <- function(id){
             )
           ),
           tabPanel(
+            title = "Animation",
+            fluidRow(
+              col_2(
+                actionBttn(
+                  ns("startanimation"),
+                  icon = icon("film"),
+                  label = "Animate!",
+                  style = "pill",
+                  color = "success"
+                )
+              ),
+              col_2(
+                actionBttn(
+                  ns("loop"),
+                  icon = icon("rotate"),
+                  label = "Loop",
+                  style = "pill",
+                  color = "success"
+                )
+              ),
+              col_2(
+                selectInput(
+                  ns("rgborind"),
+                  label = "Show",
+                  choices = c("rgb", "index"),
+                  selected = "rgb"
+                )
+              ),
+              col_2(
+                conditionalPanel(
+                  condition = "input.rgborind == 'index'", ns = ns,
+                  selectInput(
+                    ns("myindex"),
+                    label = "Vegetation index",
+                    choices = pliman::pliman_indexes(),
+                    selected = "rgb"
+                  )
+                )
+              ),
+              col_2(
+                selectInput(
+                  ns("fps"),
+                  label = "Frames per Second",
+                  choices = c(0.5, 1, 2, 4, 5, 10),
+                  selected = 2
+                )
+              ),
+              col_2(
+                downloadButton(ns("downloadgif"), "Download Animation"),
+              )
+            ),
+            imageOutput(ns("animation"), height = "720px") |> add_spinner()
+
+          ),
+          tabPanel(
             title = "Interactive visualization",
             leafletOutput(ns("leafletmap"), height = "720px")  |> add_spinner()
           )
@@ -314,9 +369,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
           filenames <- file_name(input_file_selected$paths$datapath)
           filedir$dir <- file_dir(input_file_selected$paths$datapath)
           date_match <- regmatches(filenames, regexpr("(\\d{8})|((\\d{2}-\\d{2}-\\d{4})|(\\d{4}-\\d{2}-\\d{2}))", filenames))
-          formatted_date <- as.character(sapply(date_match, reformat_date))
-          dates <- try(as.Date(formatted_date, tryFormats = c("%Y-%m-%d")))
-
+          dates <- try(as.Date(date_match, tryFormats =  date_format(date_match)[[1]]))
           if(inherits(dates, "try-error")){
             sendSweetAlert(
               session = session,
@@ -430,7 +483,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
           waiter_show(
             html = tagList(
               spin_google(),
-              h2("Cropping the raster files, please wait.")
+              h2("Cropping the raster files, .")
             ),
             color = "#228B227F"
           )
@@ -535,8 +588,136 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
         } else{
           basemap$map@map
         }
+      } else{
+        basemap$map@map
       }
 
+    })
+
+    # Animation
+    observeEvent(input$startanimation, {
+      req(mosaiclist$mosaics$data)
+      # if is RGB
+      progressSweetAlert(
+        session = session,
+        id = "myprogress",
+        title = "Start",
+        display_pct = TRUE,
+        value = 0,
+        total = length(mosaiclist$mosaics$data)
+      )
+
+      list_mo <- list()
+      if(input$rgborind == "index"){
+        for (i in seq_along(mosaiclist$mosaics$data)) {
+          updateProgressBar(
+            session = session,
+            id = "myprogress",
+            value = i,
+            title = paste0("Computing the vegetation index. Please wait."),
+            total = length(mosaiclist$mosaics$data)
+          )
+          tind <- try(
+            mosaic_index(
+              mosaiclist$mosaics$data[[i]],
+              r = suppressWarnings(as.numeric(r$r)),
+              g = suppressWarnings(as.numeric(g$g)),
+              b = suppressWarnings(as.numeric(b$b)),
+              re = suppressWarnings(as.numeric(re$re)),
+              nir = suppressWarnings(as.numeric(nir$nir)),
+              swir = suppressWarnings(as.numeric(swir$swir)),
+              tir = suppressWarnings(as.numeric(tir$tir)),
+              index = input$myindex,
+              plot = FALSE
+            ),
+            silent = TRUE
+          )
+          if(!inherits(tind, "try-error")){
+            list_mo[[i]] <- tind
+          }
+        }
+        req(list_mo)
+        minmax <- sapply(list_mo, terra::minmax)
+
+        for (i in 1:length(list_mo)) {
+          updateProgressBar(
+            session = session,
+            id = "myprogress",
+            value = i,
+            title = paste0("Rendering the animation. Please wait."),
+            total = length(mosaiclist$mosaics$data)
+          )
+          tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/animation{pliman::leading_zeros(i, 4)}.png")
+          png(tfaft,
+              width = dim(list_mo[[1]])[[2]],
+              height = dim(list_mo[[1]])[[1]])
+          mosaic_plot(list_mo[[i]],
+                      range = c(min(minmax), max(minmax)),
+                      axes = FALSE)
+          dev.off()
+        }
+        closeSweetAlert(session = session)
+      } else{
+        for (i in 1:length(mosaiclist$mosaics$data)) {
+          updateProgressBar(
+            session = session,
+            id = "myprogress",
+            value = i,
+            title = paste0("Rendering the animation. Please wait."),
+            total = length(mosaiclist$mosaics$data)
+          )
+          tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/animation{pliman::leading_zeros(i, 4)}.png")
+          png(tfaft,
+              width = dim(mosaiclist$mosaics$data[[1]])[[2]],
+              height = dim(mosaiclist$mosaics$data[[1]])[[1]])
+          try(
+            {
+              terra::plotRGB(mosaiclist$mosaics$data[[i]],
+                             r = suppressWarnings(as.numeric(r$r)),
+                             g = suppressWarnings(as.numeric(g$g)),
+                             b = suppressWarnings(as.numeric(b$b)),
+                             axes = FALSE)
+            }
+          )
+          dev.off()
+        }
+        closeSweetAlert(session = session)
+      }
+
+      dir <- pliman::file_dir(glue::glue(system.file("app", package = "plimanshiny" ), "/www/animation{i}.png"))
+      num_images <- image_read(paste0(dir, "/", list.files(dir, pattern = "animation")))
+      anim <- image_animate(num_images,
+                            fps = input$fps |> chrv2numv(),
+                            loop = 1,
+                            optimize = TRUE,
+                            dispose = "previous")
+
+      output$animation <- renderImage({
+        list(src = anim |> image_write(tempfile(fileext = ".gif")), contentType = "image/jpeg")
+      },
+      deleteFile = TRUE)
+
+      observeEvent(input$loop, {
+        anim <- image_animate(num_images,
+                              fps = input$fps |> chrv2numv(),
+                              loop = 1,
+                              optimize = TRUE,
+                              dispose = "previous")
+        output$animation <- renderImage({
+          list(src = anim |> image_write(tempfile(fileext = ".gif")), contentType = "image/jpeg")
+        },
+        deleteFile = TRUE)
+      })
+
+
+      output$downloadgif <- downloadHandler(
+        filename = "timeseries_animation.gif",
+        content = function(file) {
+          anim |> image_write(file)
+        }
+      )
+
+      a <- file.remove(paste0(dir, "/", list.files(dir, pattern = "animation")))
     })
   })
 }
