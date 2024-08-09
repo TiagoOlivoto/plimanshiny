@@ -60,6 +60,7 @@ golem::add_module(name = "spatjoin")
 golem::add_module(name = "spatinterp")
 golem::add_module(name = "matanalyze")
 golem::add_module(name = "phanalyze")
+golem::add_module(name = "utmzonesel")
 
 ## Add packages
 usethis::use_package("shiny")

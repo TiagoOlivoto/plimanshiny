@@ -906,6 +906,7 @@ mod_measurediseaseind_server <- function(id, imgdata, dfs){
     })
 
     observe({
+      req(sevsad$sev$severity)
       dfs[["phytopathometry_results_ind"]] <- create_reactval("phytopathometry_results", sevsad$sev$severity)
     })
 

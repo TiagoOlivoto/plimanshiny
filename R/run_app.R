@@ -7,6 +7,7 @@
 #' @importFrom golem with_golem_options
 #' @importFrom plotly ggplotly renderPlotly plotlyOutput
 #' @importFrom shiny shinyApp
+#' @importFrom magick image_read image_animate image_write
 #' @importFrom tidyr unnest
 #' @importFrom graphics abline par title layout legend matplot
 #' @importFrom stats binomial glm reorder runif dist D coef integrate lm nls nls.control optimise setNames smooth

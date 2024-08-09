@@ -483,7 +483,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
           waiter_show(
             html = tagList(
               spin_google(),
-              h2("Cropping the raster files, .")
+              h2("Cropping the raster files, please wait.")
             ),
             color = "#228B227F"
           )
@@ -517,27 +517,38 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
 
     })
 
+    mosaictoplot <- reactive({
+      req(mosaiclist$mosaics$data)
+      aggr <- find_aggrfact(mosaiclist$mosaics$data[[input$mosaicslider]])
+      if(aggr > 0){
+        mosaic_aggregate(mosaiclist$mosaics$data[[input$mosaicslider]], round(100 / aggr))
+      } else{
+        mosaiclist$mosaics$data[[input$mosaicslider]]
+      }
+    })
+
 
     # plot the
     output$plotmosaic <- renderPlot({
       req(mosaiclist$mosaics$data)
       if(inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")){
+
         if(input$showmosaic == "rgb"){
           if(input$stretch == "none"){
-            terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^input$gammacorr,
+            terra::plotRGB(mosaictoplot() ^input$gammacorr,
                            r = suppressWarnings(as.numeric(r$r)),
                            g = suppressWarnings(as.numeric(g$g)),
                            b = suppressWarnings(as.numeric(b$b)))
 
           } else{
-            terra::plotRGB(mosaiclist$mosaics$data[[input$mosaicslider]] ^ input$gammacorr,
+            terra::plotRGB(mosaictoplot() ^ input$gammacorr,
                            r = suppressWarnings(as.numeric(r$r)),
                            g = suppressWarnings(as.numeric(g$g)),
                            b = suppressWarnings(as.numeric(b$b)),
                            stretch = input$stretch)
           }
         } else{
-          terra::plot(mosaiclist$mosaics$data[[input$mosaicslider]][[as.numeric(input$bandnumber)]])
+          terra::plot(mosaictoplot()[[as.numeric(input$bandnumber)]])
         }
       }
       if(input$shapefileimported != ""){
@@ -559,7 +570,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
         if (inherits(mosaiclist$mosaics$data[[1]], "SpatRaster")) {
           if (input$showmosaic == "rgb") {
             bmtmp <- mosaic_view(
-              mosaiclist$mosaics$data[[input$mosaicslider]],
+              mosaictoplot(),
               r = suppressWarnings(as.numeric(r$r)),
               g = suppressWarnings(as.numeric(g$g)),
               b = suppressWarnings(as.numeric(b$b)),
@@ -568,7 +579,7 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
             )
           } else {
             bmtmp <- mosaic_view(
-              mosaiclist$mosaics$data[[input$mosaicslider]][[as.numeric(input$bandnumber)]],
+              mosaictoplot()[[as.numeric(input$bandnumber)]],
               show = "index",
               color_regions = scales::brewer_pal(palette = "RdYlGn")(8),
               max_pixels = input$maxpixels,
@@ -591,8 +602,9 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
       } else{
         basemap$map@map
       }
-
     })
+
+
 
     # Animation
     observeEvent(input$startanimation, {
@@ -648,9 +660,12 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
             total = length(mosaiclist$mosaics$data)
           )
           tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/animation{pliman::leading_zeros(i, 4)}.png")
+          wdt <- dim(list_mo[[1]])[[2]]
+          hei <- dim(list_mo[[1]])[[1]]
+          ratio <- hei / wdt
           png(tfaft,
-              width = dim(list_mo[[1]])[[2]],
-              height = dim(list_mo[[1]])[[1]])
+              width = 780,
+              height = 780 * ratio)
           mosaic_plot(list_mo[[i]],
                       range = c(min(minmax), max(minmax)),
                       axes = FALSE)
@@ -667,9 +682,12 @@ mod_timeseriesinput_server <- function(id, shapefile, mosaiclist, r, g, b, re, n
             total = length(mosaiclist$mosaics$data)
           )
           tfaft <- glue::glue(system.file("app", package = "plimanshiny" ), "/www/animation{pliman::leading_zeros(i, 4)}.png")
+          wdt <- dim(mosaiclist$mosaics$data[[1]])[[2]]
+          hei <- dim(mosaiclist$mosaics$data[[1]])[[1]]
+          ratio <- hei / wdt
           png(tfaft,
-              width = dim(mosaiclist$mosaics$data[[1]])[[2]],
-              height = dim(mosaiclist$mosaics$data[[1]])[[1]])
+              width = 780,
+              height = 780 * ratio)
           try(
             {
               terra::plotRGB(mosaiclist$mosaics$data[[i]],

@@ -620,6 +620,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
       mindex <- strsplit(input$myindex, split = ",")[[1]]
       finalindex <- c(mindex, input$plotindexes)
     })
+
     observe({
       updateSelectInput(session, "segmentindex", choices = finalindex())
       updateSelectInput(session, "activeshape", choices = setdiff(names(shapefile), "shape"))
@@ -646,6 +647,7 @@ mod_timeseriesanalysis_server <- function(id, shapefile, mosaiclist, r, g, b, re
     observeEvent(input$analyzemosaicts, {
       req(mosaiclist$mosaics$data)
       req(shapefile[[input$activeshape]]$data)
+      req(finalindex())
       if(is.null(mosaiclist$mosaics$data) | is.null(shapefile[[input$activeshape]]$data)){
         sendSweetAlert(
           session = session,

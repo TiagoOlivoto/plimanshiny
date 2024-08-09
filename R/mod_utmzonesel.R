@@ -66,6 +66,10 @@ mod_utmzonesel_server <- function(id){
       lat <- click$lat
       updateTextInput(session, "epsg",
                       value = epsg(lat, lon))
+      updateNumericInput(session, "latitude",
+                         value = lat)
+      updateNumericInput(session, "longitude",
+                         value = lon)
 
       utm_zone <- get_utm_zone(lon)
       bounds <- get_utm_bounds(utm_zone)
@@ -89,6 +93,7 @@ mod_utmzonesel_server <- function(id){
       lat <- as.numeric(input$latitude)
       updateTextInput(session, "epsg",
                       value = epsg(lat, lon))
+
 
       if (!is.na(lon) & !is.na(lat)) {
         utm_zone <- get_utm_zone(lon)
