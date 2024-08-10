@@ -54,7 +54,7 @@ mod_imagepalette_ui <- function(id){
           ),
           tabPanel(
             title = "Results",
-            DT::dataTableOutput(ns("resultpalette"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultpalette"), height = "720px", width = 980)  |> add_spinner()
           )
         )
       )
@@ -91,18 +91,11 @@ mod_imagepalette_server <- function(id, imgdata){
       plot(parms()$joint)
     })
 
-    output$resultpalette <- DT::renderDataTable(
-      parms()$proportions |> as.data.frame(),
-      extensions = 'Buttons',
-      rownames = FALSE,
-      options = list(
-        dom = 'Blrtip',
-        buttons = c('copy', 'excel'),
-        paging = FALSE,
-        scrollX = TRUE,
-        scrollY = "620px",
-        pageLength = 15
-      )
+    output$resultplottab <- reactable::renderReactable(
+      parms()$proportions |>
+        as.data.frame() |>
+        roundcols(digits = 3) |>
+        render_reactable()
     )
 
   })

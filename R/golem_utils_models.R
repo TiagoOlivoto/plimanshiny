@@ -579,7 +579,7 @@ mod_segmented <-  function(data, flight_date = "date", predictor = "median.NDVI"
           seg_loop<-try(segmented::segmented(mod,
                                              seg.Z = ~ flights,
                                              npsi = 2,
-                                             control = seg.control(n.boot = 50, random=T, tol=0.01)),
+                                             control = segmented::seg.control(n.boot = 50, random=T, tol=0.01)),
                         silent = T)
 
           #if the segmented function returns an error, then run the lm function
@@ -597,9 +597,9 @@ mod_segmented <-  function(data, flight_date = "date", predictor = "median.NDVI"
           } else if (!is.null(seg_loop$psi)) {
 
             #create a variable called slps that is equal to the slope of the segmented function
-            slps <- slope(seg_loop)$flights
+            slps <- segmented::slope(seg_loop)$flights
             #create a variable called ncpt that is equal to the intercept of the segmented function
-            ncpt <- intercept(seg_loop)$flights
+            ncpt <- segmented::intercept(seg_loop)$flights
 
             #if the vegetation index is GLI or TGI, then set the slope variable equal to the minimum slope
             if (slope == "min") {
@@ -644,8 +644,8 @@ mod_segmented <-  function(data, flight_date = "date", predictor = "median.NDVI"
 
           } else if (!is.null(seg_loop$psi)) {
 
-            slps <- slope(seg_loop)$flights
-            ncpt <- intercept(seg_loop)$flights
+            slps <- segmented::slope(seg_loop)$flights
+            ncpt <- segmented::intercept(seg_loop)$flights
 
             if (slope == "min") {
               slope <- min(slps[,1])

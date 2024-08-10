@@ -1,3 +1,3 @@
-# plimanshiny (development version)
+# plimanshiny 0.1.0
 
 * Initial CRAN submission.

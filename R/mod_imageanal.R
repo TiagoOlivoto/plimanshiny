@@ -504,11 +504,11 @@ mod_imageanal_ui <- function(id){
           ),
           tabPanel(
             title = "Results (raw)",
-            DT::dataTableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultsindivtab"), height = "720px", width = 980)  |> add_spinner()
           ),
           tabPanel(
             title = "Results (summary)",
-            DT::dataTableOutput(ns("resultssummary"), height = "720px", width = 980)  |> add_spinner()
+            reactable::reactableOutput(ns("resultssummary"), height = "720px", width = 980)  |> add_spinner()
           )
         )
       )
@@ -845,19 +845,11 @@ mod_imageanal_server <- function(id, imgdata){
 
 
 
-        output$resultsindivtab <- DT::renderDataTable(
-          get_measures(res, dpi = parms()$dpi) |> as.data.frame(),
-          extensions = 'Buttons',
-          rownames = FALSE,
-          options = list(
-            dom = 'Blrtip',
-            buttons = c('copy', 'excel'),
-            paging = FALSE,
-            scrollX = TRUE,
-            scrollY = "620px",
-            pageLength = 15
-          )
-        )
+        output$resultsindivtab <- reactable::renderReactable({
+          get_measures(res, dpi = parms()$dpi) |>
+            as.data.frame() |>
+            render_reactable()
+        })
 
 
       } else{
@@ -1185,34 +1177,18 @@ mod_imageanal_server <- function(id, imgdata){
         })
 
 
-        output$resultsindivtab <- DT::renderDataTable(
-          rescor$results,
-          extensions = 'Buttons',
-          rownames = FALSE,
-          options = list(
-            dom = 'Blrtip',
-            buttons = c('copy', 'excel'),
-            paging = FALSE,
-            scrollX = TRUE,
-            scrollY = "620px",
-            pageLength = 15
-          )
-        )
+        output$resultsindivtab <- reactable::renderReactable({
+          rescor$results |>
+            render_reactable()
+        })
+
         ressumm <- rescor$summary
         ressumm$img <- gsub("img", "", ressumm$img)
-        output$resultssummary <- DT::renderDataTable(
-          ressumm,
-          extensions = 'Buttons',
-          rownames = FALSE,
-          options = list(
-            dom = 'Blrtip',
-            buttons = c('copy', 'excel'),
-            paging = FALSE,
-            scrollX = TRUE,
-            scrollY = "620px",
-            pageLength = 15
-          )
-        )
+
+        output$resultssummary <- reactable::renderReactable({
+          ressumm |>
+            render_reactable()
+        })
 
       }
 

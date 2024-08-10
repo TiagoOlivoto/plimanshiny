@@ -190,7 +190,7 @@ mod_shapefile_prepare_ui <- function(id){
                        col_7(
                          actionBttn(
                            ns("createupdate"),
-                           label = "Create/update",
+                           label = "Create or update",
                            icon = icon("arrows-rotate"),
                            color = "success",
                            style = "jelly"
@@ -589,7 +589,7 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
             observeEvent(input$doneblock, {
               nblock(nblock() + 1)
               output$nblocksdone <- renderText({
-                glue::glue("Nº of built blocks: {nblock()}")
+                glue::glue("Built blocks: {nblock()}")
               })
               block_name <- paste0("B", sprintf("%02d", nblock()))
               createdshape[[block_name]] <- tmpshape$tmp

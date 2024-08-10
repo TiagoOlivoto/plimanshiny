@@ -33,6 +33,7 @@ The development version of `plimanshiny` can be installed from [GitHub](https://
 
 ```{r, eval=FALSE}
 install.packages("pak")
+pak::pkg_install("TiagoOlivoto/pliman")
 pak::pkg_install("TiagoOlivoto/plimanshiny")
 ```
 

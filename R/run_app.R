@@ -3,15 +3,15 @@
 #' @param ... A series of options to be used inside the app.
 #' @param upload_size Shiny limits file uploads. Defaults to 10000 MB (10 GB).
 #' @export
-#' @rawNamespace import(DT, except = c(dataTableOutput, renderDataTable))
 #' @importFrom golem with_golem_options
 #' @importFrom plotly ggplotly renderPlotly plotlyOutput
 #' @importFrom shiny shinyApp
+#' @importFrom segmented segmented.lm seg.control intercept
 #' @importFrom magick image_read image_animate image_write
 #' @importFrom tidyr unnest
 #' @importFrom graphics abline par title layout legend matplot
-#' @importFrom stats binomial glm reorder runif dist D coef integrate lm nls nls.control optimise setNames smooth
-#' @importFrom grDevices dev.off jpeg adjustcolor col2rgb colorRampPalette rgb
+#' @importFrom stats binomial glm reorder runif dist D coef integrate lm nls nls.control optimise setNames smooth approx loess
+#' @importFrom grDevices dev.off jpeg adjustcolor col2rgb colorRampPalette rgb png terrain.colors
 #' @importFrom utils data stack write.csv
 #' @importFrom future plan multisession
 #' @importFrom doFuture `%dofuture%`
