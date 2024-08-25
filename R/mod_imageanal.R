@@ -520,7 +520,7 @@ mod_imageanal_ui <- function(id){
 #' imageanal Server Functions
 #'
 #' @noRd
-mod_imageanal_server <- function(id, imgdata){
+mod_imageanal_server <- function(id, imgdata, dfs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -850,6 +850,7 @@ mod_imageanal_server <- function(id, imgdata){
             as.data.frame() |>
             render_reactable()
         })
+        dfs[["result_image_analysis"]] <- create_reactval("result_image_analysis",  get_measures(res, dpi = parms()$dpi) |>as.data.frame())
 
 
       } else{
@@ -1181,6 +1182,8 @@ mod_imageanal_server <- function(id, imgdata){
           rescor$results |>
             render_reactable()
         })
+
+        dfs[["result_image_analysis"]] <- create_reactval("result_image_analysis", rescor$results)
 
         ressumm <- rescor$summary
         ressumm$img <- gsub("img", "", ressumm$img)

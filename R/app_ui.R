@@ -146,27 +146,6 @@ app_ui <- function(request) {
             )
           ),
           ### to be included ###
-          bs4SidebarMenuItem(
-            "Surface Elevation",
-            icon = shiny::icon("mountain-sun"),
-            startExpanded = F,
-            bs4SidebarMenuSubItem(
-              text = "DSM",
-              tabName = "dsmcimport",
-              icon = shiny::icon("file-upload", verify_fa = FALSE)
-            ),
-            bs4SidebarMenuSubItem(
-              text = "Manipulate",
-              tabName = "dsmamanipulate",
-              icon = shiny::icon("screwdriver-wrench", verify_fa = FALSE)
-            ),
-            bs4SidebarMenuSubItem(
-              text = "Analyze",
-              tabName = "dsmanalyze",
-              icon = shiny::icon("chart-line")
-            )
-
-          ),
 
           bs4SidebarMenuItem(
             "Drone traits",
@@ -206,6 +185,11 @@ app_ui <- function(request) {
             bs4SidebarMenuSubItem(
               text = "Spatial interpolation",
               tabName = "spatinterpolate",
+              icon = shiny::icon("chart-line")
+            ),
+            bs4SidebarMenuSubItem(
+              text = "Spatial autocorrelation",
+              tabName = "spatautocor",
               icon = shiny::icon("chart-line")
             )
           ),

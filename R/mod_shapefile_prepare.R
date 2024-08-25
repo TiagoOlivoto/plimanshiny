@@ -173,7 +173,7 @@ mod_shapefile_prepare_ui <- function(id){
                          col_6(
                            actionBttn(
                              ns("doneblock"),
-                             label = "Block built",
+                             label = "Store block",
                              icon = icon("plus"),
                              color = "success",
                              style = "jelly"
@@ -190,7 +190,7 @@ mod_shapefile_prepare_ui <- function(id){
                        col_7(
                          actionBttn(
                            ns("createupdate"),
-                           label = "Create or update",
+                           label = "Create-update",
                            icon = icon("arrows-rotate"),
                            color = "success",
                            style = "jelly"
@@ -248,11 +248,12 @@ mod_shapefile_prepare_ui <- function(id){
                      )
             ),
             divclass("shape5",
+                     hl(),
                      fluidRow(
                        style = "margin-top: -10px;",
                        prettyCheckbox(
                          inputId = ns("shapedone"),
-                         label = "Sahpefile built",
+                         label = "Shapefile finished",
                          value = FALSE,
                          status = "info",
                          icon = icon("thumbs-up"),
@@ -752,8 +753,8 @@ mod_shapefile_prepare_server <- function(id, mosaic_data, basemap, shapefile, ac
                   } else{
                     for (i in 1:length(newshpname)) {
                       shpimp <- import_shp_mod(input$import_shapefile$datapath[[i]],
-                                     input$import_shapefile[[i]],
-                                     session) |>
+                                               input$import_shapefile[[i]],
+                                               session) |>
                         convert_numeric_cols() |>
                         check_cols_shpinp()
                       shapefile[[newshpname[[i]]]] <- create_reactval(newshpname[[i]], shpimp)
